@@ -23,6 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+LANG_PATTERN = "^(en|es|fr|zh)$"
+
 
 @app.get("/api/health")
 def health():
@@ -59,7 +61,7 @@ def stock_history(ticker: str, period: str = Query("6mo", pattern="^(1mo|3mo|6mo
 
 
 @app.get("/api/news/{ticker}", response_model=NewsResponse)
-def stock_news(ticker: str):
+def stock_news(ticker: str, lang: str = Query("en", pattern=LANG_PATTERN)):
     try:
         ticker = normalize_ticker(ticker)
     except ValueError as e:
@@ -71,12 +73,12 @@ def stock_news(ticker: str):
     return {
         "ticker": ticker.upper(),
         "items": items,
-        "ai_summary": ai.summarize_news(ticker.upper(), items),
+        "ai_summary": ai.summarize_news(ticker.upper(), items, lang=lang),
     }
 
 
 @app.get("/api/analysis/{ticker}", response_model=AnalysisResponse)
-def stock_analysis(ticker: str):
+def stock_analysis(ticker: str, lang: str = Query("en", pattern=LANG_PATTERN)):
     try:
         ticker = normalize_ticker(ticker)
     except ValueError as e:
@@ -91,7 +93,7 @@ def stock_analysis(ticker: str):
     return {
         "ticker": ticker.upper(),
         "insights": insights,
-        "ai_narrative": ai.narrate_analysis(ticker.upper(), metrics, insights),
+        "ai_narrative": ai.narrate_analysis(ticker.upper(), metrics, insights, lang=lang),
         "disclaimer": DISCLAIMER,
     }
 

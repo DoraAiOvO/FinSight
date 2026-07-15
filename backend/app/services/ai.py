@@ -7,6 +7,26 @@ _SYSTEM = (
     "you rely on, and note uncertainty. Be concise and plain-spoken."
 )
 
+SUPPORTED_LANGUAGES = ("en", "es", "fr", "zh")
+
+_LANGUAGE_NAMES = {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "zh": "Chinese (Simplified)",
+}
+
+
+def _language_instruction(lang: str) -> str:
+    """Mirror RoboPrompt's language policy: respond in the UI-selected language."""
+    if lang == "en" or lang not in _LANGUAGE_NAMES:
+        return ""
+    return (
+        f"\n\nWrite your entire response in {_LANGUAGE_NAMES[lang]}. Keep ticker "
+        "symbols and standard financial terms (P/E, FCF, beta) in their usual "
+        "form when natural."
+    )
+
 
 def _client():
     if not settings.ANTHROPIC_API_KEY:
@@ -19,7 +39,7 @@ def _client():
         return None
 
 
-def _ask(prompt: str, max_tokens: int = 600) -> str | None:
+def _ask(prompt: str, max_tokens: int = 600, lang: str = "en") -> str | None:
     client = _client()
     if client is None:
         return None
@@ -28,14 +48,14 @@ def _ask(prompt: str, max_tokens: int = 600) -> str | None:
             model=settings.AI_MODEL,
             max_tokens=max_tokens,
             system=_SYSTEM,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": prompt + _language_instruction(lang)}],
         )
         return "".join(b.text for b in msg.content if b.type == "text").strip()
     except Exception:
         return None
 
 
-def summarize_news(ticker: str, items: list[dict]) -> str | None:
+def summarize_news(ticker: str, items: list[dict], lang: str = "en") -> str | None:
     """Summarize recent headlines into key themes. None if AI unavailable."""
     if not items:
         return None
@@ -43,11 +63,12 @@ def summarize_news(ticker: str, items: list[dict]) -> str | None:
     return _ask(
         f"Recent headlines for {ticker}:\n{headlines}\n\n"
         "Summarize the 2-4 main themes in these headlines and what each could mean "
-        "for the company. Reference the headlines as your evidence."
+        "for the company. Reference the headlines as your evidence.",
+        lang=lang,
     )
 
 
-def narrate_analysis(ticker: str, metrics: dict, insights: list[dict]) -> str | None:
+def narrate_analysis(ticker: str, metrics: dict, insights: list[dict], lang: str = "en") -> str | None:
     """Turn rule-based insights into a short plain-English narrative."""
     if not insights:
         return None
@@ -60,5 +81,6 @@ def narrate_analysis(ticker: str, metrics: dict, insights: list[dict]) -> str | 
         f"Company: {metrics.get('name')} ({ticker}), sector {metrics.get('sector')}.\n"
         f"Rule-based findings with evidence:\n{bullet}\n\n"
         "Write a short narrative (under 200 words) weaving these findings together. "
-        "Explain the evidence; do not recommend buying or selling."
+        "Explain the evidence; do not recommend buying or selling.",
+        lang=lang,
     )
