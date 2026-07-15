@@ -9,7 +9,7 @@ jobs:
   set-homepage:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      administration: write
     steps:
       - uses: actions/github-script@v7
         with:
