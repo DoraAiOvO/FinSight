@@ -12,6 +12,7 @@ from .models.schemas import (
 )
 from .services import ai, market_data
 from .services.analysis import DISCLAIMER, build_comparison, build_insights
+from .services.tickers import normalize_comparison, normalize_ticker
 
 app = FastAPI(title="FinSight API", version="0.1.0")
 
@@ -31,6 +32,10 @@ def health():
 @app.get("/api/stocks/{ticker}", response_model=Overview)
 def stock_overview(ticker: str):
     try:
+        ticker = normalize_ticker(ticker)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    try:
         return market_data.get_overview(ticker)
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -40,6 +45,10 @@ def stock_overview(ticker: str):
 
 @app.get("/api/stocks/{ticker}/history", response_model=HistoryResponse)
 def stock_history(ticker: str, period: str = Query("6mo", pattern="^(1mo|3mo|6mo|1y|2y|5y)$")):
+    try:
+        ticker = normalize_ticker(ticker)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     try:
         points = market_data.get_history(ticker, period)
     except Exception as e:
@@ -51,6 +60,10 @@ def stock_history(ticker: str, period: str = Query("6mo", pattern="^(1mo|3mo|6mo
 
 @app.get("/api/news/{ticker}", response_model=NewsResponse)
 def stock_news(ticker: str):
+    try:
+        ticker = normalize_ticker(ticker)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     try:
         items = market_data.get_news(ticker)
     except Exception as e:
@@ -64,6 +77,10 @@ def stock_news(ticker: str):
 
 @app.get("/api/analysis/{ticker}", response_model=AnalysisResponse)
 def stock_analysis(ticker: str):
+    try:
+        ticker = normalize_ticker(ticker)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     try:
         metrics = market_data.get_overview(ticker)
     except LookupError as e:
@@ -81,9 +98,10 @@ def stock_analysis(ticker: str):
 
 @app.get("/api/compare", response_model=CompareResponse)
 def compare(tickers: str = Query(..., description="Comma-separated tickers, e.g. AAPL,MSFT")):
-    symbols = [t.strip().upper() for t in tickers.split(",") if t.strip()][:5]
-    if len(symbols) < 2:
-        raise HTTPException(status_code=400, detail="Provide at least two tickers")
+    try:
+        symbols = normalize_comparison(tickers)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     overviews = []
     for s in symbols:
         try:

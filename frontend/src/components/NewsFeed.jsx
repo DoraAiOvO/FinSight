@@ -1,27 +1,41 @@
 export default function NewsFeed({ news }) {
   return (
-    <section className="card">
-      <h3>Recent news</h3>
+    <section className="card news-card">
+      <div className="section-heading">
+        <div>
+          <p className="card-kicker">What is changing</p>
+          <h3>Recent news</h3>
+        </div>
+        <span className="source-count">{news.items.length} sources</span>
+      </div>
+
       {news.ai_summary && (
         <div className="ai-note">
-          <strong>Themes:</strong> {news.ai_summary}
+          <span className="ai-label">Headline themes</span>
+          <p>{news.ai_summary}</p>
         </div>
       )}
-      {news.items.length === 0 && <p className="muted">No recent headlines found.</p>}
-      <ul className="news-list">
-        {news.items.map((n, i) => (
-          <li key={i}>
-            {n.link ? (
-              <a href={n.link} target="_blank" rel="noreferrer">{n.title}</a>
-            ) : (
-              n.title
-            )}
-            <span className="muted news-meta">
-              {[n.publisher, n.published_at?.slice(0, 10)].filter(Boolean).join(' · ')}
-            </span>
+
+      {news.items.length === 0 && <p className="empty-copy">No recent headlines were found.</p>}
+      <ol className="news-list">
+        {news.items.map((item, index) => (
+          <li key={`${item.title}-${index}`}>
+            <span className="news-index">{String(index + 1).padStart(2, '0')}</span>
+            <div>
+              {item.link ? (
+                <a href={item.link} target="_blank" rel="noreferrer">
+                  {item.title}<span aria-hidden="true">↗</span>
+                </a>
+              ) : (
+                <span className="news-title">{item.title}</span>
+              )}
+              <span className="news-meta">
+                {[item.publisher, item.published_at?.slice(0, 10)].filter(Boolean).join(' · ')}
+              </span>
+            </div>
           </li>
         ))}
-      </ul>
+      </ol>
     </section>
   )
 }

@@ -44,8 +44,8 @@ Frontend (Node 18+):
 
 ```bash
 cd frontend
-npm install
-npm run dev        # http://localhost:5173 (proxies /api to :8000)
+pnpm install
+pnpm dev           # http://localhost:5173 (proxies /api to :8000)
 ```
 
 Optional AI layer: `cp .env.example .env` and set `ANTHROPIC_API_KEY`.

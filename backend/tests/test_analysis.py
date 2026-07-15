@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.services.analysis import build_comparison, build_insights  # noqa: E402
+from app.services.tickers import normalize_comparison, normalize_ticker  # noqa: E402
 
 
 def base_metrics(**overrides):
@@ -139,3 +140,24 @@ def test_comparison_handles_missing_values():
     # With only one company reporting, no "best" is declared — a win against
     # missing data would be misleading evidence.
     assert div["best"] is None
+
+
+def test_tickers_are_normalized_and_validated():
+    assert normalize_ticker(" brk-b ") == "BRK-B"
+    assert normalize_ticker("rds.a") == "RDS.A"
+
+
+def test_invalid_ticker_is_rejected():
+    import pytest
+
+    with pytest.raises(ValueError, match="valid ticker"):
+        normalize_ticker("AAPL/MSFT")
+
+
+def test_comparison_rejects_duplicates_and_more_than_five():
+    import pytest
+
+    with pytest.raises(ValueError, match="unique"):
+        normalize_comparison("AAPL, aapl")
+    with pytest.raises(ValueError, match="up to 5"):
+        normalize_comparison("A,B,C,D,E,F")
