@@ -2,8 +2,6 @@
 
 > See beyond the numbers.
 
-**Live website:** [finsight-research.doraaiyuyang.chatgpt.site](https://finsight-research.doraaiyuyang.chatgpt.site)
-
 FinSight is an AI-powered stock research agent that helps people make more
 informed investment decisions. It brings financial data, market news, company
 comparisons, and risk analysis into one research workflow, then explains the
