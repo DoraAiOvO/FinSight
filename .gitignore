@@ -8,9 +8,10 @@ venv/
 # Node
 node_modules/
 frontend/dist/
+.vercel/
 
 # Env & IDE
-.env
+.env*
 .DS_Store
 .idea/
 .vscode/
