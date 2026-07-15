@@ -8,7 +8,7 @@ const PERIODS = [
 ]
 
 export default function PriceChart({ history, loading, onPeriodChange }) {
-  const points = history.points
+  const points = (history.points || []).filter((point) => Number.isFinite(point.close))
   if (!points || points.length < 2) return null
 
   const width = 900

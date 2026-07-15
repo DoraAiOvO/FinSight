@@ -1,4 +1,5 @@
 """Market data access layer built on yfinance, with a small in-memory cache."""
+import math
 import time
 
 import yfinance as yf
@@ -32,6 +33,26 @@ def get_raw_info(ticker: str) -> dict:
     return _store(key, info)
 
 
+def normalize_dividend_yield(info: dict, price: float | None) -> float | None:
+    """Return dividend yield as a decimal across yfinance response versions."""
+    annual_dividend = info.get("dividendRate")
+    if annual_dividend is not None and price:
+        try:
+            return float(annual_dividend) / float(price)
+        except (TypeError, ValueError, ZeroDivisionError):
+            pass
+
+    raw_yield = info.get("dividendYield")
+    if raw_yield is None:
+        return None
+    try:
+        value = float(raw_yield)
+    except (TypeError, ValueError):
+        return None
+    # Newer yfinance versions return percentage points (0.34 means 0.34%).
+    return value / 100 if value > 0.2 else value
+
+
 def extract_metrics(info: dict, ticker: str) -> dict:
     """Normalize the yfinance info dict into FinSight's metric schema."""
     price = info.get("currentPrice") or info.get("regularMarketPrice")
@@ -59,7 +80,7 @@ def extract_metrics(info: dict, ticker: str) -> dict:
         "current_ratio": info.get("currentRatio"),
         "free_cash_flow": info.get("freeCashflow"),
         "beta": info.get("beta"),
-        "dividend_yield": info.get("dividendYield"),
+        "dividend_yield": normalize_dividend_yield(info, price),
         "fifty_two_week_low": info.get("fiftyTwoWeekLow"),
         "fifty_two_week_high": info.get("fiftyTwoWeekHigh"),
         "analyst_target_mean": info.get("targetMeanPrice"),
@@ -72,6 +93,20 @@ def get_overview(ticker: str) -> dict:
     return extract_metrics(get_raw_info(ticker), ticker)
 
 
+def normalize_history_points(rows) -> list[dict]:
+    """Convert provider rows to finite closing-price points."""
+    points = []
+    for index, row in rows:
+        try:
+            close = float(row["Close"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not math.isfinite(close):
+            continue
+        points.append({"date": index.strftime("%Y-%m-%d"), "close": round(close, 2)})
+    return points
+
+
 def get_history(ticker: str, period: str = "6mo") -> list[dict]:
     """Daily closing prices for a period (1mo, 3mo, 6mo, 1y, 5y)."""
     key = f"hist:{ticker.upper()}:{period}"
@@ -79,10 +114,7 @@ def get_history(ticker: str, period: str = "6mo") -> list[dict]:
     if cached is not None:
         return cached["points"]
     hist = yf.Ticker(ticker).history(period=period)
-    points = [
-        {"date": idx.strftime("%Y-%m-%d"), "close": round(float(row["Close"]), 2)}
-        for idx, row in hist.iterrows()
-    ]
+    points = normalize_history_points(hist.iterrows())
     _store(key, {"points": points})
     return points
 
