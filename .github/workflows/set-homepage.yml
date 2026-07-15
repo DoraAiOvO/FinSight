@@ -1,0 +1,22 @@
+name: Set repository homepage
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  set-homepage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.repos.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              homepage: 'https://finsight-research.doraaiyuyang.chatgpt.site',
+            })
