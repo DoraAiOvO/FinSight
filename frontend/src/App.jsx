@@ -30,7 +30,7 @@ function EmptyState({ onAnalyze }) {
     <main className="landing">
       <section className="hero-copy">
         <p className="eyebrow">Evidence-first equity research</p>
-        <h1>See the business behind the ticker.</h1>
+        <h1>See the business <em>behind the ticker.</em></h1>
         <p className="hero-lede">
           Turn fundamentals, price movement, recent news, and risk signals into one
           balanced research brief you can actually follow.
@@ -215,7 +215,7 @@ export default function App() {
           <div className="report-heading">
             <div>
               <p className="eyebrow">Research brief · {data.overview.ticker}</p>
-              <h1>A balanced view of the evidence</h1>
+              <h1>A balanced view of <em>the evidence</em></h1>
             </div>
             <p className="report-time">
               Generated {data.generatedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
@@ -242,7 +242,7 @@ export default function App() {
           <div className="report-heading">
             <div>
               <p className="eyebrow">Peer research</p>
-              <h1>Compare the evidence, metric by metric.</h1>
+              <h1>Compare the evidence, <em>metric by metric.</em></h1>
             </div>
           </div>
           <CompareTable data={compare} />
