@@ -1,4 +1,5 @@
 import { fmtBig, fmtNum, fmtPct } from '../lib/api.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 
 const FORMATTERS = {
   market_cap: fmtBig,
@@ -11,12 +12,13 @@ const FORMATTERS = {
 }
 
 export default function CompareTable({ data }) {
+  const { t, ts } = useTranslation()
   return (
     <section className="card compare-card">
       <div className="section-heading compare-heading">
         <div>
-          <p className="card-kicker">Consistent criteria</p>
-          <h2>Side-by-side fundamentals</h2>
+          <p className="card-kicker">{t('compareKicker')}</p>
+          <h2>{t('compareTableTitle')}</h2>
         </div>
         <div className="ticker-list">
           {data.tickers.map((ticker) => <span key={ticker}>{ticker}</span>)}
@@ -24,13 +26,13 @@ export default function CompareTable({ data }) {
       </div>
       <div className="comparison-note">
         <span>★</span>
-        Stronger marks the favorable direction for this metric—not the “better stock.”
+        {t('compareNote')}
       </div>
       <div className="table-wrap">
         <table className="compare">
           <thead>
             <tr>
-              <th scope="col">Metric</th>
+              <th scope="col">{t('metricHeader')}</th>
               {data.tickers.map((ticker) => <th scope="col" key={ticker}>{ticker}</th>)}
             </tr>
           </thead>
@@ -40,15 +42,15 @@ export default function CompareTable({ data }) {
               return (
                 <tr key={row.metric}>
                   <th scope="row">
-                    {row.label}
+                    {ts(row.label)}
                     {row.higher_is_better != null && (
-                      <small>{row.higher_is_better ? 'Higher is favorable' : 'Lower is favorable'}</small>
+                      <small>{row.higher_is_better ? t('higherFavorable') : t('lowerFavorable')}</small>
                     )}
                   </th>
                   {data.tickers.map((ticker) => (
                     <td key={ticker} className={row.best === ticker ? 'best mono' : 'mono'}>
                       {format(row.values[ticker])}
-                      {row.best === ticker && <span className="best-mark" aria-label="Stronger value">★</span>}
+                      {row.best === ticker && <span className="best-mark" aria-label={t('strongerValue')}>★</span>}
                     </td>
                   ))}
                 </tr>

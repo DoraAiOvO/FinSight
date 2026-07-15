@@ -1,22 +1,25 @@
+import { useTranslation } from '../hooks/useTranslation.js'
+
 export default function NewsFeed({ news }) {
+  const { t } = useTranslation()
   return (
     <section className="card news-card">
       <div className="section-heading">
         <div>
-          <p className="card-kicker">What is changing</p>
-          <h3>Recent news</h3>
+          <p className="card-kicker">{t('newsKicker')}</p>
+          <h3>{t('newsTitle')}</h3>
         </div>
-        <span className="source-count">{news.items.length} sources</span>
+        <span className="source-count">{news.items.length} {t('sources')}</span>
       </div>
 
       {news.ai_summary && (
         <div className="ai-note">
-          <span className="ai-label">Headline themes</span>
+          <span className="ai-label">{t('headlineThemes')}</span>
           <p>{news.ai_summary}</p>
         </div>
       )}
 
-      {news.items.length === 0 && <p className="empty-copy">No recent headlines were found.</p>}
+      {news.items.length === 0 && <p className="empty-copy">{t('noHeadlines')}</p>}
       <ol className="news-list">
         {news.items.map((item, index) => (
           <li key={`${item.title}-${index}`}>
