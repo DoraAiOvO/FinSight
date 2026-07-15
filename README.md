@@ -1,37 +1,56 @@
+<div align="center">
+
+<img src="docs/banner.svg" alt="FinSight — see beyond the numbers" width="100%" />
+
 # FinSight
 
-> See beyond the numbers.
+**See beyond the numbers.**
 
-FinSight is an AI-powered stock research agent that helps people make more
-informed investment decisions. It brings financial data, market news, company
-comparisons, and risk analysis into one research workflow, then explains the
-evidence behind its conclusions.
+An evidence-first stock research assistant that turns fundamentals, market news,
+peer comparisons, and risk signals into one balanced research brief — and always
+shows its work.
 
-FinSight is designed to support a user's judgment—not to tell them what to buy
-or sell.
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](backend)
+[![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)](backend/app/main.py)
+[![React](https://img.shields.io/badge/React-frontend-61DAFB?logo=react&logoColor=black)](frontend)
+[![Vite](https://img.shields.io/badge/Vite-build-646CFF?logo=vite&logoColor=white)](frontend/vite.config.js)
+[![Claude](https://img.shields.io/badge/Claude-optional_AI_layer-D97757?logo=anthropic&logoColor=white)](backend/app/services/ai.py)
+
+*Designed to support your judgment — not to tell you what to buy or sell.*
+
+</div>
+
+---
 
 ## Why FinSight?
 
-Investment research is often scattered across financial statements, news
-articles, market data, and company reports. FinSight aims to turn that fragmented
-information into a clear, explainable view of a company so users can understand
-both the opportunity and the uncertainty.
+Investment research is scattered across financial statements, news articles,
+market data, and company reports. FinSight turns that fragmented information
+into a clear, explainable view of a company, so you can understand both the
+opportunity **and** the uncertainty.
 
-## Capabilities
+Every insight cites its evidence: the metric, the observed value, and the
+benchmark it was judged against. The optional AI layer narrates those findings —
+it never generates conclusions of its own and never recommends buying or selling.
 
-- **Financial analysis** — organize important company data and surface meaningful trends.
-- **Market news summaries** — condense relevant news and explain why it may matter.
-- **Company comparisons** — compare businesses side by side using consistent criteria.
-- **Risk and opportunity analysis** — identify possible strengths, catalysts, uncertainties, and warning signs.
-- **Evidence-based explanations** — show the reasoning and supporting information behind each analysis.
+## What it does
 
-## Getting started
+| Capability | Description |
+|---|---|
+| 📊 **Financial analysis** | Organizes key company data and surfaces meaningful trends |
+| 📰 **News summaries** | Condenses relevant headlines and explains why they may matter |
+| ⚖️ **Company comparisons** | Compares 2–5 businesses side by side using consistent criteria |
+| 🔍 **Risk & opportunity analysis** | Flags strengths, catalysts, uncertainties, and warning signs |
+| 🧾 **Evidence-based explanations** | Shows the reasoning and data behind every insight |
 
-The MVP is a FastAPI backend (market data via Yahoo Finance) plus a React/Vite
-frontend. An optional Anthropic API key adds AI news summaries and analysis
-narratives; without it, insights come from the transparent rules engine alone.
+## Quick start
 
-Backend (Python 3.10+):
+The MVP is a **FastAPI** backend (market data via Yahoo Finance) plus a
+**React/Vite** frontend. An optional Anthropic API key adds AI news summaries
+and analysis narratives; without it, insights come from the transparent rules
+engine alone.
+
+**Backend** (Python 3.10+):
 
 ```bash
 cd backend
@@ -40,7 +59,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-Frontend (Node 18+):
+**Frontend** (Node 18+):
 
 ```bash
 cd frontend
@@ -48,9 +67,9 @@ pnpm install
 pnpm dev           # http://localhost:5173 (proxies /api to :8000)
 ```
 
-Optional AI layer: `cp .env.example .env` and set `ANTHROPIC_API_KEY`.
+**Optional AI layer:** `cp .env.example .env` and set `ANTHROPIC_API_KEY`.
 
-Tests: `cd backend && pytest`
+**Tests:** `cd backend && pytest`
 
 ## Architecture
 
@@ -68,6 +87,8 @@ Tests: `cd backend && pytest`
 └── frontend/           React + Vite single-page app
 ```
 
+### API
+
 | Endpoint | Description |
 |---|---|
 | `GET /api/stocks/{ticker}` | Normalized fundamentals overview |
@@ -77,34 +98,23 @@ Tests: `cd backend && pytest`
 | `GET /api/compare?tickers=AAPL,MSFT` | Side-by-side comparison (2–5 tickers) |
 | `GET /api/health` | Status + whether the AI layer is enabled |
 
-Every insight the analysis engine produces cites its evidence: the metric, the
-observed value, and the benchmark it was judged against. The AI layer narrates
-those findings; it never generates conclusions of its own and never recommends
-buying or selling.
+## How a research brief comes together
 
-## Intended workflow
-
-1. Choose a stock or a group of companies to research.
-2. Collect relevant financial data and market news.
-3. Analyze the company and compare it with peers.
-4. Review potential risks, opportunities, and the evidence behind them.
-5. Use the research to make an independent decision.
+1. **Choose** a stock or a group of companies to research.
+2. **Collect** relevant financial data and market news.
+3. **Analyze** the company and compare it with peers.
+4. **Review** potential risks, opportunities, and the evidence behind them.
+5. **Decide** independently, using the research as support.
 
 ## Product principles
 
-- **Evidence first:** conclusions should be supported by relevant data and sources.
-- **Explainable by default:** users should be able to understand how an insight was reached.
-- **Balanced analysis:** opportunities and risks should be presented together.
-- **User agency:** FinSight assists with research; the user makes the final decision.
-- **Responsible communication:** the product should never imply guaranteed returns.
+- **Evidence first** — conclusions are supported by relevant data and sources.
+- **Explainable by default** — you can always see how an insight was reached.
+- **Balanced analysis** — opportunities and risks are presented together.
+- **User agency** — FinSight assists with research; you make the final decision.
+- **Responsible communication** — never implies guaranteed returns.
 
-## Project status
-
-The MVP is implemented: it can research a company, summarize its financial
-picture and recent news, compare it with peers, and produce a transparent
-risk-and-opportunity brief.
-
-### Roadmap
+## Roadmap
 
 - [x] Define the MVP user journey and research report format
 - [x] Select reliable financial-data and news sources (Yahoo Finance via yfinance)
@@ -120,7 +130,7 @@ risk-and-opportunity brief.
 ## Contributing
 
 The project is just getting started. Ideas, research, and implementation
-suggestions are welcome through GitHub issues.
+suggestions are welcome through [GitHub issues](../../issues).
 
 ## Disclaimer
 
