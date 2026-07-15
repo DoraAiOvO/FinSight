@@ -1,0 +1,62 @@
+<svg width="1200" height="300" viewBox="0 0 1200 300" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FinSight — see beyond the numbers">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#081311"/>
+      <stop offset="1" stop-color="#0d1d19"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8fe3bd" stop-opacity="0"/>
+      <stop offset="0.25" stop-color="#8fe3bd" stop-opacity="0.85"/>
+      <stop offset="0.8" stop-color="#8fe3bd"/>
+      <stop offset="1" stop-color="#c8f4de"/>
+    </linearGradient>
+    <linearGradient id="fill" x1="0" y1="120" x2="0" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8fe3bd" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#8fe3bd" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.1" r="0.6">
+      <stop stop-color="#438d6d" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#438d6d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="300" fill="url(#bg)"/>
+  <rect width="1200" height="300" fill="url(#glow)"/>
+  <g stroke="#93a49f" stroke-opacity="0.08">
+    <line x1="0" y1="75" x2="1200" y2="75"/>
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="225" x2="1200" y2="225"/>
+    <line x1="300" y1="0" x2="300" y2="300"/>
+    <line x1="600" y1="0" x2="600" y2="300"/>
+    <line x1="900" y1="0" x2="900" y2="300"/>
+  </g>
+  <path d="M0 246 L90 238 L170 244 L250 220 L330 228 L420 200 L500 210 L580 186 L660 196 L740 168 L830 178 L910 142 L990 156 L1070 118 L1150 128 L1200 104 L1200 300 L0 300 Z" fill="url(#fill)"/>
+  <path d="M0 246 L90 238 L170 244 L250 220 L330 228 L420 200 L500 210 L580 186 L660 196 L740 168 L830 178 L910 142 L990 156 L1070 118 L1150 128 L1200 104" stroke="url(#line)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="1070" cy="118" r="5" fill="#8fe3bd"/>
+  <circle cx="1070" cy="118" r="11" fill="#8fe3bd" fill-opacity="0.15"/>
+  <g transform="translate(84, 96)">
+    <rect x="0" y="0" width="64" height="64" rx="16" fill="#8fe3bd" fill-opacity="0.08" stroke="#8fe3bd" stroke-opacity="0.45" stroke-width="1.5"/>
+    <rect x="15" y="34" width="9" height="16" rx="3" fill="#8fe3bd"/>
+    <rect x="28" y="24" width="9" height="26" rx="3" fill="#8fe3bd"/>
+    <rect x="41" y="14" width="9" height="20" rx="3" fill="#8fe3bd"/>
+  </g>
+  <text x="172" y="140" font-family="Georgia, 'Times New Roman', serif" font-size="58" letter-spacing="-1.5" fill="#f2f6f4">FinSight</text>
+  <text x="174" y="178" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" fill="#93a49f">See beyond the numbers — evidence-first stock research.</text>
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#8fe3bd">
+    <g transform="translate(174, 204)">
+      <rect width="108" height="28" rx="6" fill="#8fe3bd" fill-opacity="0.07" stroke="#8fe3bd" stroke-opacity="0.3"/>
+      <text x="14" y="18">Fundamentals</text>
+    </g>
+    <g transform="translate(292, 204)">
+      <rect width="52" height="28" rx="6" fill="#8fe3bd" fill-opacity="0.07" stroke="#8fe3bd" stroke-opacity="0.3"/>
+      <text x="14" y="18">News</text>
+    </g>
+    <g transform="translate(354, 204)">
+      <rect width="128" height="28" rx="6" fill="#8fe3bd" fill-opacity="0.07" stroke="#8fe3bd" stroke-opacity="0.3"/>
+      <text x="14" y="18">Risk analysis</text>
+    </g>
+    <g transform="translate(492, 204)">
+      <rect width="118" height="28" rx="6" fill="#8fe3bd" fill-opacity="0.07" stroke="#8fe3bd" stroke-opacity="0.3"/>
+      <text x="14" y="18">Comparison</text>
+    </g>
+  </g>
+</svg>
