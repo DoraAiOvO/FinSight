@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from '../hooks/useTranslation.js'
 
 const TICKER_PATTERN = /^[A-Z0-9][A-Z0-9.-]{0,9}$/
 
 export default function SearchBar({ mode, onModeChange, onAnalyze, onCompare, loading }) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [validation, setValidation] = useState('')
 
@@ -14,23 +16,23 @@ export default function SearchBar({ mode, onModeChange, onAnalyze, onCompare, lo
     const tickers = raw.split(/[,\s]+/).filter(Boolean)
 
     if (!raw) {
-      setValidation('Enter a ticker to begin.')
+      setValidation(t('vEnterTicker'))
       return
     }
     if (tickers.some((ticker) => !TICKER_PATTERN.test(ticker))) {
-      setValidation('Use ticker symbols only, such as BRK-B or RDS.A.')
+      setValidation(t('vTickerFormat'))
       return
     }
     if (mode === 'compare' && (tickers.length < 2 || tickers.length > 5)) {
-      setValidation('Enter between two and five tickers to compare.')
+      setValidation(t('vCompareCount'))
       return
     }
     if (mode === 'analyze' && tickers.length > 1) {
-      setValidation('Enter one ticker, or switch to Compare for multiple companies.')
+      setValidation(t('vOneTicker'))
       return
     }
     if (new Set(tickers).size !== tickers.length) {
-      setValidation('Use each ticker only once.')
+      setValidation(t('vDuplicate'))
       return
     }
 
@@ -40,15 +42,15 @@ export default function SearchBar({ mode, onModeChange, onAnalyze, onCompare, lo
   }
 
   return (
-    <section className="search-panel" aria-label="Stock research search">
-      <div className="mode-toggle" aria-label="Research mode">
+    <section className="search-panel" aria-label={t('searchAriaLabel')}>
+      <div className="mode-toggle" aria-label={t('modeAriaLabel')}>
         <button
           type="button"
           className={mode === 'analyze' ? 'active' : ''}
           aria-pressed={mode === 'analyze'}
           onClick={() => onModeChange('analyze')}
         >
-          Company
+          {t('modeCompany')}
         </button>
         <button
           type="button"
@@ -56,12 +58,12 @@ export default function SearchBar({ mode, onModeChange, onAnalyze, onCompare, lo
           aria-pressed={mode === 'compare'}
           onClick={() => onModeChange('compare')}
         >
-          Compare
+          {t('modeCompare')}
         </button>
       </div>
       <form className="search-form" onSubmit={submit}>
         <label htmlFor="ticker-search">
-          {mode === 'compare' ? 'Compare 2–5 companies' : 'Research a public company'}
+          {mode === 'compare' ? t('labelCompare') : t('labelAnalyze')}
         </label>
         <div className="search-control">
           <span className="search-icon" aria-hidden="true" />
@@ -69,13 +71,13 @@ export default function SearchBar({ mode, onModeChange, onAnalyze, onCompare, lo
             id="ticker-search"
             value={query}
             onChange={(event) => { setQuery(event.target.value); setValidation('') }}
-            placeholder={mode === 'compare' ? 'AAPL, MSFT, GOOGL' : 'Enter a ticker, e.g. AAPL'}
+            placeholder={mode === 'compare' ? t('placeholderCompare') : t('placeholderAnalyze')}
             autoCapitalize="characters"
             autoComplete="off"
             spellCheck="false"
           />
           <button type="submit" className="go" disabled={loading}>
-            {loading ? 'Working…' : mode === 'compare' ? 'Compare companies' : 'Build research brief'}
+            {loading ? t('working') : mode === 'compare' ? t('compareCta') : t('analyzeCta')}
             {!loading && <span aria-hidden="true">→</span>}
           </button>
         </div>

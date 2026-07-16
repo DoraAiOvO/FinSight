@@ -1,3 +1,5 @@
+import { useTranslation } from '../hooks/useTranslation.js'
+
 const PERIODS = [
   ['1mo', '1M'],
   ['3mo', '3M'],
@@ -8,6 +10,7 @@ const PERIODS = [
 ]
 
 export default function PriceChart({ history, loading, onPeriodChange }) {
+  const { t } = useTranslation()
   const points = (history.points || []).filter((point) => Number.isFinite(point.close))
   if (!points || points.length < 2) return null
 
@@ -39,10 +42,10 @@ export default function PriceChart({ history, loading, onPeriodChange }) {
     <section className={`card chart-card ${loading ? 'is-loading' : ''}`}>
       <div className="chart-head">
         <div>
-          <p className="card-kicker">Market context</p>
-          <h3>Price performance</h3>
+          <p className="card-kicker">{t('chartKicker')}</p>
+          <h3>{t('chartTitle')}</h3>
         </div>
-        <div className="period-toggle" aria-label="Price history period">
+        <div className="period-toggle" aria-label={t('chartPeriodAria')}>
           {PERIODS.map(([value, label]) => (
             <button
               key={value}
@@ -61,7 +64,7 @@ export default function PriceChart({ history, loading, onPeriodChange }) {
       <div className="chart-summary">
         <strong>{last.toFixed(2)}</strong>
         <span className={isUp ? 'delta up' : 'delta down'}>
-          {isUp ? '↗' : '↘'} {Math.abs(changePercent).toFixed(1)}% over {history.period}
+          {isUp ? '↗' : '↘'} {Math.abs(changePercent).toFixed(1)}% {t('over')} {history.period}
         </span>
       </div>
 
@@ -71,7 +74,7 @@ export default function PriceChart({ history, loading, onPeriodChange }) {
           className="chart"
           preserveAspectRatio="none"
           role="img"
-          aria-label={`Price from ${points[0].date} to ${points[points.length - 1].date}`}
+          aria-label={`${points[0].date} → ${points[points.length - 1].date}`}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -120,11 +123,11 @@ export default function PriceChart({ history, loading, onPeriodChange }) {
           aria-hidden="true"
           style={{ left: `${(endX / width) * 100}%`, top: `${(endY / height) * 100}%` }}
         />
-        {loading && <span className="chart-loading">Updating chart…</span>}
+        {loading && <span className="chart-loading">{t('updatingChart')}</span>}
       </div>
       <div className="chart-range muted">
         <span>{points[0].date}</span>
-        <span>Low {minimum.toFixed(2)} · High {maximum.toFixed(2)}</span>
+        <span>{t('low')} {minimum.toFixed(2)} · {t('high')} {maximum.toFixed(2)}</span>
         <span>{points[points.length - 1].date}</span>
       </div>
     </section>

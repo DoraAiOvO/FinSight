@@ -1,6 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from '../hooks/useTranslation.js'
+
+const SEVERITY_KEYS = { high: 'sevHigh', medium: 'sevMedium', low: 'sevLow' }
 
 function InsightCard({ insight, defaultOpen = false }) {
+  const { t, ts } = useTranslation()
   const [open, setOpen] = useState(defaultOpen)
   const isRisk = insight.kind === 'risk'
 
@@ -9,19 +13,21 @@ function InsightCard({ insight, defaultOpen = false }) {
       <button className="insight-head" type="button" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="insight-signal" aria-hidden="true" />
         <span className="insight-title-wrap">
-          <span className="insight-kind">{isRisk ? 'Risk signal' : 'Opportunity signal'}</span>
-          <span className="insight-title">{insight.title}</span>
+          <span className="insight-kind">{isRisk ? t('riskSignal') : t('opportunitySignal')}</span>
+          <span className="insight-title">{ts(insight.title)}</span>
         </span>
-        <span className={`severity severity-${insight.severity}`}>{insight.severity}</span>
+        <span className={`severity severity-${insight.severity}`}>
+          {t(SEVERITY_KEYS[insight.severity] || insight.severity)}
+        </span>
         <span className="caret" aria-hidden="true">{open ? '−' : '+'}</span>
       </button>
       {open && (
         <div className="insight-body">
-          <p>{insight.explanation}</p>
+          <p>{ts(insight.explanation)}</p>
           <div className="evidence-list">
             {insight.evidence.map((item, index) => (
               <div className="evidence-row" key={`${item.metric}-${index}`}>
-                <span><small>{item.metric}</small><strong>{item.value}</strong></span>
+                <span><small>{ts(item.metric)}</small><strong>{item.value}</strong></span>
                 <p>{item.benchmark}</p>
               </div>
             ))}
@@ -33,6 +39,7 @@ function InsightCard({ insight, defaultOpen = false }) {
 }
 
 export default function AnalysisPanel({ analysis }) {
+  const { t } = useTranslation()
   const [filter, setFilter] = useState('all')
   const risks = analysis.insights.filter((insight) => insight.kind === 'risk')
   const opportunities = analysis.insights.filter((insight) => insight.kind === 'opportunity')
@@ -44,28 +51,28 @@ export default function AnalysisPanel({ analysis }) {
     <section className="card analysis-card">
       <div className="section-heading">
         <div>
-          <p className="card-kicker">Transparent rules engine</p>
-          <h3>Risks &amp; opportunities</h3>
+          <p className="card-kicker">{t('analysisKicker')}</p>
+          <h3>{t('analysisTitle')}</h3>
         </div>
-        <div className="balance-counts" aria-label={`${opportunities.length} opportunities and ${risks.length} risks`}>
-          <span className="opportunity-count">{opportunities.length} upside</span>
-          <span className="risk-count">{risks.length} risk</span>
+        <div className="balance-counts" aria-label={`${opportunities.length} ${t('upside')} · ${risks.length} ${t('riskCount')}`}>
+          <span className="opportunity-count">{opportunities.length} {t('upside')}</span>
+          <span className="risk-count">{risks.length} {t('riskCount')}</span>
         </div>
       </div>
 
       {analysis.ai_narrative && (
         <div className="ai-note">
-          <span className="ai-label">FinSight synthesis</span>
+          <span className="ai-label">{t('synthesis')}</span>
           <p>{analysis.ai_narrative}</p>
         </div>
       )}
 
       {analysis.insights.length > 0 && (
-        <div className="insight-filters" aria-label="Filter research signals">
+        <div className="insight-filters" aria-label={t('filterAria')}>
           {[
-            ['all', 'All evidence'],
-            ['opportunity', 'Opportunities'],
-            ['risk', 'Risks'],
+            ['all', t('filterAll')],
+            ['opportunity', t('filterOpportunities')],
+            ['risk', t('filterRisks')],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -81,14 +88,14 @@ export default function AnalysisPanel({ analysis }) {
       )}
 
       {analysis.insights.length === 0 && (
-        <p className="empty-copy">No notable flags were triggered by the available metrics.</p>
+        <p className="empty-copy">{t('noFlags')}</p>
       )}
       <div className="insight-list">
         {visible.map((insight, index) => (
           <InsightCard key={`${insight.kind}-${insight.title}`} insight={insight} defaultOpen={index === 0} />
         ))}
       </div>
-      <p className="disclaimer">{analysis.disclaimer}</p>
+      <p className="disclaimer">{t('disclaimer')}</p>
     </section>
   )
 }

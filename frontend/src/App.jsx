@@ -5,16 +5,21 @@ import PriceChart from './components/PriceChart.jsx'
 import AnalysisPanel from './components/AnalysisPanel.jsx'
 import NewsFeed from './components/NewsFeed.jsx'
 import CompareTable from './components/CompareTable.jsx'
+import LanguageSwitcher from './components/LanguageSwitcher.jsx'
+import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
 
 const STARTER_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'COST']
 
+const TIME_LOCALES = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', zh: 'zh-CN' }
+
 function LoadingReport({ mode }) {
+  const { t } = useTranslation()
   return (
     <main className="results loading-report" aria-live="polite" aria-busy="true">
       <div className="loading-copy">
         <span className="loading-pulse" />
-        {mode === 'compare' ? 'Building a consistent comparison…' : 'Gathering the evidence…'}
+        {mode === 'compare' ? t('loadingCompare') : t('loadingAnalyze')}
       </div>
       <div className="skeleton skeleton-hero" />
       <div className="skeleton-grid">
@@ -26,17 +31,15 @@ function LoadingReport({ mode }) {
 }
 
 function EmptyState({ onAnalyze }) {
+  const { t } = useTranslation()
   return (
     <main className="landing">
       <section className="hero-copy">
-        <p className="eyebrow">Evidence-first equity research</p>
-        <h1>See the business <em>behind the ticker.</em></h1>
-        <p className="hero-lede">
-          Turn fundamentals, price movement, recent news, and risk signals into one
-          balanced research brief you can actually follow.
-        </p>
-        <div className="starter-row" aria-label="Try a popular ticker">
-          <span>Start with</span>
+        <p className="eyebrow">{t('eyebrow')}</p>
+        <h1>{t('heroTitle')} <em>{t('heroTitleEm')}</em></h1>
+        <p className="hero-lede">{t('heroLede')}</p>
+        <div className="starter-row" aria-label={t('tryPopular')}>
+          <span>{t('startWith')}</span>
           {STARTER_TICKERS.map((ticker) => (
             <button key={ticker} type="button" onClick={() => onAnalyze(ticker)}>
               {ticker}
@@ -47,22 +50,22 @@ function EmptyState({ onAnalyze }) {
 
       <section className="method-card" aria-labelledby="method-title">
         <div className="method-topline">
-          <span className="method-kicker">How FinSight works</span>
-          <span className="method-badge">No black box</span>
+          <span className="method-kicker">{t('methodKicker')}</span>
+          <span className="method-badge">{t('methodBadge')}</span>
         </div>
-        <h2 id="method-title">A research trail, not a verdict.</h2>
+        <h2 id="method-title">{t('methodTitle')}</h2>
         <ol className="method-list">
           <li>
             <span>01</span>
-            <div><strong>Collect</strong><small>Fundamentals, pricing, and news</small></div>
+            <div><strong>{t('methodCollect')}</strong><small>{t('methodCollectDesc')}</small></div>
           </li>
           <li>
             <span>02</span>
-            <div><strong>Test</strong><small>Metrics against visible benchmarks</small></div>
+            <div><strong>{t('methodTest')}</strong><small>{t('methodTestDesc')}</small></div>
           </li>
           <li>
             <span>03</span>
-            <div><strong>Explain</strong><small>Risks and opportunities together</small></div>
+            <div><strong>{t('methodExplain')}</strong><small>{t('methodExplainDesc')}</small></div>
           </li>
         </ol>
       </section>
@@ -71,6 +74,7 @@ function EmptyState({ onAnalyze }) {
 }
 
 export default function App() {
+  const { t, language } = useTranslation()
   const [mode, setMode] = useState('analyze')
   const [loading, setLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
@@ -95,6 +99,10 @@ export default function App() {
     setCompare(null)
   }
 
+  function noticeText(notice) {
+    return notice.detail ? `${t(notice.key)}: ${notice.detail}` : t(notice.key)
+  }
+
   async function analyze(ticker) {
     const currentRequest = ++requestId.current
     setMode('analyze')
@@ -108,14 +116,14 @@ export default function App() {
       const overview = await api.overview(ticker)
       const sections = await Promise.allSettled([
         api.history(ticker, '6mo'),
-        api.analysis(ticker),
-        api.news(ticker),
+        api.analysis(ticker, language),
+        api.news(ticker, language),
       ])
       if (currentRequest !== requestId.current) return
 
-      const sectionNames = ['Price history', 'Risk analysis', 'Recent news']
+      const sectionKeys = ['noticeHistory', 'noticeAnalysis', 'noticeNews']
       const unavailable = sections.flatMap((result, index) =>
-        result.status === 'rejected' ? [`${sectionNames[index]} is temporarily unavailable.`] : [],
+        result.status === 'rejected' ? [{ key: sectionKeys[index] }] : [],
       )
       setNotices(unavailable)
       setData({
@@ -142,12 +150,12 @@ export default function App() {
       const history = await api.history(data.overview.ticker, nextPeriod)
       if (parentRequest !== requestId.current) return
       setData((current) => current && { ...current, history })
-      setNotices((current) => current.filter((notice) => !notice.startsWith('Price history')))
+      setNotices((current) => current.filter((notice) => !notice.key.startsWith('noticeHistory')))
     } catch (requestError) {
       if (parentRequest !== requestId.current) return
       setNotices((current) => [
-        ...current.filter((notice) => !notice.startsWith('Price history')),
-        `Price history could not be updated: ${requestError.message}`,
+        ...current.filter((notice) => !notice.key.startsWith('noticeHistory')),
+        { key: 'noticeHistoryUpdate', detail: requestError.message },
       ])
     } finally {
       if (parentRequest === requestId.current) setHistoryLoading(false)
@@ -176,13 +184,16 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <button className="brand" type="button" onClick={resetHome} aria-label="Go to FinSight home">
+        <button className="brand" type="button" onClick={resetHome} aria-label={t('goHome')}>
           <span className="brand-mark" aria-hidden="true"><i /></span>
           <span>FinSight</span>
         </button>
-        <div className="header-note">
-          <span className="status-dot" />
-          Research assistant · Not investment advice
+        <div className="header-actions">
+          <div className="header-note">
+            <span className="status-dot" />
+            {t('headerNote')}
+          </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -196,15 +207,15 @@ export default function App() {
 
       {error && (
         <div className="message error-box" role="alert">
-          <strong>We couldn’t build that report.</strong>
+          <strong>{t('errorTitle')}</strong>
           <span>{error}</span>
         </div>
       )}
 
       {notices.length > 0 && !loading && (
         <div className="message notice-box" role="status">
-          <strong>Partial report</strong>
-          <span>{notices.join(' ')}</span>
+          <strong>{t('partialReport')}</strong>
+          <span>{notices.map(noticeText).join(' ')}</span>
         </div>
       )}
 
@@ -214,12 +225,12 @@ export default function App() {
         <main className="results">
           <div className="report-heading">
             <div>
-              <p className="eyebrow">Research brief · {data.overview.ticker}</p>
-              <h1>A balanced view of <em>the evidence</em></h1>
+              <p className="eyebrow">{t('researchBriefKicker')} · {data.overview.ticker}</p>
+              <h1>{t('reportTitle')} <em>{t('reportTitleEm')}</em></h1>
             </div>
             <p className="report-time">
-              Generated {data.generatedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-              <span>Yahoo Finance data may be delayed</span>
+              {t('generatedAt')} {data.generatedAt.toLocaleTimeString(TIME_LOCALES[language] || [], { hour: 'numeric', minute: '2-digit' })}
+              <span>{t('dataDelayed')}</span>
             </p>
           </div>
           <StockOverview overview={data.overview} />
@@ -241,8 +252,8 @@ export default function App() {
         <main className="results">
           <div className="report-heading">
             <div>
-              <p className="eyebrow">Peer research</p>
-              <h1>Compare the evidence, <em>metric by metric.</em></h1>
+              <p className="eyebrow">{t('peerKicker')}</p>
+              <h1>{t('compareTitle')} <em>{t('compareTitleEm')}</em></h1>
             </div>
           </div>
           <CompareTable data={compare} />
@@ -252,8 +263,8 @@ export default function App() {
       {!loading && !data && !compare && !error && <EmptyState onAnalyze={analyze} />}
 
       <footer className="site-footer">
-        <div><span className="brand-mini">FS</span> See beyond the numbers.</div>
-        <p>Educational research only. Verify important information independently.</p>
+        <div><span className="brand-mini">FS</span> {t('footerTagline')}</div>
+        <p>{t('footerDisclaimer')}</p>
       </footer>
     </div>
   )

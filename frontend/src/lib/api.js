@@ -11,8 +11,10 @@ export const api = {
   overview: (ticker) => get(`/api/stocks/${encodeURIComponent(ticker)}`),
   history: (ticker, period = '6mo') =>
     get(`/api/stocks/${encodeURIComponent(ticker)}/history?period=${period}`),
-  news: (ticker) => get(`/api/news/${encodeURIComponent(ticker)}`),
-  analysis: (ticker) => get(`/api/analysis/${encodeURIComponent(ticker)}`),
+  news: (ticker, lang = 'en') =>
+    get(`/api/news/${encodeURIComponent(ticker)}?lang=${encodeURIComponent(lang)}`),
+  analysis: (ticker, lang = 'en') =>
+    get(`/api/analysis/${encodeURIComponent(ticker)}?lang=${encodeURIComponent(lang)}`),
   compare: (tickers) => get(`/api/compare?tickers=${encodeURIComponent(tickers.join(','))}`),
 }
 
