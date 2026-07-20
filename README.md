@@ -72,6 +72,43 @@ pnpm dev           # http://localhost:5173 (proxies /api to :8000)
 
 **Tests:** `cd backend && pytest`
 
+### Persistent database
+
+The stock overview, history, news, analysis, and comparison endpoints remain
+anonymous and do not require a database connection. Persistence is available as
+an independent SQLAlchemy layer for customer profiles, watchlists, research
+sessions, saved reports, theses, feedback, and alert preferences.
+
+For the quickest local setup, leave `FINSIGHT_DATABASE_URL` unset. SQLAlchemy
+then uses `sqlite:///./finsight.db`. Create or update the schema from `backend/`:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+To develop against PostgreSQL 16 instead:
+
+```bash
+docker compose up -d db
+export FINSIGHT_DATABASE_URL=postgresql+psycopg://finsight:finsight@localhost:5432/finsight
+cd backend
+alembic upgrade head
+```
+
+Useful migration commands:
+
+```bash
+alembic current              # show the database revision
+alembic history              # list available revisions
+alembic downgrade -1         # roll back one revision
+alembic revision --autogenerate -m "describe schema change"
+```
+
+Run `alembic upgrade head` before using future authenticated or saved-research
+features. The application never calls `create_all()` at startup; Alembic is the
+single source of truth for schema changes.
+
 ## Architecture
 
 ```
@@ -79,11 +116,13 @@ pnpm dev           # http://localhost:5173 (proxies /api to :8000)
 │   ├── app/
 │   │   ├── main.py             API routes
 │   │   ├── config.py           env-based settings
+│   │   ├── db/                  SQLAlchemy models + session factory
 │   │   ├── models/schemas.py   Pydantic response models
 │   │   └── services/
 │   │       ├── market_data.py  Yahoo Finance access + cache
 │   │       ├── analysis.py     transparent risk/opportunity rules
 │   │       └── ai.py           optional Anthropic layer
+│   ├── alembic/        versioned database migrations
 │   └── tests/          unit tests (no network needed)
 └── frontend/           React + Vite single-page app
 ```
@@ -132,6 +171,7 @@ without changing the report's presentation.
 - [x] Add financial and news analysis
 - [x] Add company comparison
 - [x] Add risk and opportunity reporting with source references
+- [x] Add the SQLAlchemy and Alembic persistence foundation
 - [ ] Test the quality, clarity, and consistency of generated research
 - [ ] Add SEC filings and earnings-call sources
 - [ ] Exportable research briefs (PDF)
