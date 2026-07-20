@@ -33,7 +33,10 @@ JSON_LIST = MutableList.as_mutable(JSON)
 class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "users"
 
-    email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
+    # Email remains optional until authentication is introduced. The customer
+    # onboarding flow creates a browser-scoped anonymous user and can attach an
+    # email to that same user in a later authentication phase.
+    email: Mapped[str | None] = mapped_column(String(320), nullable=True, unique=True)
     display_name: Mapped[str | None] = mapped_column(String(120))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 

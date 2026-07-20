@@ -1,11 +1,20 @@
-async function get(path) {
-  const res = await fetch(path)
+async function request(path, options) {
+  const res = await fetch(path, options)
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.detail || `Request failed (${res.status})`)
+    const error = new Error(body.detail || `Request failed (${res.status})`)
+    error.status = res.status
+    throw error
   }
   return res.json()
 }
+
+const get = (path) => request(path)
+const write = (path, method, body) => request(path, {
+  method,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+})
 
 export const api = {
   overview: (ticker) => get(`/api/stocks/${encodeURIComponent(ticker)}`),
@@ -13,9 +22,19 @@ export const api = {
     get(`/api/stocks/${encodeURIComponent(ticker)}/history?period=${period}`),
   news: (ticker, lang = 'en') =>
     get(`/api/news/${encodeURIComponent(ticker)}?lang=${encodeURIComponent(lang)}`),
-  analysis: (ticker, lang = 'en') =>
-    get(`/api/analysis/${encodeURIComponent(ticker)}?lang=${encodeURIComponent(lang)}`),
+  analysis: (ticker, lang = 'en', customerId = null) => {
+    const params = new URLSearchParams({ lang })
+    if (customerId) params.set('customer_id', customerId)
+    return get(`/api/analysis/${encodeURIComponent(ticker)}?${params}`)
+  },
   compare: (tickers) => get(`/api/compare?tickers=${encodeURIComponent(tickers.join(','))}`),
+  customerProfile: {
+    create: (profile) => write('/api/customer-profiles', 'POST', profile),
+    get: (customerId) => get(`/api/customer-profiles/${encodeURIComponent(customerId)}`),
+    update: (customerId, profile) => (
+      write(`/api/customer-profiles/${encodeURIComponent(customerId)}`, 'PUT', profile)
+    ),
+  },
 }
 
 export function dataValue(point) {

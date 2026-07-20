@@ -43,6 +43,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 🔍 **Risk & opportunity analysis** | Flags strengths, catalysts, uncertainties, and warning signs |
 | 🧾 **Evidence-based explanations** | Shows the reasoning and data behind every insight |
 | 🌐 **Multilingual research** | Localizes the interface, rule-based evidence, and AI summaries in English, Spanish, French, or Simplified Chinese |
+| 🧭 **Customer research profile** | Organizes the same evidence around experience, horizon, priorities, risk comfort, report depth, language, and industries of interest |
 
 ## Quick start
 
@@ -70,7 +71,7 @@ pnpm dev           # http://localhost:5173 (proxies /api to :8000)
 
 **Optional AI layer:** `cp .env.example .env` and set `ANTHROPIC_API_KEY`.
 
-**Tests:** `cd backend && pytest`
+**Tests:** `cd backend && pytest`; `cd frontend && pnpm test`
 
 ### Persistent database
 
@@ -109,6 +110,24 @@ Run `alembic upgrade head` before using future authenticated or saved-research
 features. The application never calls `create_all()` at startup; Alembic is the
 single source of truth for schema changes.
 
+### Customer onboarding and safe personalization
+
+On first visit, customers can complete or skip a three-step research-profile
+flow. A completed profile is stored in the database and its anonymous customer
+UUID is kept in that browser's local storage. Authentication and cross-device
+identity are intentionally outside this phase.
+
+The profile may only affect:
+
+- report section order;
+- which existing metrics and insights are visually highlighted; and
+- whether explanations use simple, standard, or professional detail.
+
+It never removes evidence, changes deterministic risk or opportunity signals,
+or produces personalized buy, sell, or suitability instructions. Only the
+derived explanation-depth setting—not the customer's risk comfort or
+priorities—is passed to the optional AI narrative layer.
+
 ## Architecture
 
 ```
@@ -121,6 +140,8 @@ single source of truth for schema changes.
 │   │   └── services/
 │   │       ├── market_data.py  Yahoo Finance access + cache
 │   │       ├── analysis.py     transparent risk/opportunity rules
+│   │       ├── presentation.py profile-driven organization and highlights
+│   │       ├── customer_profiles.py  onboarding persistence
 │   │       └── ai.py           optional Anthropic layer
 │   ├── alembic/        versioned database migrations
 │   └── tests/          unit tests (no network needed)
@@ -135,7 +156,11 @@ single source of truth for schema changes.
 | `GET /api/stocks/{ticker}/history?period=6mo` | Daily closes (1mo–5y) |
 | `GET /api/news/{ticker}` | Recent headlines + optional AI theme summary |
 | `GET /api/analysis/{ticker}` | Evidence-backed risks & opportunities |
+| `GET /api/analysis/{ticker}?customer_id={uuid}` | Same evidence with a customer-specific presentation plan |
 | `GET /api/compare?tickers=AAPL,MSFT` | Side-by-side comparison (2–5 tickers) |
+| `POST /api/customer-profiles` | Create a browser-scoped customer profile |
+| `GET /api/customer-profiles/{customer_id}` | Restore a customer profile |
+| `PUT /api/customer-profiles/{customer_id}` | Replace customer research preferences |
 | `GET /api/health` | Status + whether the AI layer is enabled |
 
 ### Data provenance contract
@@ -172,6 +197,7 @@ without changing the report's presentation.
 - [x] Add company comparison
 - [x] Add risk and opportunity reporting with source references
 - [x] Add the SQLAlchemy and Alembic persistence foundation
+- [x] Add customer onboarding and presentation-only research profiles
 - [ ] Test the quality, clarity, and consistency of generated research
 - [ ] Add SEC filings and earnings-call sources
 - [ ] Exportable research briefs (PDF)

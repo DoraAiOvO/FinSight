@@ -1,3 +1,5 @@
+import { profileTranslations } from './profileTranslations.js'
+
 // UI translations, mirroring the RoboPrompt language option.
 // `getTranslation` resolves UI strings by key; `translateServerText` maps the
 // fixed set of English strings produced by the backend rules engine (insight
@@ -5,6 +7,7 @@
 
 export const translations = {
   en: {
+    ...profileTranslations.en,
     // Header / footer
     headerNote: 'Research assistant · Not investment advice',
     goHome: 'Go to FinSight home',
@@ -128,6 +131,7 @@ export const translations = {
     strongerValue: 'Stronger value',
   },
   es: {
+    ...profileTranslations.es,
     headerNote: 'Asistente de investigación · No es asesoramiento de inversión',
     goHome: 'Ir al inicio de FinSight',
     footerTagline: 'Ve más allá de los números.',
@@ -241,6 +245,7 @@ export const translations = {
     strongerValue: 'Valor más fuerte',
   },
   fr: {
+    ...profileTranslations.fr,
     headerNote: 'Assistant de recherche · Pas un conseil en investissement',
     goHome: 'Aller à l’accueil FinSight',
     footerTagline: 'Voyez au-delà des chiffres.',
@@ -354,6 +359,7 @@ export const translations = {
     strongerValue: 'Valeur plus forte',
   },
   zh: {
+    ...profileTranslations.zh,
     headerNote: '研究助手 · 不构成投资建议',
     goHome: '返回 FinSight 首页',
     footerTagline: '看见数字背后的故事。',
