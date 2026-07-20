@@ -5,11 +5,60 @@ import PriceChart from './components/PriceChart.jsx'
 import AnalysisPanel from './components/AnalysisPanel.jsx'
 import NewsFeed from './components/NewsFeed.jsx'
 import CompareTable from './components/CompareTable.jsx'
+import CustomerOnboarding from './components/CustomerOnboarding.jsx'
 import LanguageSwitcher from './components/LanguageSwitcher.jsx'
+import PersonalizationBanner from './components/PersonalizationBanner.jsx'
+import ProfileButton from './components/ProfileButton.jsx'
+import { useCustomerProfile } from './context/CustomerProfileContext.jsx'
 import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
 
 const STARTER_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'COST']
+
+function ReportSections({ data, historyLoading, onPeriodChange }) {
+  const presentation = data.analysis?.presentation
+  const sections = {
+    overview: (
+      <StockOverview
+        overview={data.overview}
+        highlightedMetrics={presentation?.highlighted_metric_keys}
+        industryMatch={presentation?.industry_match}
+      />
+    ),
+    price_history: data.history && (
+      <PriceChart
+        history={data.history}
+        loading={historyLoading}
+        onPeriodChange={onPeriodChange}
+      />
+    ),
+    analysis: data.analysis && (
+      <AnalysisPanel analysis={data.analysis} presentation={presentation} />
+    ),
+    news: data.news && <NewsFeed news={data.news} />,
+  }
+
+  if (!presentation?.personalized) {
+    return (
+      <>
+        {sections.overview}
+        {sections.price_history}
+        <div className="research-grid">
+          {sections.analysis}
+          {sections.news}
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <div className="personalized-report-sections">
+      {presentation.section_order.map((section) => (
+        sections[section] ? <div className={`report-section report-section-${section}`} key={section}>{sections[section]}</div> : null
+      ))}
+    </div>
+  )
+}
 
 function LoadingReport({ mode }) {
   const { t } = useTranslation()
@@ -73,6 +122,7 @@ function EmptyState({ onAnalyze }) {
 
 export default function App() {
   const { t, language, locale } = useTranslation()
+  const { customerId, profile, openOnboarding } = useCustomerProfile()
   const [mode, setMode] = useState('analyze')
   const [loading, setLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
@@ -82,16 +132,17 @@ export default function App() {
   const [compare, setCompare] = useState(null)
   const requestId = useRef(0)
   const lastAnalyzeTicker = useRef(null)
-  const previousLanguage = useRef(language)
+  const previousPreferenceKey = useRef(`${language}:${profile?.updated_at || ''}`)
 
   useEffect(() => {
-    if (previousLanguage.current === language) return
-    previousLanguage.current = language
+    const preferenceKey = `${language}:${profile?.updated_at || ''}`
+    if (previousPreferenceKey.current === preferenceKey) return
+    previousPreferenceKey.current = preferenceKey
     const ticker = data?.overview?.ticker || (
       loading && mode === 'analyze' ? lastAnalyzeTicker.current : null
     )
     if (ticker) analyze(ticker)
-  }, [language])
+  }, [language, profile?.updated_at])
 
   function changeMode(nextMode) {
     setMode(nextMode)
@@ -127,7 +178,7 @@ export default function App() {
       const overview = await api.overview(ticker)
       const sections = await Promise.allSettled([
         api.history(ticker, '6mo'),
-        api.analysis(ticker, language),
+        api.analysis(ticker, language, customerId),
         api.news(ticker, language),
       ])
       if (currentRequest !== requestId.current) return
@@ -204,6 +255,7 @@ export default function App() {
             <span className="status-dot" />
             {t('headerNote')}
           </div>
+          <ProfileButton />
           <LanguageSwitcher />
         </div>
       </header>
@@ -247,18 +299,15 @@ export default function App() {
               <span>{t('dataDelayed')}</span>
             </p>
           </div>
-          <StockOverview overview={data.overview} />
-          {data.history && (
-            <PriceChart
-              history={data.history}
-              loading={historyLoading}
-              onPeriodChange={changePeriod}
-            />
-          )}
-          <div className="research-grid">
-            {data.analysis && <AnalysisPanel analysis={data.analysis} />}
-            {data.news && <NewsFeed news={data.news} />}
-          </div>
+          <PersonalizationBanner
+            presentation={data.analysis?.presentation}
+            onEdit={openOnboarding}
+          />
+          <ReportSections
+            data={data}
+            historyLoading={historyLoading}
+            onPeriodChange={changePeriod}
+          />
         </main>
       )}
 
@@ -280,6 +329,7 @@ export default function App() {
         <div><span className="brand-mini">FS</span> {t('footerTagline')}</div>
         <p>{t('footerDisclaimer')}</p>
       </footer>
+      <CustomerOnboarding />
     </div>
   )
 }

@@ -7,8 +7,9 @@ for a new endpoint to accidentally return an unattributed number or narrative.
 from datetime import date, datetime
 from enum import Enum
 from typing import TypeAlias
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class FreshnessStatus(str, Enum):
@@ -16,6 +17,108 @@ class FreshnessStatus(str, Enum):
     STALE = "stale"
     HISTORICAL = "historical"
     UNKNOWN = "unknown"
+
+
+class ExperienceLevel(str, Enum):
+    BEGINNER = "beginner"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+
+
+class ResearchHorizon(str, Enum):
+    SHORT_TERM = "short_term"
+    ONE_TO_THREE_YEARS = "one_to_three_years"
+    FIVE_PLUS_YEARS = "five_plus_years"
+
+
+class ResearchPriority(str, Enum):
+    GROWTH = "growth"
+    STABILITY = "stability"
+    INCOME = "income"
+    VALUE = "value"
+    INNOVATION = "innovation"
+
+
+class RiskComfort(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class ReportDepth(str, Enum):
+    QUICK = "quick"
+    STANDARD = "standard"
+    DEEP = "deep"
+
+
+class PreferredLanguage(str, Enum):
+    ENGLISH = "en"
+    SPANISH = "es"
+    FRENCH = "fr"
+    CHINESE = "zh"
+
+
+class ExplanationDepth(str, Enum):
+    SIMPLE = "simple"
+    STANDARD = "standard"
+    PROFESSIONAL = "professional"
+
+
+class ReportSection(str, Enum):
+    OVERVIEW = "overview"
+    ANALYSIS = "analysis"
+    PRICE_HISTORY = "price_history"
+    NEWS = "news"
+
+
+class CustomerProfilePreferences(BaseModel):
+    experience_level: ExperienceLevel
+    research_horizon: ResearchHorizon
+    priorities: list[ResearchPriority] = Field(min_length=1, max_length=5)
+    risk_comfort: RiskComfort
+    preferred_report_depth: ReportDepth
+    preferred_language: PreferredLanguage
+    industries_of_interest: list[str] = Field(min_length=1, max_length=8)
+
+    @field_validator("priorities")
+    @classmethod
+    def priorities_are_unique(cls, values: list[ResearchPriority]):
+        if len(values) != len(set(values)):
+            raise ValueError("priorities must be unique")
+        return values
+
+    @field_validator("industries_of_interest")
+    @classmethod
+    def normalize_industries(cls, values: list[str]):
+        normalized = [value.strip() for value in values]
+        if any(not value or len(value) > 80 for value in normalized):
+            raise ValueError("industries must contain 1 to 80 characters")
+        if len({value.casefold() for value in normalized}) != len(normalized):
+            raise ValueError("industries must be unique")
+        return normalized
+
+
+class CustomerProfileResponse(CustomerProfilePreferences):
+    customer_id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class ReportPresentation(BaseModel):
+    personalized: bool = False
+    section_order: list[ReportSection] = Field(
+        default_factory=lambda: [
+            ReportSection.OVERVIEW,
+            ReportSection.PRICE_HISTORY,
+            ReportSection.ANALYSIS,
+            ReportSection.NEWS,
+        ]
+    )
+    explanation_depth: ExplanationDepth = ExplanationDepth.STANDARD
+    report_depth: ReportDepth = ReportDepth.STANDARD
+    highlighted_insight_codes: list[str] = Field(default_factory=list)
+    highlighted_metric_keys: list[str] = Field(default_factory=list)
+    industry_match: bool = False
 
 
 class Provenance(BaseModel):
@@ -113,12 +216,14 @@ class Insight(BaseModel):
     severity: str  # "low" | "medium" | "high"
     explanation: Evidence
     evidence: list[EvidenceItem]
+    highlighted: bool = False
 
 
 class AnalysisResponse(BaseModel):
     ticker: str
     insights: list[Insight]
     ai_narrative: Evidence | None = None
+    presentation: ReportPresentation = Field(default_factory=ReportPresentation)
     disclaimer: str
 
 

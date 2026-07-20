@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 export const LANGUAGES = ['en', 'es', 'fr', 'zh']
 
@@ -43,7 +43,7 @@ export function LanguageProvider({ children }) {
     document.title = PAGE_TITLES[language]
   }, [language])
 
-  function setLanguage(lang) {
+  const setLanguage = useCallback((lang) => {
     if (!LANGUAGES.includes(lang)) return
     setLanguageState(lang)
     try {
@@ -51,7 +51,7 @@ export function LanguageProvider({ children }) {
     } catch {
       // Keep the session selection even when persistence is unavailable.
     }
-  }
+  }, [])
 
   const locale = LANGUAGE_OPTIONS.find((option) => option.code === language)?.locale || 'en-US'
 

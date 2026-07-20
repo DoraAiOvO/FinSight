@@ -83,6 +83,7 @@ def narrate_analysis(
     metrics: dict,
     insights: list[dict],
     lang: str = "en",
+    explanation_depth: str = "standard",
 ) -> dict | None:
     """Turn rule-based insights into a short narrative in the requested language."""
     if not insights:
@@ -95,11 +96,30 @@ def narrate_analysis(
         )
         for i in insights
     )
+    depth_instructions = {
+        "simple": (
+            "Use plain language, briefly define financial terms, and stay under "
+            "120 words."
+        ),
+        "professional": (
+            "Use professional research language, discuss benchmark limitations and "
+            "uncertainty, and stay under 300 words."
+        ),
+        "standard": "Use clear research language and stay under 200 words.",
+    }
+    depth_instruction = depth_instructions.get(
+        explanation_depth, depth_instructions["standard"]
+    )
+    max_tokens = {"simple": 400, "standard": 600, "professional": 900}.get(
+        explanation_depth, 600
+    )
     claim = _ask(
         f"Company: {metrics.get('name')} ({ticker}), sector {metrics.get('sector')}.\n"
         f"Rule-based findings with evidence:\n{bullet}\n\n"
-        "Write a short narrative (under 200 words) weaving these findings together. "
-        "Explain the evidence; do not recommend buying or selling.",
+        f"Write a narrative weaving these findings together. {depth_instruction} "
+        "Explain the evidence; do not recommend buying or selling. Do not infer "
+        "that the company is suitable or unsuitable for this user.",
+        max_tokens=max_tokens,
         lang=lang,
     )
     return generated_evidence(

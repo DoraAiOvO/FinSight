@@ -78,6 +78,12 @@ def test_openapi_exposes_standardized_data_point_and_evidence_contracts():
     assert models["PricePoint"]["properties"]["close"]["$ref"].endswith("/DataPoint")
     narrative_ref = models["AnalysisResponse"]["properties"]["ai_narrative"]["anyOf"][0]
     assert narrative_ref["$ref"].endswith("/Evidence")
+    assert models["CustomerProfilePreferences"]["properties"]["risk_comfort"][
+        "$ref"
+    ].endswith("/RiskComfort")
+    assert models["AnalysisResponse"]["properties"]["presentation"][
+        "$ref"
+    ].endswith("/ReportPresentation")
 
 
 def test_overview_analysis_comparison_and_news_responses_include_provenance(monkeypatch):
@@ -103,7 +109,9 @@ def test_overview_analysis_comparison_and_news_responses_include_provenance(monk
     )
     monkeypatch.setattr(
         "app.main.ai.narrate_analysis",
-        lambda ticker, metrics, insights, lang="en": claim("AI analysis", provider="Anthropic"),
+        lambda ticker, metrics, insights, lang="en", explanation_depth="standard": claim(
+            "AI analysis", provider="Anthropic"
+        ),
     )
     client = TestClient(app)
 
@@ -123,6 +131,7 @@ def test_overview_analysis_comparison_and_news_responses_include_provenance(monk
     assert_provenance(analysis["insights"][0]["explanation"])
     assert_provenance(analysis["insights"][0]["evidence"][0]["value"])
     assert_provenance(analysis["insights"][0]["evidence"][0]["benchmark"])
+    assert analysis["presentation"]["personalized"] is False
 
     compare_response = client.get("/api/compare?tickers=AAA,BBB")
     assert compare_response.status_code == 200

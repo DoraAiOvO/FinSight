@@ -16,7 +16,11 @@ const METRICS = [
   ['free_cash_flow', 'mFreeCashFlow', fmtBig],
 ]
 
-export default function StockOverview({ overview: company }) {
+export default function StockOverview({
+  overview: company,
+  highlightedMetrics = [],
+  industryMatch = false,
+}) {
   const { t, locale } = useTranslation()
   const price = dataValue(company.price)
   const changePercent = dataValue(company.change_percent)
@@ -44,6 +48,7 @@ export default function StockOverview({ overview: company }) {
             <p className="muted">
               {[company.sector, company.industry].filter(Boolean).join(' · ') || t('companyProfile')}
             </p>
+            {industryMatch && <span className="industry-match">{t('industryInterest')}</span>}
           </div>
         </div>
         <div className="price-block">
@@ -63,9 +68,12 @@ export default function StockOverview({ overview: company }) {
 
       <div className="metric-grid">
         {METRICS.map(([key, labelKey, format]) => (
-          <div className="metric" key={key}>
+          <div className={highlightedMetrics?.includes(key) ? 'metric profile-highlighted' : 'metric'} key={key}>
             <span className="metric-label">{t(labelKey)}</span>
             <span className="metric-value">{format(company[key], locale)}</span>
+            {highlightedMetrics?.includes(key) && (
+              <span className="metric-highlight-label">{t('highlightedForProfile')}</span>
+            )}
           </div>
         ))}
       </div>
