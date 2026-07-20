@@ -5,6 +5,8 @@ Every insight cites the concrete numbers that triggered it, so users can see
 fully unit-testable; the optional AI layer only narrates on top of this.
 """
 
+from .provenance import data_point, data_value, evidence, inherited_provenance
+
 DISCLAIMER = (
     "FinSight explains evidence; it does not give investment advice. "
     "Data may be delayed or incomplete. Always do your own research."
@@ -27,19 +29,84 @@ def _pct(v: float | None) -> str:
     return "n/a" if v is None else f"{v * 100:.1f}%"
 
 
+EVIDENCE_INPUTS = {
+    "free_cash_flow_ttm": ("free_cash_flow",),
+    "fcf_yield": ("free_cash_flow", "market_cap"),
+    "revenue_growth_yoy": ("revenue_growth",),
+    "net_profit_margin": ("profit_margin",),
+    "beta_5y": ("beta",),
+    "range_position": ("price", "fifty_two_week_low", "fifty_two_week_high"),
+    "analyst_target_mean": ("analyst_target_mean", "price"),
+}
+
+BENCHMARK_INPUTS = {
+    "vs_market_cap": ("market_cap",),
+}
+
+
+def _source_points(metrics: dict, metric_key: str | None) -> list[dict]:
+    keys = EVIDENCE_INPUTS.get(metric_key, (metric_key,) if metric_key else ())
+    return [metrics[key] for key in keys if isinstance(metrics.get(key), dict)]
+
+
+def _benchmark_points(metrics: dict, item: dict, inputs: list[dict]) -> list[dict]:
+    keys = BENCHMARK_INPUTS.get(item.get("benchmark_key"), ())
+    extra = [metrics[key] for key in keys if isinstance(metrics.get(key), dict)]
+    return [*inputs, *extra]
+
+
 def build_insights(m: dict) -> list[dict]:
     """Apply transparent rules to normalized metrics. Returns list of insights."""
+    sourced_metrics = m
+    m = {key: data_value(value) for key, value in m.items()}
     out: list[dict] = []
 
-    def add(code, kind, title, severity, explanation, evidence):
+    def add(code, kind, title, severity, explanation, evidence_items):
+        wrapped_items = []
+        claim_inputs = []
+        for item in evidence_items:
+            inputs = _source_points(sourced_metrics, item.get("metric_key"))
+            benchmark_inputs = _benchmark_points(sourced_metrics, item, inputs)
+            value_meta = inherited_provenance(
+                inputs,
+                source=f"deterministic analysis: {item.get('metric_key') or item['metric']}",
+                confidence=0.9,
+            )
+            wrapped = {
+                **item,
+                "value": data_point(
+                    item["value"],
+                    display_value=str(item["value"]),
+                    **value_meta,
+                ),
+                "benchmark": evidence(
+                    item["benchmark"],
+                    **inherited_provenance(
+                        benchmark_inputs,
+                        source=(
+                            "analysis benchmark: "
+                            f"{item.get('benchmark_key') or item['metric']}"
+                        ),
+                        confidence=0.75,
+                    ),
+                ),
+            }
+            wrapped_items.append(wrapped)
+            claim_inputs.append(wrapped["value"])
+
+        claim_meta = inherited_provenance(
+            claim_inputs,
+            source=f"deterministic insight: {code}",
+            confidence=0.85,
+        )
         out.append(
             {
                 "code": code,
                 "kind": kind,
-                "title": title,
+                "title": evidence(title, **claim_meta),
                 "severity": severity,
-                "explanation": explanation,
-                "evidence": evidence,
+                "explanation": evidence(explanation, **claim_meta),
+                "evidence": wrapped_items,
             }
         )
 
@@ -386,9 +453,21 @@ def build_comparison(overviews: list[dict]) -> list[dict]:
         values = {o["ticker"]: o.get(key) for o in overviews}
         best = None
         if higher_better is not None:
-            numeric = {t: v for t, v in values.items() if isinstance(v, (int, float))}
+            numeric = {
+                ticker: data_value(value)
+                for ticker, value in values.items()
+                if isinstance(data_value(value), (int, float))
+            }
             if len(numeric) >= 2:
-                best = (max if higher_better else min)(numeric, key=numeric.get)
+                best_ticker = (max if higher_better else min)(numeric, key=numeric.get)
+                best = evidence(
+                    best_ticker,
+                    **inherited_provenance(
+                        [value for value in values.values() if isinstance(value, dict)],
+                        source=f"peer comparison: {key}",
+                        confidence=0.9,
+                    ),
+                )
         rows.append(
             {
                 "metric": key,

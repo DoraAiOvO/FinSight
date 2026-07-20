@@ -1,4 +1,5 @@
 import { useTranslation } from '../hooks/useTranslation.js'
+import { evidenceText } from '../lib/api.js'
 
 export default function NewsFeed({ news }) {
   const { t, locale } = useTranslation()
@@ -22,22 +23,22 @@ export default function NewsFeed({ news }) {
       {news.ai_summary && (
         <div className="ai-note">
           <span className="ai-label">{t('headlineThemes')}</span>
-          <p>{news.ai_summary}</p>
+          <p>{evidenceText(news.ai_summary)}</p>
         </div>
       )}
 
       {news.items.length === 0 && <p className="empty-copy">{t('noHeadlines')}</p>}
       <ol className="news-list">
         {news.items.map((item, index) => (
-          <li key={`${item.title}-${index}`}>
+          <li key={`${evidenceText(item.title)}-${index}`}>
             <span className="news-index">{String(index + 1).padStart(2, '0')}</span>
             <div>
               {item.link ? (
                 <a href={item.link} target="_blank" rel="noreferrer">
-                  {item.title}<span aria-hidden="true">↗</span>
+                  {evidenceText(item.title)}<span aria-hidden="true">↗</span>
                 </a>
               ) : (
-                <span className="news-title">{item.title}</span>
+                <span className="news-title">{evidenceText(item.title)}</span>
               )}
               <span className="news-meta">
                 {[item.publisher, formatDate(item.published_at)].filter(Boolean).join(' · ')}

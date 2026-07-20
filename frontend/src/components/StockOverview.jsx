@@ -1,4 +1,4 @@
-import { fmtBig, fmtNum, fmtPct } from '../lib/api.js'
+import { dataValue, evidenceText, fmtBig, fmtNum, fmtPct } from '../lib/api.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 
 const METRICS = [
@@ -9,17 +9,24 @@ const METRICS = [
   ['profit_margin', 'mNetMargin', fmtPct],
   ['revenue_growth', 'mRevenueGrowth', fmtPct],
   ['debt_to_equity', 'mDebtToEquity', (value, locale) => (
-    value == null ? '—' : `${value.toLocaleString(locale, { maximumFractionDigits: 0 })}%`
+    dataValue(value) == null
+      ? '—'
+      : `${dataValue(value).toLocaleString(locale, { maximumFractionDigits: 0 })}%`
   )],
   ['free_cash_flow', 'mFreeCashFlow', fmtBig],
 ]
 
 export default function StockOverview({ overview: company }) {
   const { t, locale } = useTranslation()
-  const isUp = (company.change_percent ?? 0) >= 0
-  const range = company.fifty_two_week_high - company.fifty_two_week_low
-  const rangePosition = range > 0 && company.price != null
-    ? Math.max(0, Math.min(100, ((company.price - company.fifty_two_week_low) / range) * 100))
+  const price = dataValue(company.price)
+  const changePercent = dataValue(company.change_percent)
+  const rangeLow = dataValue(company.fifty_two_week_low)
+  const rangeHigh = dataValue(company.fifty_two_week_high)
+  const summary = evidenceText(company.summary)
+  const isUp = (changePercent ?? 0) >= 0
+  const range = rangeHigh - rangeLow
+  const rangePosition = range > 0 && price != null
+    ? Math.max(0, Math.min(100, ((price - rangeLow) / range) * 100))
     : null
 
   return (
@@ -42,11 +49,11 @@ export default function StockOverview({ overview: company }) {
         <div className="price-block">
           <span className="price-label">{t('currentPrice')}</span>
           <div className="price">
-            {company.price != null ? `${fmtNum(company.price, locale)} ${company.currency || ''}` : '—'}
+            {price != null ? `${fmtNum(price, locale)} ${company.currency || ''}` : '—'}
           </div>
-          {company.change_percent != null && (
+          {changePercent != null && (
             <div className={isUp ? 'delta up' : 'delta down'}>
-              {isUp ? '↗' : '↘'} {Math.abs(company.change_percent).toLocaleString(locale, {
+              {isUp ? '↗' : '↘'} {Math.abs(changePercent).toLocaleString(locale, {
                 maximumFractionDigits: 2,
               })}% {t('today')}
             </div>
@@ -63,7 +70,7 @@ export default function StockOverview({ overview: company }) {
         ))}
       </div>
 
-      {(rangePosition != null || company.summary) && (
+      {(rangePosition != null || summary) && (
         <div className="overview-context">
           {rangePosition != null && (
             <div className="range-block">
@@ -77,12 +84,12 @@ export default function StockOverview({ overview: company }) {
                 <span style={{ left: `${rangePosition}%` }} />
               </div>
               <div className="range-values muted">
-                <span>{fmtNum(company.fifty_two_week_low, locale)}</span>
-                <span>{fmtNum(company.fifty_two_week_high, locale)}</span>
+                <span>{fmtNum(rangeLow, locale)}</span>
+                <span>{fmtNum(rangeHigh, locale)}</span>
               </div>
             </div>
           )}
-          {company.summary && <p className="summary">{company.summary}</p>}
+          {summary && <p className="summary">{summary}</p>}
         </div>
       )}
     </section>

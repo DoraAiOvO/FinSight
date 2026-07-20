@@ -1,5 +1,6 @@
 """Optional AI layer (Anthropic). Degrades gracefully when no API key is set."""
 from ..config import settings
+from .provenance import evidence_text, generated_evidence
 
 _SYSTEM = (
     "You are FinSight, an evidence-first stock analysis assistant. Never tell the "
@@ -55,32 +56,55 @@ def _ask(prompt: str, max_tokens: int = 600, lang: str = "en") -> str | None:
         return None
 
 
-def summarize_news(ticker: str, items: list[dict], lang: str = "en") -> str | None:
+def summarize_news(ticker: str, items: list[dict], lang: str = "en") -> dict | None:
     """Summarize recent headlines into key themes. None if AI unavailable."""
     if not items:
         return None
-    headlines = "\n".join(f"- {i['title']} ({i.get('publisher') or 'unknown'})" for i in items[:10])
-    return _ask(
+    headlines = "\n".join(
+        f"- {evidence_text(i['title'])} ({i.get('publisher') or 'unknown'})"
+        for i in items[:10]
+    )
+    claim = _ask(
         f"Recent headlines for {ticker}:\n{headlines}\n\n"
         "Summarize the 2-4 main themes in these headlines and what each could mean "
         "for the company. Reference the headlines as your evidence.",
         lang=lang,
     )
+    return generated_evidence(
+        claim,
+        provider="Anthropic",
+        source=settings.AI_MODEL,
+        confidence=0.6,
+    )
 
 
-def narrate_analysis(ticker: str, metrics: dict, insights: list[dict], lang: str = "en") -> str | None:
+def narrate_analysis(
+    ticker: str,
+    metrics: dict,
+    insights: list[dict],
+    lang: str = "en",
+) -> dict | None:
     """Turn rule-based insights into a short narrative in the requested language."""
     if not insights:
         return None
     bullet = "\n".join(
-        f"- [{i['kind']}/{i['severity']}] {i['title']}: "
-        + "; ".join(f"{e['metric']}={e['value']}" for e in i["evidence"])
+        f"- [{i['kind']}/{i['severity']}] {evidence_text(i['title'])}: "
+        + "; ".join(
+            f"{e['metric']}={e['value'].get('display_value') or e['value']['value']}"
+            for e in i["evidence"]
+        )
         for i in insights
     )
-    return _ask(
+    claim = _ask(
         f"Company: {metrics.get('name')} ({ticker}), sector {metrics.get('sector')}.\n"
         f"Rule-based findings with evidence:\n{bullet}\n\n"
         "Write a short narrative (under 200 words) weaving these findings together. "
         "Explain the evidence; do not recommend buying or selling.",
         lang=lang,
+    )
+    return generated_evidence(
+        claim,
+        provider="Anthropic",
+        source=settings.AI_MODEL,
+        confidence=0.6,
     )

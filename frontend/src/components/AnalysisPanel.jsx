@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from '../hooks/useTranslation.js'
+import { displayDataPoint, evidenceText } from '../lib/api.js'
 
 const SEVERITY_KEYS = { high: 'sevHigh', medium: 'sevMedium', low: 'sevLow' }
 
@@ -7,6 +8,8 @@ function InsightCard({ insight, defaultOpen = false }) {
   const { t, ts, tb } = useTranslation()
   const [open, setOpen] = useState(defaultOpen)
   const isRisk = insight.kind === 'risk'
+  const title = evidenceText(insight.title)
+  const explanation = evidenceText(insight.explanation)
 
   return (
     <article className={`insight ${insight.kind}`}>
@@ -14,7 +17,7 @@ function InsightCard({ insight, defaultOpen = false }) {
         <span className="insight-signal" aria-hidden="true" />
         <span className="insight-title-wrap">
           <span className="insight-kind">{isRisk ? t('riskSignal') : t('opportunitySignal')}</span>
-          <span className="insight-title">{ts(insight.title)}</span>
+          <span className="insight-title">{ts(title)}</span>
         </span>
         <span className={`severity severity-${insight.severity}`}>
           {t(SEVERITY_KEYS[insight.severity] || insight.severity)}
@@ -23,12 +26,12 @@ function InsightCard({ insight, defaultOpen = false }) {
       </button>
       {open && (
         <div className="insight-body">
-          <p>{ts(insight.explanation)}</p>
+          <p>{ts(explanation)}</p>
           <div className="evidence-list">
             {insight.evidence.map((item, index) => (
               <div className="evidence-row" key={`${item.metric}-${index}`}>
-                <span><small>{ts(item.metric)}</small><strong>{item.value}</strong></span>
-                <p>{tb(item.benchmark_key, item.benchmark_params, item.benchmark)}</p>
+                <span><small>{ts(item.metric)}</small><strong>{displayDataPoint(item.value)}</strong></span>
+                <p>{tb(item.benchmark_key, item.benchmark_params, evidenceText(item.benchmark))}</p>
               </div>
             ))}
           </div>
@@ -63,7 +66,7 @@ export default function AnalysisPanel({ analysis }) {
       {analysis.ai_narrative && (
         <div className="ai-note">
           <span className="ai-label">{t('synthesis')}</span>
-          <p>{analysis.ai_narrative}</p>
+          <p>{evidenceText(analysis.ai_narrative)}</p>
         </div>
       )}
 

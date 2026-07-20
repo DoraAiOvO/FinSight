@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.services.analysis import build_comparison, build_insights  # noqa: E402
+from app.services.provenance import evidence_text  # noqa: E402
 from app.services.tickers import normalize_comparison, normalize_ticker  # noqa: E402
 
 
@@ -35,7 +36,7 @@ def base_metrics(**overrides):
 
 
 def titles(insights, kind=None):
-    return [i["title"] for i in insights if kind is None or i["kind"] == kind]
+    return [evidence_text(i["title"]) for i in insights if kind is None or i["kind"] == kind]
 
 
 def test_healthy_company_has_no_high_severity_risks():
@@ -45,13 +46,16 @@ def test_healthy_company_has_no_high_severity_risks():
 
 def test_high_pe_flags_valuation_risk_with_evidence():
     insights = build_insights(base_metrics(trailing_pe=75.0))
-    risk = next(i for i in insights if i["title"] == "Rich valuation")
+    risk = next(i for i in insights if evidence_text(i["title"]) == "Rich valuation")
     assert risk["code"] == "rich_valuation"
     assert risk["severity"] == "high"
     assert risk["evidence"][0]["metric"] == "Trailing P/E"
     assert risk["evidence"][0]["metric_key"] == "trailing_pe"
     assert risk["evidence"][0]["benchmark_key"] == "market_pe_average"
-    assert "75.0" in risk["evidence"][0]["value"]
+    assert risk["evidence"][0]["value"]["display_value"] == "75.0"
+    assert risk["title"]["provider"] == "FinSight"
+    assert risk["explanation"]["confidence"] == 0.85
+    assert risk["evidence"][0]["benchmark"]["claim"].startswith("Broad-market")
 
 
 def test_low_pe_flags_opportunity():
@@ -63,13 +67,13 @@ def test_leverage_and_liquidity_risks():
     insights = build_insights(base_metrics(debt_to_equity=350.0, current_ratio=0.7))
     assert "High leverage" in titles(insights, "risk")
     assert "Tight short-term liquidity" in titles(insights, "risk")
-    leverage = next(i for i in insights if i["title"] == "High leverage")
+    leverage = next(i for i in insights if evidence_text(i["title"]) == "High leverage")
     assert leverage["severity"] == "high"
 
 
 def test_negative_fcf_is_high_risk():
     insights = build_insights(base_metrics(free_cash_flow=-1e9))
-    fcf = next(i for i in insights if i["title"] == "Negative free cash flow")
+    fcf = next(i for i in insights if evidence_text(i["title"]) == "Negative free cash flow")
     assert fcf["severity"] == "high"
 
 
@@ -84,7 +88,7 @@ def test_growth_and_margin_opportunities():
     insights = build_insights(base_metrics(revenue_growth=0.35, profit_margin=0.25))
     assert "Fast revenue growth" in titles(insights, "opportunity")
     assert "High profitability" in titles(insights, "opportunity")
-    growth = next(i for i in insights if i["title"] == "Fast revenue growth")
+    growth = next(i for i in insights if evidence_text(i["title"]) == "Fast revenue growth")
     assert growth["severity"] == "high"
 
 
@@ -129,8 +133,8 @@ def test_comparison_picks_best_per_metric():
     b.update({"ticker": "BBB", "revenue_growth": 0.05, "trailing_pe": 12.0})
     rows = build_comparison([a, b])
     by_metric = {r["metric"]: r for r in rows}
-    assert by_metric["revenue_growth"]["best"] == "AAA"  # higher is better
-    assert by_metric["trailing_pe"]["best"] == "BBB"  # lower is better
+    assert evidence_text(by_metric["revenue_growth"]["best"]) == "AAA"  # higher is better
+    assert evidence_text(by_metric["trailing_pe"]["best"]) == "BBB"  # lower is better
     assert by_metric["beta"]["best"] is None  # neutral metric
 
 

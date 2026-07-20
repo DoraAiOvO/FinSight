@@ -1,4 +1,4 @@
-import { fmtBig, fmtNum, fmtPct } from '../lib/api.js'
+import { dataValue, evidenceText, fmtBig, fmtNum, fmtPct } from '../lib/api.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 
 const FORMATTERS = {
@@ -9,7 +9,9 @@ const FORMATTERS = {
   operating_margin: fmtPct,
   dividend_yield: fmtPct,
   debt_to_equity: (value, locale) => (
-    value == null ? '—' : `${value.toLocaleString(locale, { maximumFractionDigits: 0 })}%`
+    dataValue(value) == null
+      ? '—'
+      : `${dataValue(value).toLocaleString(locale, { maximumFractionDigits: 0 })}%`
   ),
 }
 
@@ -41,6 +43,7 @@ export default function CompareTable({ data }) {
           <tbody>
             {data.rows.map((row) => {
               const format = FORMATTERS[row.metric] || fmtNum
+              const best = evidenceText(row.best)
               return (
                 <tr key={row.metric}>
                   <th scope="row">
@@ -50,9 +53,9 @@ export default function CompareTable({ data }) {
                     )}
                   </th>
                   {data.tickers.map((ticker) => (
-                    <td key={ticker} className={row.best === ticker ? 'best mono' : 'mono'}>
+                    <td key={ticker} className={best === ticker ? 'best mono' : 'mono'}>
                       {format(row.values[ticker], locale)}
-                      {row.best === ticker && <span className="best-mark" aria-label={t('strongerValue')}>★</span>}
+                      {best === ticker && <span className="best-mark" aria-label={t('strongerValue')}>★</span>}
                     </td>
                   ))}
                 </tr>

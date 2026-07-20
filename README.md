@@ -99,6 +99,15 @@ pnpm dev           # http://localhost:5173 (proxies /api to :8000)
 | `GET /api/compare?tickers=AAPL,MSFT` | Side-by-side comparison (2–5 tickers) |
 | `GET /api/health` | Status + whether the AI layer is enabled |
 
+### Data provenance contract
+
+API financial values use a shared `DataPoint` object, and sourced or generated
+claims use a shared `Evidence` object. Both include `provider`, `source`,
+`as_of_date`, `fetched_at`, `freshness_status`, `confidence`, and an optional
+`source_url`. This contract applies consistently across overview, price history,
+analysis, comparison, and news responses; the frontend unwraps the payloads
+without changing the report's presentation.
+
 ## How a research brief comes together
 
 1. **Choose** a stock or a group of companies to research.

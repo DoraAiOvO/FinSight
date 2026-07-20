@@ -18,7 +18,24 @@ export const api = {
   compare: (tickers) => get(`/api/compare?tickers=${encodeURIComponent(tickers.join(','))}`),
 }
 
+export function dataValue(point) {
+  if (point == null) return null
+  return typeof point === 'object' && Object.hasOwn(point, 'value') ? point.value : point
+}
+
+export function evidenceText(item) {
+  if (item == null) return null
+  return typeof item === 'object' && Object.hasOwn(item, 'claim') ? item.claim : item
+}
+
+export function displayDataPoint(point) {
+  if (point == null) return null
+  if (typeof point === 'object' && point.display_value != null) return point.display_value
+  return dataValue(point)
+}
+
 export function fmtBig(v, locale) {
+  v = dataValue(v)
   if (v == null) return '—'
   const abs = Math.abs(v)
   const scaled = (value, suffix) => value.toLocaleString(locale, {
@@ -32,9 +49,11 @@ export function fmtBig(v, locale) {
 }
 
 export function fmtPct(v, locale) {
+  v = dataValue(v)
   return v == null ? '—' : (v * 100).toLocaleString(locale, { maximumFractionDigits: 1 }) + '%'
 }
 
 export function fmtNum(v, locale) {
+  v = dataValue(v)
   return v == null ? '—' : Number(v).toLocaleString(locale, { maximumFractionDigits: 2 })
 }

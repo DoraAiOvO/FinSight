@@ -1,4 +1,5 @@
 import { useTranslation } from '../hooks/useTranslation.js'
+import { dataValue } from '../lib/api.js'
 
 const PERIODS = [
   ['1mo', '1M'],
@@ -11,19 +12,21 @@ const PERIODS = [
 
 export default function PriceChart({ history, loading, onPeriodChange }) {
   const { t, locale } = useTranslation()
-  const points = (history.points || []).filter((point) => Number.isFinite(point.close))
+  const points = (history.points || [])
+    .map((point) => ({ ...point, closeValue: dataValue(point.close) }))
+    .filter((point) => Number.isFinite(point.closeValue))
   if (!points || points.length < 2) return null
 
   const width = 900
   const height = 220
   const padding = 8
-  const closes = points.map((point) => point.close)
+  const closes = points.map((point) => point.closeValue)
   const minimum = Math.min(...closes)
   const maximum = Math.max(...closes)
   const span = maximum - minimum || 1
   const coords = points.map((point, index) => {
     const x = padding + (index / (points.length - 1)) * (width - 2 * padding)
-    const y = height - padding - ((point.close - minimum) / span) * (height - 2 * padding)
+    const y = height - padding - ((point.closeValue - minimum) / span) * (height - 2 * padding)
     return [x, y]
   })
   const path = coords
