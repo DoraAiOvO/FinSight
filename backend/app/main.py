@@ -13,11 +13,15 @@ from .models.schemas import (
     CompareResponse,
     CustomerProfilePreferences,
     CustomerProfileResponse,
+    FilingDetailResponse,
+    FilingListResponse,
+    FilingQuestionRequest,
+    FilingQuestionResponse,
     HistoryResponse,
     NewsResponse,
     Overview,
 )
-from .services import ai, market_data
+from .services import ai, market_data, sec_filings
 from .services.analysis import DISCLAIMER, build_comparison, build_insights
 from .services.customer_profiles import (
     create_customer_profile,
@@ -38,6 +42,18 @@ app.add_middleware(
 )
 
 LANG_PATTERN = "^(en|es|fr|zh)$"
+
+
+def _raise_sec_error(error: sec_filings.SecError):
+    if isinstance(error, sec_filings.SecNotFoundError):
+        raise HTTPException(status_code=404, detail=str(error))
+    if isinstance(error, sec_filings.SecRateLimitError):
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+            headers={"Retry-After": "60"},
+        )
+    raise HTTPException(status_code=502, detail=str(error))
 
 
 @app.get("/api/health")
@@ -142,6 +158,54 @@ def stock_news(ticker: str, lang: str = Query("en", pattern=LANG_PATTERN)):
         "items": items,
         "ai_summary": ai.summarize_news(ticker.upper(), items, lang=lang),
     }
+
+
+@app.get("/api/filings/{ticker}", response_model=FilingListResponse)
+def recent_filings(ticker: str, limit: int = Query(12, ge=1, le=20)):
+    try:
+        ticker = normalize_ticker(ticker)
+        return sec_filings.list_filings(ticker, limit=limit)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except sec_filings.SecError as error:
+        _raise_sec_error(error)
+
+
+@app.get(
+    "/api/filings/{ticker}/{accession_number}",
+    response_model=FilingDetailResponse,
+)
+def filing_detail(ticker: str, accession_number: str):
+    try:
+        ticker = normalize_ticker(ticker)
+        return sec_filings.get_filing(ticker, accession_number)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except sec_filings.SecError as error:
+        _raise_sec_error(error)
+
+
+@app.post(
+    "/api/filings/{ticker}/{accession_number}/questions",
+    response_model=FilingQuestionResponse,
+)
+def ask_filing_question(
+    ticker: str,
+    accession_number: str,
+    request: FilingQuestionRequest,
+):
+    try:
+        ticker = normalize_ticker(ticker)
+        return sec_filings.answer_question(
+            ticker,
+            accession_number,
+            request.question,
+            lang=request.lang.value,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except sec_filings.SecError as error:
+        _raise_sec_error(error)
 
 
 @app.get("/api/analysis/{ticker}", response_model=AnalysisResponse)

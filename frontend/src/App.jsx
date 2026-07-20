@@ -4,6 +4,7 @@ import StockOverview from './components/StockOverview.jsx'
 import PriceChart from './components/PriceChart.jsx'
 import AnalysisPanel from './components/AnalysisPanel.jsx'
 import NewsFeed from './components/NewsFeed.jsx'
+import FilingsPanel from './components/FilingsPanel.jsx'
 import CompareTable from './components/CompareTable.jsx'
 import CustomerOnboarding from './components/CustomerOnboarding.jsx'
 import LanguageSwitcher from './components/LanguageSwitcher.jsx'
@@ -36,6 +37,7 @@ function ReportSections({ data, historyLoading, onPeriodChange }) {
       <AnalysisPanel analysis={data.analysis} presentation={presentation} />
     ),
     news: data.news && <NewsFeed news={data.news} />,
+    filings: data.filings && <FilingsPanel data={data.filings} ticker={data.overview.ticker} />,
   }
 
   if (!presentation?.personalized) {
@@ -47,16 +49,20 @@ function ReportSections({ data, historyLoading, onPeriodChange }) {
           {sections.analysis}
           {sections.news}
         </div>
+        {sections.filings}
       </>
     )
   }
 
   return (
-    <div className="personalized-report-sections">
-      {presentation.section_order.map((section) => (
-        sections[section] ? <div className={`report-section report-section-${section}`} key={section}>{sections[section]}</div> : null
-      ))}
-    </div>
+    <>
+      <div className="personalized-report-sections">
+        {presentation.section_order.map((section) => (
+          sections[section] ? <div className={`report-section report-section-${section}`} key={section}>{sections[section]}</div> : null
+        ))}
+      </div>
+      {sections.filings}
+    </>
   )
 }
 
@@ -180,10 +186,11 @@ export default function App() {
         api.history(ticker, '6mo'),
         api.analysis(ticker, language, customerId),
         api.news(ticker, language),
+        api.filings(ticker),
       ])
       if (currentRequest !== requestId.current) return
 
-      const sectionKeys = ['noticeHistory', 'noticeAnalysis', 'noticeNews']
+      const sectionKeys = ['noticeHistory', 'noticeAnalysis', 'noticeNews', 'noticeFilings']
       const unavailable = sections.flatMap((result, index) =>
         result.status === 'rejected' ? [{ key: sectionKeys[index] }] : [],
       )
@@ -193,6 +200,7 @@ export default function App() {
         history: sections[0].status === 'fulfilled' ? sections[0].value : null,
         analysis: sections[1].status === 'fulfilled' ? sections[1].value : null,
         news: sections[2].status === 'fulfilled' ? sections[2].value : null,
+        filings: sections[3].status === 'fulfilled' ? sections[3].value : null,
         generatedAt: new Date(),
       })
     } catch (requestError) {

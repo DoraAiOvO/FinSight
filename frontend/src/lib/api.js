@@ -28,6 +28,19 @@ export const api = {
     return get(`/api/analysis/${encodeURIComponent(ticker)}?${params}`)
   },
   compare: (tickers) => get(`/api/compare?tickers=${encodeURIComponent(tickers.join(','))}`),
+  filings: (ticker, limit = 12) => (
+    get(`/api/filings/${encodeURIComponent(ticker)}?limit=${limit}`)
+  ),
+  filing: (ticker, accessionNumber) => (
+    get(`/api/filings/${encodeURIComponent(ticker)}/${encodeURIComponent(accessionNumber)}`)
+  ),
+  askFiling: (ticker, accessionNumber, question, lang = 'en') => (
+    write(
+      `/api/filings/${encodeURIComponent(ticker)}/${encodeURIComponent(accessionNumber)}/questions`,
+      'POST',
+      { question, lang },
+    )
+  ),
   customerProfile: {
     create: (profile) => write('/api/customer-profiles', 'POST', profile),
     get: (customerId) => get(`/api/customer-profiles/${encodeURIComponent(customerId)}`),

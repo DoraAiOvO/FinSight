@@ -627,6 +627,64 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .news-list a > span { margin-left: 7px; color: var(--muted); font-size: .7rem; }
 .news-meta { display: block; margin-top: 5px; color: var(--muted); font-size: .61rem; }
 
+.filings-card { padding: 27px; }
+.filings-heading { align-items: flex-start; }
+.filings-source-time { display: flex; flex-direction: column; align-items: flex-end; color: var(--accent); font-size: .64rem; }
+.filings-source-time small { margin-top: 3px; color: var(--muted); font-size: .56rem; }
+.filing-list { margin-top: 19px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.filing-list article { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; min-height: 72px; padding: 12px 14px; border-top: 1px solid var(--border); transition: background .16s ease; }
+.filing-list article:first-child { border-top: 0; }
+.filing-list article:hover, .filing-list article.selected { background: rgba(143,227,189,.035); }
+.filing-list-main { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.filing-list-main > div { display: flex; flex-direction: column; min-width: 0; }
+.filing-list-main strong { overflow: hidden; font-size: .76rem; font-weight: 640; white-space: nowrap; text-overflow: ellipsis; }
+.filing-list-main small { margin-top: 4px; color: var(--muted); font-size: .59rem; }
+.filing-type { display: inline-grid; place-items: center; flex: 0 0 auto; min-width: 43px; min-height: 27px; padding: 0 7px; border: 1px solid rgba(140,184,255,.23); border-radius: 6px; background: rgba(140,184,255,.055); color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .6rem; font-weight: 750; }
+.filing-list-actions { display: flex; gap: 8px; align-items: center; }
+.filing-list-actions a, .filing-list-actions button { min-height: 31px; padding: 0 10px; border: 1px solid var(--border); border-radius: 7px; background: transparent; color: var(--muted-bright); cursor: pointer; font-size: .61rem; text-decoration: none; }
+.filing-list-actions a { display: inline-flex; align-items: center; }
+.filing-list-actions a:hover, .filing-list-actions button:hover { border-color: var(--accent); color: var(--accent); }
+.earnings-badge { padding: 3px 7px; border-radius: 20px; background: rgba(143,227,189,.08); color: var(--accent); font-size: .54rem; white-space: nowrap; }
+.filing-loading, .filing-error { margin: 16px 0 0; font-size: .68rem; }
+.filing-loading { color: var(--muted-bright); }
+.filing-error { color: var(--red); }
+.filing-reader { margin-top: 20px; padding: 18px; border: 1px solid var(--border-bright); border-radius: 12px; background: rgba(7,16,15,.58); animation: rise .28s ease both; }
+.filing-reader-head { display: flex; justify-content: space-between; gap: 18px; align-items: center; }
+.filing-reader-head > div { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.filing-reader-head strong { overflow: hidden; font-size: .79rem; white-space: nowrap; text-overflow: ellipsis; }
+.filing-reader-head > button { width: 31px; height: 31px; border: 1px solid var(--border); border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; font-size: 1rem; }
+.filing-reader-head > button:hover { border-color: var(--accent); color: var(--accent); }
+.filing-sections { margin-top: 16px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+.filing-sections details { border-top: 1px solid var(--border); }
+.filing-sections details:first-child { border-top: 0; }
+.filing-sections summary { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; gap: 11px; align-items: center; padding: 12px 13px; cursor: pointer; list-style: none; }
+.filing-sections summary::-webkit-details-marker { display: none; }
+.filing-sections summary:hover { background: rgba(255,255,255,.015); }
+.filing-sections summary span { color: var(--accent); font-size: .58rem; text-transform: uppercase; }
+.filing-sections summary strong { font-size: .72rem; font-weight: 650; }
+.filing-sections summary i { color: var(--muted); font-size: .9rem; font-style: normal; transition: transform .16s ease; }
+.filing-sections details[open] summary i { transform: rotate(45deg); }
+.filing-section-body { padding: 4px 16px 16px; border-top: 1px solid rgba(37,54,50,.55); }
+.filing-section-body p { max-height: 520px; overflow-y: auto; margin: 13px 0; padding-right: 10px; color: var(--muted-bright); font-family: ui-serif, Georgia, serif; font-size: .72rem; line-height: 1.75; white-space: pre-wrap; }
+.filing-section-body small { display: block; margin: -4px 0 10px; color: var(--amber); font-size: .56rem; }
+.filing-section-body a { color: var(--accent); font-size: .59rem; text-decoration: none; }
+.filing-question { margin-top: 19px; }
+.filing-question label { display: block; margin-bottom: 7px; font-size: .71rem; font-weight: 650; }
+.filing-question > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.filing-question input { min-width: 0; min-height: 42px; padding: 0 12px; border: 1px solid var(--border-bright); border-radius: 8px; outline: 0; background: var(--surface); color: var(--text); font-size: .72rem; }
+.filing-question input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(143,227,189,.07); }
+.filing-question button { padding: 0 14px; border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: var(--accent-ink); cursor: pointer; font-size: .68rem; font-weight: 750; }
+.filing-question button:disabled { cursor: wait; opacity: .5; }
+.filing-answer { margin-top: 15px; padding: 15px; border: 1px solid rgba(143,227,189,.18); border-radius: 9px; background: rgba(143,227,189,.035); }
+.filing-answer-label { display: flex; justify-content: space-between; gap: 20px; }
+.filing-answer-label strong { color: var(--accent); font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; }
+.filing-answer-label span { color: var(--muted); font-size: .55rem; text-align: right; }
+.filing-answer > p { margin: 11px 0 14px; color: var(--text); font-size: .75rem; line-height: 1.65; white-space: pre-wrap; }
+.filing-answer ol { margin: 0; padding: 0 0 0 21px; }
+.filing-answer li { margin-top: 10px; padding-left: 4px; color: var(--muted); font-size: .61rem; }
+.filing-answer li > a { color: var(--accent); text-decoration: none; }
+.filing-answer blockquote { margin: 5px 0; padding-left: 10px; border-left: 2px solid var(--border-bright); color: var(--muted-bright); font-size: .64rem; line-height: 1.55; }
+
 .compare-card { padding: 27px; }
 .compare-heading { align-items: flex-end; }
 .ticker-list { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
@@ -755,7 +813,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .message { grid-template-columns: 1fr; gap: 3px; }
   .report-heading { display: block; }
   .report-time { margin-top: 14px; text-align: left; }
-  .overview-card, .chart-card, .analysis-card, .news-card, .compare-card { padding: 20px; }
+  .overview-card, .chart-card, .analysis-card, .news-card, .filings-card, .compare-card { padding: 20px; }
   .overview-head { display: block; }
   .price-block { margin: 21px 0 0 61px; text-align: left; }
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
@@ -774,6 +832,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .insight-filters button { white-space: nowrap; }
   .evidence-row { grid-template-columns: 1fr; gap: 5px; }
   .evidence-row > span { justify-content: flex-start; }
+  .filings-heading { display: block; }
+  .filings-source-time { align-items: flex-start; margin-top: 10px; }
+  .filing-list article { grid-template-columns: 1fr; gap: 10px; }
+  .filing-list-actions { flex-wrap: wrap; padding-left: 55px; }
+  .filing-sections summary { grid-template-columns: 56px minmax(0,1fr) auto; }
+  .filing-question > div { grid-template-columns: 1fr; }
+  .filing-question button { min-height: 39px; }
+  .filing-answer-label { display: block; }
+  .filing-answer-label span { display: block; margin-top: 3px; text-align: left; }
   .compare-heading { display: block; }
   .ticker-list { justify-content: flex-start; margin-top: 15px; }
   .skeleton-grid { grid-template-columns: 1fr; }
