@@ -1,7 +1,14 @@
 import { useTranslation } from '../hooks/useTranslation.js'
 
 export default function NewsFeed({ news }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
+
+  function formatDate(value) {
+    if (!value) return null
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value.slice(0, 10)
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date)
+  }
   return (
     <section className="card news-card">
       <div className="section-heading">
@@ -33,7 +40,7 @@ export default function NewsFeed({ news }) {
                 <span className="news-title">{item.title}</span>
               )}
               <span className="news-meta">
-                {[item.publisher, item.published_at?.slice(0, 10)].filter(Boolean).join(' · ')}
+                {[item.publisher, formatDate(item.published_at)].filter(Boolean).join(' · ')}
               </span>
             </div>
           </li>

@@ -46,8 +46,11 @@ def test_healthy_company_has_no_high_severity_risks():
 def test_high_pe_flags_valuation_risk_with_evidence():
     insights = build_insights(base_metrics(trailing_pe=75.0))
     risk = next(i for i in insights if i["title"] == "Rich valuation")
+    assert risk["code"] == "rich_valuation"
     assert risk["severity"] == "high"
     assert risk["evidence"][0]["metric"] == "Trailing P/E"
+    assert risk["evidence"][0]["metric_key"] == "trailing_pe"
+    assert risk["evidence"][0]["benchmark_key"] == "market_pe_average"
     assert "75.0" in risk["evidence"][0]["value"]
 
 
@@ -73,6 +76,8 @@ def test_negative_fcf_is_high_risk():
 def test_strong_fcf_yield_is_opportunity():
     insights = build_insights(base_metrics(free_cash_flow=4e9, market_cap=50e9))
     assert "Strong cash generation" in titles(insights, "opportunity")
+    cash = next(i for i in insights if i["code"] == "strong_cash_generation")
+    assert cash["evidence"][1]["benchmark_params"] == {"marketCap": "50.00B"}
 
 
 def test_growth_and_margin_opportunities():

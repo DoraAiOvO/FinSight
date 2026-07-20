@@ -8,11 +8,13 @@ const FORMATTERS = {
   profit_margin: fmtPct,
   operating_margin: fmtPct,
   dividend_yield: fmtPct,
-  debt_to_equity: (value) => (value == null ? '—' : `${value.toFixed(0)}%`),
+  debt_to_equity: (value, locale) => (
+    value == null ? '—' : `${value.toLocaleString(locale, { maximumFractionDigits: 0 })}%`
+  ),
 }
 
 export default function CompareTable({ data }) {
-  const { t, ts } = useTranslation()
+  const { t, ts, locale } = useTranslation()
   return (
     <section className="card compare-card">
       <div className="section-heading compare-heading">
@@ -49,7 +51,7 @@ export default function CompareTable({ data }) {
                   </th>
                   {data.tickers.map((ticker) => (
                     <td key={ticker} className={row.best === ticker ? 'best mono' : 'mono'}>
-                      {format(row.values[ticker])}
+                      {format(row.values[ticker], locale)}
                       {row.best === ticker && <span className="best-mark" aria-label={t('strongerValue')}>★</span>}
                     </td>
                   ))}

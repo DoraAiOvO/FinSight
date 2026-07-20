@@ -44,9 +44,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
-button:focus-visible, input:focus-visible, a:focus-visible {
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
@@ -117,6 +117,12 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .brand-mark::before { left: 7px; height: 7px; }
 .brand-mark i { left: 13px; height: 12px; box-shadow: 6px -5px 0 var(--accent); }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
 .header-note {
   display: flex;
   align-items: center;
@@ -132,6 +138,55 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   background: var(--accent);
   box-shadow: 0 0 0 4px rgba(143, 227, 189, 0.08);
   animation: pulse 2.6s infinite;
+}
+
+.language-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(13, 24, 22, 0.72);
+  color: var(--muted-bright);
+}
+
+.language-switcher:hover { border-color: var(--border-bright); }
+
+.language-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  pointer-events: none;
+}
+
+.language-switcher select {
+  min-height: 34px;
+  padding: 0 29px 0 30px;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.language-switcher option { background: var(--surface); color: var(--text); }
+.select-caret { position: absolute; right: 10px; color: var(--muted); font-size: 0.8rem; pointer-events: none; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .search-panel {
@@ -571,6 +626,8 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   .app-shell { width: min(100% - 28px, 1180px); }
   .site-header { min-height: 64px; margin: 0 -14px; padding: 0 14px; }
   .header-note { display: none; }
+  .header-actions { gap: 0; }
+  .language-switcher select { width: 82px; }
   .search-panel { grid-template-columns: 1fr; gap: 11px; padding: 19px 0 24px; }
   .mode-toggle { width: fit-content; }
   .search-control { grid-template-columns: auto minmax(0,1fr); }

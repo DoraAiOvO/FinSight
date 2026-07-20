@@ -31,9 +31,10 @@ def build_insights(m: dict) -> list[dict]:
     """Apply transparent rules to normalized metrics. Returns list of insights."""
     out: list[dict] = []
 
-    def add(kind, title, severity, explanation, evidence):
+    def add(code, kind, title, severity, explanation, evidence):
         out.append(
             {
+                "code": code,
                 "kind": kind,
                 "title": title,
                 "severity": severity,
@@ -46,6 +47,7 @@ def build_insights(m: dict) -> list[dict]:
     if pe is not None:
         if pe > 40:
             add(
+                "rich_valuation",
                 "risk",
                 "Rich valuation",
                 "high" if pe > 60 else "medium",
@@ -54,13 +56,16 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Trailing P/E",
+                        "metric_key": "trailing_pe",
                         "value": f"{pe:.1f}",
                         "benchmark": "Broad-market long-run average is roughly 15–20",
+                        "benchmark_key": "market_pe_average",
                     }
                 ],
             )
         elif pe < 12:
             add(
+                "low_earnings_multiple",
                 "opportunity",
                 "Low earnings multiple",
                 "medium",
@@ -69,8 +74,10 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Trailing P/E",
+                        "metric_key": "trailing_pe",
                         "value": f"{pe:.1f}",
                         "benchmark": "Broad-market long-run average is roughly 15–20",
+                        "benchmark_key": "market_pe_average",
                     }
                 ],
             )
@@ -78,6 +85,7 @@ def build_insights(m: dict) -> list[dict]:
     dte = m.get("debt_to_equity")
     if dte is not None and dte > 150:
         add(
+            "high_leverage",
             "risk",
             "High leverage",
             "high" if dte > 300 else "medium",
@@ -86,8 +94,10 @@ def build_insights(m: dict) -> list[dict]:
             [
                 {
                     "metric": "Debt / Equity",
+                    "metric_key": "debt_to_equity",
                     "value": f"{dte:.0f}%",
                     "benchmark": "Above ~150% is generally considered elevated",
+                    "benchmark_key": "debt_elevated",
                 }
             ],
         )
@@ -95,6 +105,7 @@ def build_insights(m: dict) -> list[dict]:
     cr = m.get("current_ratio")
     if cr is not None and cr < 1:
         add(
+            "tight_liquidity",
             "risk",
             "Tight short-term liquidity",
             "medium",
@@ -103,8 +114,10 @@ def build_insights(m: dict) -> list[dict]:
             [
                 {
                     "metric": "Current ratio",
+                    "metric_key": "current_ratio",
                     "value": f"{cr:.2f}",
                     "benchmark": "Below 1.0 means liabilities due soon exceed liquid assets",
+                    "benchmark_key": "current_ratio_low",
                 }
             ],
         )
@@ -112,6 +125,7 @@ def build_insights(m: dict) -> list[dict]:
     fcf = m.get("free_cash_flow")
     if fcf is not None and fcf < 0:
         add(
+            "negative_free_cash_flow",
             "risk",
             "Negative free cash flow",
             "high",
@@ -120,8 +134,10 @@ def build_insights(m: dict) -> list[dict]:
             [
                 {
                     "metric": "Free cash flow (TTM)",
+                    "metric_key": "free_cash_flow_ttm",
                     "value": _fmt_num(fcf),
                     "benchmark": "Sustainable businesses generate positive free cash flow",
+                    "benchmark_key": "positive_fcf",
                 }
             ],
         )
@@ -129,6 +145,7 @@ def build_insights(m: dict) -> list[dict]:
         yield_ = fcf / m["market_cap"]
         if yield_ > 0.05:
             add(
+                "strong_cash_generation",
                 "opportunity",
                 "Strong cash generation",
                 "medium",
@@ -137,13 +154,18 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "FCF yield",
+                        "metric_key": "fcf_yield",
                         "value": _pct(yield_),
                         "benchmark": "Above ~5% is considered strong",
+                        "benchmark_key": "fcf_yield_strong",
                     },
                     {
                         "metric": "Free cash flow (TTM)",
+                        "metric_key": "free_cash_flow_ttm",
                         "value": _fmt_num(fcf),
                         "benchmark": f"vs market cap {_fmt_num(m['market_cap'])}",
+                        "benchmark_key": "vs_market_cap",
+                        "benchmark_params": {"marketCap": _fmt_num(m["market_cap"])},
                     },
                 ],
             )
@@ -152,6 +174,7 @@ def build_insights(m: dict) -> list[dict]:
     if rg is not None:
         if rg > 0.15:
             add(
+                "fast_revenue_growth",
                 "opportunity",
                 "Fast revenue growth",
                 "high" if rg > 0.30 else "medium",
@@ -160,13 +183,16 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Revenue growth (YoY)",
+                        "metric_key": "revenue_growth_yoy",
                         "value": _pct(rg),
                         "benchmark": "Above ~15% is fast for an established company",
+                        "benchmark_key": "revenue_growth_fast",
                     }
                 ],
             )
         elif rg < 0:
             add(
+                "shrinking_revenue",
                 "risk",
                 "Shrinking revenue",
                 "high" if rg < -0.10 else "medium",
@@ -175,8 +201,10 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Revenue growth (YoY)",
+                        "metric_key": "revenue_growth_yoy",
                         "value": _pct(rg),
                         "benchmark": "Negative growth means the top line is contracting",
+                        "benchmark_key": "revenue_growth_negative",
                     }
                 ],
             )
@@ -185,6 +213,7 @@ def build_insights(m: dict) -> list[dict]:
     if pm is not None:
         if pm > 0.20:
             add(
+                "high_profitability",
                 "opportunity",
                 "High profitability",
                 "medium",
@@ -193,13 +222,16 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Net profit margin",
+                        "metric_key": "net_profit_margin",
                         "value": _pct(pm),
                         "benchmark": "Above ~20% is high across most industries",
+                        "benchmark_key": "net_margin_high",
                     }
                 ],
             )
         elif pm < 0:
             add(
+                "unprofitable_operations",
                 "risk",
                 "Unprofitable operations",
                 "medium",
@@ -208,8 +240,10 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Net profit margin",
+                        "metric_key": "net_profit_margin",
                         "value": _pct(pm),
                         "benchmark": "Negative margin means net losses",
+                        "benchmark_key": "net_margin_negative",
                     }
                 ],
             )
@@ -217,6 +251,7 @@ def build_insights(m: dict) -> list[dict]:
     beta = m.get("beta")
     if beta is not None and beta > 1.5:
         add(
+            "high_volatility",
             "risk",
             "High volatility",
             "low",
@@ -225,8 +260,10 @@ def build_insights(m: dict) -> list[dict]:
             [
                 {
                     "metric": "Beta (5y)",
+                    "metric_key": "beta_5y",
                     "value": f"{beta:.2f}",
                     "benchmark": "1.0 = moves with the market; above 1.5 is volatile",
+                    "benchmark_key": "beta_volatile",
                 }
             ],
         )
@@ -234,6 +271,7 @@ def build_insights(m: dict) -> list[dict]:
     dy = m.get("dividend_yield")
     if dy is not None and dy > 0.03:
         add(
+            "dividend_income",
             "opportunity",
             "Meaningful dividend income",
             "low",
@@ -242,8 +280,10 @@ def build_insights(m: dict) -> list[dict]:
             [
                 {
                     "metric": "Dividend yield",
+                    "metric_key": "dividend_yield",
                     "value": _pct(dy),
                     "benchmark": "Above ~3% is a meaningful income component",
+                    "benchmark_key": "dividend_meaningful",
                 }
             ],
         )
@@ -253,6 +293,7 @@ def build_insights(m: dict) -> list[dict]:
         pos = (price - low) / (high - low)
         if pos > 0.95:
             add(
+                "near_52_week_high",
                 "risk",
                 "Trading at 52-week highs",
                 "low",
@@ -261,13 +302,17 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Position in 52-week range",
+                        "metric_key": "range_position",
                         "value": _pct(pos),
                         "benchmark": f"Range {low:,.2f} – {high:,.2f}",
+                        "benchmark_key": "range_values",
+                        "benchmark_params": {"low": f"{low:,.2f}", "high": f"{high:,.2f}"},
                     }
                 ],
             )
         elif pos < 0.10:
             add(
+                "near_52_week_low",
                 "opportunity",
                 "Near 52-week lows",
                 "low",
@@ -276,8 +321,11 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Position in 52-week range",
+                        "metric_key": "range_position",
                         "value": _pct(pos),
                         "benchmark": f"Range {low:,.2f} – {high:,.2f}",
+                        "benchmark_key": "range_values",
+                        "benchmark_params": {"low": f"{low:,.2f}", "high": f"{high:,.2f}"},
                     }
                 ],
             )
@@ -288,6 +336,7 @@ def build_insights(m: dict) -> list[dict]:
         if abs(upside) > 0.15:
             kind = "opportunity" if upside > 0 else "risk"
             add(
+                "analyst_target_gap",
                 kind,
                 "Analyst targets diverge from price",
                 "low",
@@ -298,8 +347,14 @@ def build_insights(m: dict) -> list[dict]:
                 [
                     {
                         "metric": "Mean analyst target",
+                        "metric_key": "analyst_target_mean",
                         "value": f"{target:,.2f}",
                         "benchmark": f"vs current price {price:,.2f} ({_pct(upside)} gap)",
+                        "benchmark_key": "vs_current_price",
+                        "benchmark_params": {
+                            "price": f"{price:,.2f}",
+                            "gap": _pct(upside),
+                        },
                     }
                 ],
             )

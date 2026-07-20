@@ -1,5 +1,5 @@
 """Pydantic response models."""
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Overview(BaseModel):
@@ -58,9 +58,13 @@ class EvidenceItem(BaseModel):
     metric: str
     value: str
     benchmark: str
+    metric_key: str | None = None
+    benchmark_key: str | None = None
+    benchmark_params: dict[str, str] = Field(default_factory=dict)
 
 
 class Insight(BaseModel):
+    code: str
     kind: str  # "risk" | "opportunity"
     title: str
     severity: str  # "low" | "medium" | "high"

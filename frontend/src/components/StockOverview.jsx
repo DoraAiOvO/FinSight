@@ -8,12 +8,14 @@ const METRICS = [
   ['price_to_sales', 'mPriceToSales', fmtNum],
   ['profit_margin', 'mNetMargin', fmtPct],
   ['revenue_growth', 'mRevenueGrowth', fmtPct],
-  ['debt_to_equity', 'mDebtToEquity', (value) => (value == null ? '—' : `${value.toFixed(0)}%`)],
+  ['debt_to_equity', 'mDebtToEquity', (value, locale) => (
+    value == null ? '—' : `${value.toLocaleString(locale, { maximumFractionDigits: 0 })}%`
+  )],
   ['free_cash_flow', 'mFreeCashFlow', fmtBig],
 ]
 
 export default function StockOverview({ overview: company }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const isUp = (company.change_percent ?? 0) >= 0
   const range = company.fifty_two_week_high - company.fifty_two_week_low
   const rangePosition = range > 0 && company.price != null
@@ -40,11 +42,13 @@ export default function StockOverview({ overview: company }) {
         <div className="price-block">
           <span className="price-label">{t('currentPrice')}</span>
           <div className="price">
-            {company.price != null ? `${fmtNum(company.price)} ${company.currency || ''}` : '—'}
+            {company.price != null ? `${fmtNum(company.price, locale)} ${company.currency || ''}` : '—'}
           </div>
           {company.change_percent != null && (
             <div className={isUp ? 'delta up' : 'delta down'}>
-              {isUp ? '↗' : '↘'} {Math.abs(company.change_percent).toFixed(2)}% {t('today')}
+              {isUp ? '↗' : '↘'} {Math.abs(company.change_percent).toLocaleString(locale, {
+                maximumFractionDigits: 2,
+              })}% {t('today')}
             </div>
           )}
         </div>
@@ -54,7 +58,7 @@ export default function StockOverview({ overview: company }) {
         {METRICS.map(([key, labelKey, format]) => (
           <div className="metric" key={key}>
             <span className="metric-label">{t(labelKey)}</span>
-            <span className="metric-value">{format(company[key])}</span>
+            <span className="metric-value">{format(company[key], locale)}</span>
           </div>
         ))}
       </div>
@@ -65,14 +69,16 @@ export default function StockOverview({ overview: company }) {
             <div className="range-block">
               <div className="range-heading">
                 <span>{t('range52')}</span>
-                <strong>{rangePosition.toFixed(0)}% {t('throughRange')}</strong>
+                <strong>{rangePosition.toLocaleString(locale, {
+                  maximumFractionDigits: 0,
+                })}% {t('throughRange')}</strong>
               </div>
               <div className="range-track">
                 <span style={{ left: `${rangePosition}%` }} />
               </div>
               <div className="range-values muted">
-                <span>{fmtNum(company.fifty_two_week_low)}</span>
-                <span>{fmtNum(company.fifty_two_week_high)}</span>
+                <span>{fmtNum(company.fifty_two_week_low, locale)}</span>
+                <span>{fmtNum(company.fifty_two_week_high, locale)}</span>
               </div>
             </div>
           )}

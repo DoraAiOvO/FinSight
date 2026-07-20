@@ -42,6 +42,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | ⚖️ **Company comparisons** | Compares 2–5 businesses side by side using consistent criteria |
 | 🔍 **Risk & opportunity analysis** | Flags strengths, catalysts, uncertainties, and warning signs |
 | 🧾 **Evidence-based explanations** | Shows the reasoning and data behind every insight |
+| 🌐 **Multilingual research** | Localizes the interface, rule-based evidence, and AI summaries in English, Spanish, French, or Simplified Chinese |
 
 ## Quick start
 

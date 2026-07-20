@@ -4,7 +4,7 @@ import { useTranslation } from '../hooks/useTranslation.js'
 const SEVERITY_KEYS = { high: 'sevHigh', medium: 'sevMedium', low: 'sevLow' }
 
 function InsightCard({ insight, defaultOpen = false }) {
-  const { t, ts } = useTranslation()
+  const { t, ts, tb } = useTranslation()
   const [open, setOpen] = useState(defaultOpen)
   const isRisk = insight.kind === 'risk'
 
@@ -28,7 +28,7 @@ function InsightCard({ insight, defaultOpen = false }) {
             {insight.evidence.map((item, index) => (
               <div className="evidence-row" key={`${item.metric}-${index}`}>
                 <span><small>{ts(item.metric)}</small><strong>{item.value}</strong></span>
-                <p>{item.benchmark}</p>
+                <p>{tb(item.benchmark_key, item.benchmark_params, item.benchmark)}</p>
               </div>
             ))}
           </div>
@@ -92,7 +92,11 @@ export default function AnalysisPanel({ analysis }) {
       )}
       <div className="insight-list">
         {visible.map((insight, index) => (
-          <InsightCard key={`${insight.kind}-${insight.title}`} insight={insight} defaultOpen={index === 0} />
+          <InsightCard
+            key={`${insight.kind}-${insight.code || insight.title}`}
+            insight={insight}
+            defaultOpen={index === 0}
+          />
         ))}
       </div>
       <p className="disclaimer">{t('disclaimer')}</p>

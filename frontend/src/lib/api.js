@@ -18,19 +18,23 @@ export const api = {
   compare: (tickers) => get(`/api/compare?tickers=${encodeURIComponent(tickers.join(','))}`),
 }
 
-export function fmtBig(v) {
+export function fmtBig(v, locale) {
   if (v == null) return '—'
   const abs = Math.abs(v)
-  if (abs >= 1e12) return (v / 1e12).toFixed(2) + 'T'
-  if (abs >= 1e9) return (v / 1e9).toFixed(2) + 'B'
-  if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M'
-  return v.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  const scaled = (value, suffix) => value.toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }) + suffix
+  if (abs >= 1e12) return scaled(v / 1e12, 'T')
+  if (abs >= 1e9) return scaled(v / 1e9, 'B')
+  if (abs >= 1e6) return scaled(v / 1e6, 'M')
+  return v.toLocaleString(locale, { maximumFractionDigits: 2 })
 }
 
-export function fmtPct(v) {
-  return v == null ? '—' : (v * 100).toFixed(1) + '%'
+export function fmtPct(v, locale) {
+  return v == null ? '—' : (v * 100).toLocaleString(locale, { maximumFractionDigits: 1 }) + '%'
 }
 
-export function fmtNum(v) {
-  return v == null ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 })
+export function fmtNum(v, locale) {
+  return v == null ? '—' : Number(v).toLocaleString(locale, { maximumFractionDigits: 2 })
 }

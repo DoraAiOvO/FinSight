@@ -10,7 +10,7 @@ const PERIODS = [
 ]
 
 export default function PriceChart({ history, loading, onPeriodChange }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const points = (history.points || []).filter((point) => Number.isFinite(point.close))
   if (!points || points.length < 2) return null
 
@@ -62,9 +62,11 @@ export default function PriceChart({ history, loading, onPeriodChange }) {
       </div>
 
       <div className="chart-summary">
-        <strong>{last.toFixed(2)}</strong>
+        <strong>{last.toLocaleString(locale, { maximumFractionDigits: 2 })}</strong>
         <span className={isUp ? 'delta up' : 'delta down'}>
-          {isUp ? '↗' : '↘'} {Math.abs(changePercent).toFixed(1)}% {t('over')} {history.period}
+          {isUp ? '↗' : '↘'} {Math.abs(changePercent).toLocaleString(locale, {
+            maximumFractionDigits: 1,
+          })}% {t('over')} {PERIODS.find(([value]) => value === history.period)?.[1] || history.period}
         </span>
       </div>
 
@@ -127,7 +129,11 @@ export default function PriceChart({ history, loading, onPeriodChange }) {
       </div>
       <div className="chart-range muted">
         <span>{points[0].date}</span>
-        <span>{t('low')} {minimum.toFixed(2)} · {t('high')} {maximum.toFixed(2)}</span>
+        <span>
+          {t('low')} {minimum.toLocaleString(locale, { maximumFractionDigits: 2 })}
+          {' · '}
+          {t('high')} {maximum.toLocaleString(locale, { maximumFractionDigits: 2 })}
+        </span>
         <span>{points[points.length - 1].date}</span>
       </div>
     </section>

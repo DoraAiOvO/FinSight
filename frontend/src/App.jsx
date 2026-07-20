@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import SearchBar from './components/SearchBar.jsx'
 import StockOverview from './components/StockOverview.jsx'
 import PriceChart from './components/PriceChart.jsx'
@@ -10,8 +10,6 @@ import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
 
 const STARTER_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'COST']
-
-const TIME_LOCALES = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', zh: 'zh-CN' }
 
 function LoadingReport({ mode }) {
   const { t } = useTranslation()
@@ -74,7 +72,7 @@ function EmptyState({ onAnalyze }) {
 }
 
 export default function App() {
-  const { t, language } = useTranslation()
+  const { t, language, locale } = useTranslation()
   const [mode, setMode] = useState('analyze')
   const [loading, setLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
@@ -83,6 +81,17 @@ export default function App() {
   const [data, setData] = useState(null)
   const [compare, setCompare] = useState(null)
   const requestId = useRef(0)
+  const lastAnalyzeTicker = useRef(null)
+  const previousLanguage = useRef(language)
+
+  useEffect(() => {
+    if (previousLanguage.current === language) return
+    previousLanguage.current = language
+    const ticker = data?.overview?.ticker || (
+      loading && mode === 'analyze' ? lastAnalyzeTicker.current : null
+    )
+    if (ticker) analyze(ticker)
+  }, [language])
 
   function changeMode(nextMode) {
     setMode(nextMode)
@@ -97,6 +106,7 @@ export default function App() {
     setNotices([])
     setData(null)
     setCompare(null)
+    lastAnalyzeTicker.current = null
   }
 
   function noticeText(notice) {
@@ -104,6 +114,7 @@ export default function App() {
   }
 
   async function analyze(ticker) {
+    lastAnalyzeTicker.current = ticker
     const currentRequest = ++requestId.current
     setMode('analyze')
     setLoading(true)
@@ -229,7 +240,10 @@ export default function App() {
               <h1>{t('reportTitle')} <em>{t('reportTitleEm')}</em></h1>
             </div>
             <p className="report-time">
-              {t('generatedAt')} {data.generatedAt.toLocaleTimeString(TIME_LOCALES[language] || [], { hour: 'numeric', minute: '2-digit' })}
+              {t('generatedAt')} {data.generatedAt.toLocaleTimeString(locale, {
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
               <span>{t('dataDelayed')}</span>
             </p>
           </div>

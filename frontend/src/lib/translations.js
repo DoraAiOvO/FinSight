@@ -693,3 +693,61 @@ export function translateServerText(language, text) {
   if (!text || language === 'en') return text
   return SERVER_TEXT[language]?.[text] || SERVER_EXPLANATIONS[language]?.[text] || text
 }
+
+const BENCHMARK_TEXT = {
+  es: {
+    market_pe_average: 'La media histórica del mercado amplio ronda 15–20',
+    debt_elevated: 'Más de ~150% suele considerarse elevado',
+    current_ratio_low: 'Por debajo de 1,0, los pasivos próximos superan los activos líquidos',
+    positive_fcf: 'Los negocios sostenibles generan flujo de caja libre positivo',
+    fcf_yield_strong: 'Más de ~5% se considera sólido',
+    vs_market_cap: 'frente a una capitalización de {marketCap}',
+    revenue_growth_fast: 'Más de ~15% es rápido para una empresa consolidada',
+    revenue_growth_negative: 'El crecimiento negativo indica contracción de los ingresos',
+    net_margin_high: 'Más de ~20% es alto en la mayoría de sectores',
+    net_margin_negative: 'Un margen negativo implica pérdidas netas',
+    beta_volatile: '1,0 = se mueve con el mercado; más de 1,5 es volátil',
+    dividend_meaningful: 'Más de ~3% aporta ingresos relevantes',
+    range_values: 'Rango {low} – {high}',
+    vs_current_price: 'frente al precio actual {price} (brecha de {gap})',
+  },
+  fr: {
+    market_pe_average: 'La moyenne historique du marché large est d’environ 15–20',
+    debt_elevated: 'Au-dessus de ~150 %, le niveau est généralement jugé élevé',
+    current_ratio_low: 'Sous 1,0, les dettes à court terme dépassent les actifs liquides',
+    positive_fcf: 'Une entreprise durable génère un flux de trésorerie disponible positif',
+    fcf_yield_strong: 'Au-dessus de ~5 %, le niveau est jugé solide',
+    vs_market_cap: 'contre une capitalisation de {marketCap}',
+    revenue_growth_fast: 'Au-dessus de ~15 %, la croissance est rapide pour une entreprise établie',
+    revenue_growth_negative: 'Une croissance négative signifie que le chiffre d’affaires se contracte',
+    net_margin_high: 'Au-dessus de ~20 %, la marge est élevée dans la plupart des secteurs',
+    net_margin_negative: 'Une marge négative signifie une perte nette',
+    beta_volatile: '1,0 = évolue avec le marché ; au-dessus de 1,5 = volatil',
+    dividend_meaningful: 'Au-dessus de ~3 %, le revenu devient significatif',
+    range_values: 'Fourchette {low} – {high}',
+    vs_current_price: 'contre un cours actuel de {price} (écart de {gap})',
+  },
+  zh: {
+    market_pe_average: '大盘长期平均水平约为 15–20',
+    debt_elevated: '超过约 150% 通常被视为偏高',
+    current_ratio_low: '低于 1.0 表示短期负债超过流动资产',
+    positive_fcf: '可持续经营的企业应产生正自由现金流',
+    fcf_yield_strong: '超过约 5% 通常被视为较强',
+    vs_market_cap: '对比市值 {marketCap}',
+    revenue_growth_fast: '对成熟企业而言，超过约 15% 属于快速增长',
+    revenue_growth_negative: '负增长表示营收正在收缩',
+    net_margin_high: '在多数行业中，超过约 20% 属于较高水平',
+    net_margin_negative: '负利润率意味着净亏损',
+    beta_volatile: '1.0 = 与市场同步；高于 1.5 表示波动较大',
+    dividend_meaningful: '超过约 3% 可构成有意义的收益来源',
+    range_values: '区间 {low} – {high}',
+    vs_current_price: '对比当前价格 {price}（差距 {gap}）',
+  },
+}
+
+export function translateBenchmark(language, key, params = {}, fallback = '') {
+  const template = BENCHMARK_TEXT[language]?.[key] || fallback
+  return template.replace(/\{(\w+)\}/g, (match, name) => (
+    params[name] == null ? match : String(params[name])
+  ))
+}

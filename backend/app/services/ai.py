@@ -69,7 +69,7 @@ def summarize_news(ticker: str, items: list[dict], lang: str = "en") -> str | No
 
 
 def narrate_analysis(ticker: str, metrics: dict, insights: list[dict], lang: str = "en") -> str | None:
-    """Turn rule-based insights into a short plain-English narrative."""
+    """Turn rule-based insights into a short narrative in the requested language."""
     if not insights:
         return None
     bullet = "\n".join(
