@@ -84,6 +84,15 @@ def test_openapi_exposes_standardized_data_point_and_evidence_contracts():
     assert models["AnalysisResponse"]["properties"]["presentation"][
         "$ref"
     ].endswith("/ReportPresentation")
+    assert models["FilingListResponse"]["properties"]["filings"]["items"][
+        "$ref"
+    ].endswith("/FilingSummary")
+    assert models["FilingDetailResponse"]["properties"]["sections"]["items"][
+        "$ref"
+    ].endswith("/FilingSection")
+    assert models["FilingQuestionResponse"]["properties"]["answer"][
+        "$ref"
+    ].endswith("/Evidence")
 
 
 def test_overview_analysis_comparison_and_news_responses_include_provenance(monkeypatch):

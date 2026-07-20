@@ -44,6 +44,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 🧾 **Evidence-based explanations** | Shows the reasoning and data behind every insight |
 | 🌐 **Multilingual research** | Localizes the interface, rule-based evidence, and AI summaries in English, Spanish, French, or Simplified Chinese |
 | 🧭 **Customer research profile** | Organizes the same evidence around experience, horizon, priorities, risk comfort, report depth, language, and industries of interest |
+| 🏛️ **SEC filings** | Lists recent 10-K, 10-Q, and 8-K filings, extracts decision-useful sections and earnings exhibits, and answers questions with citations to the original filing |
 
 ## Quick start
 
@@ -70,6 +71,18 @@ pnpm dev           # http://localhost:5173 (proxies /api to :8000)
 ```
 
 **Optional AI layer:** `cp .env.example .env` and set `ANTHROPIC_API_KEY`.
+
+**SEC access:** FinSight uses the public SEC EDGAR submissions API without an
+API key. For deployed environments, set a declared contact in the request
+User-Agent as required by the SEC:
+
+```bash
+export FINSIGHT_SEC_USER_AGENT="FinSight your-email@example.com"
+```
+
+SEC metadata is cached for six hours and filing documents for 24 hours by
+default. Override these process-local cache windows with
+`FINSIGHT_SEC_CACHE_TTL` and `FINSIGHT_SEC_DOCUMENT_CACHE_TTL` (seconds).
 
 **Tests:** `cd backend && pytest`; `cd frontend && pnpm test`
 
@@ -142,6 +155,7 @@ priorities—is passed to the optional AI narrative layer.
 │   │       ├── analysis.py     transparent risk/opportunity rules
 │   │       ├── presentation.py profile-driven organization and highlights
 │   │       ├── customer_profiles.py  onboarding persistence
+│   │       ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
 │   │       └── ai.py           optional Anthropic layer
 │   ├── alembic/        versioned database migrations
 │   └── tests/          unit tests (no network needed)
@@ -158,6 +172,9 @@ priorities—is passed to the optional AI narrative layer.
 | `GET /api/analysis/{ticker}` | Evidence-backed risks & opportunities |
 | `GET /api/analysis/{ticker}?customer_id={uuid}` | Same evidence with a customer-specific presentation plan |
 | `GET /api/compare?tickers=AAPL,MSFT` | Side-by-side comparison (2–5 tickers) |
+| `GET /api/filings/{ticker}` | Recent 10-K, 10-Q, and 8-K filings from SEC EDGAR |
+| `GET /api/filings/{ticker}/{accession}` | Important extracted sections from one filing |
+| `POST /api/filings/{ticker}/{accession}/questions` | Filing-grounded answer plus original-section citations |
 | `POST /api/customer-profiles` | Create a browser-scoped customer profile |
 | `GET /api/customer-profiles/{customer_id}` | Restore a customer profile |
 | `PUT /api/customer-profiles/{customer_id}` | Replace customer research preferences |
@@ -171,6 +188,15 @@ claims use a shared `Evidence` object. Both include `provider`, `source`,
 `source_url`. This contract applies consistently across overview, price history,
 analysis, comparison, and news responses; the frontend unwraps the payloads
 without changing the report's presentation.
+
+SEC results add official filing, reporting-period, acceptance, fetch, and cache
+timestamps. Filing questions retrieve the most relevant extracted passages
+first; the optional AI layer may explain those passages, but citation selection
+is deterministic and every citation links back to the original SEC document.
+For earnings-related 8-K filings, FinSight also reads matching EX-99 earnings
+release exhibits from the same EDGAR filing package.
+Without an Anthropic key, the endpoint returns an extractive answer with the
+same citations instead of disabling filing questions.
 
 ## How a research brief comes together
 
@@ -199,7 +225,8 @@ without changing the report's presentation.
 - [x] Add the SQLAlchemy and Alembic persistence foundation
 - [x] Add customer onboarding and presentation-only research profiles
 - [ ] Test the quality, clarity, and consistency of generated research
-- [ ] Add SEC filings and earnings-call sources
+- [x] Add SEC 10-K, 10-Q, and earnings-related 8-K sources
+- [ ] Add earnings-call transcript sources
 - [ ] Exportable research briefs (PDF)
 - [ ] Watchlists and saved research sessions
 

@@ -6,7 +6,7 @@ for a new endpoint to accidentally return an unattributed number or narrative.
 """
 from datetime import date, datetime
 from enum import Enum
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -238,3 +238,82 @@ class CompareRow(BaseModel):
 class CompareResponse(BaseModel):
     tickers: list[str]
     rows: list[CompareRow]
+
+
+class CacheMetadata(BaseModel):
+    hit: bool
+    fetched_at: datetime
+    expires_at: datetime
+
+
+class FilingSummary(BaseModel):
+    accession_number: str
+    filing_type: Literal["10-K", "10-Q", "8-K"]
+    filing_date: date
+    report_date: date | None = None
+    accepted_at: datetime | None = None
+    primary_document: str
+    items: list[str] = Field(default_factory=list)
+    description: str | None = None
+    is_earnings_related: bool = False
+    source_url: str
+    index_url: str
+
+
+class FilingListResponse(BaseModel):
+    ticker: str
+    company_name: str
+    cik: str
+    filings: list[FilingSummary]
+    source: Provenance
+    cache: CacheMetadata
+
+
+class FilingSection(BaseModel):
+    section_id: str
+    item: str
+    title: str
+    text: str
+    character_count: int
+    truncated: bool = False
+    source_url: str
+
+
+class FilingDetailResponse(BaseModel):
+    ticker: str
+    company_name: str
+    cik: str
+    filing: FilingSummary
+    sections: list[FilingSection]
+    source: Provenance
+    cache: CacheMetadata
+
+
+class FilingQuestionRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+    lang: PreferredLanguage = PreferredLanguage.ENGLISH
+
+    @field_validator("question")
+    @classmethod
+    def question_is_meaningful(cls, value: str):
+        normalized = " ".join(value.split())
+        if len(normalized) < 3:
+            raise ValueError("question must contain at least 3 characters")
+        return normalized
+
+
+class FilingCitation(BaseModel):
+    section_id: str
+    section_title: str
+    quote: str
+    source_url: str
+
+
+class FilingQuestionResponse(BaseModel):
+    ticker: str
+    accession_number: str
+    question: str
+    answer: Evidence
+    citations: list[FilingCitation]
+    answered_at: datetime
+    ai_used: bool

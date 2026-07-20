@@ -18,6 +18,17 @@ class Settings:
         "FINSIGHT_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
     ).split(",")
     CACHE_TTL_SECONDS: int = int(os.getenv("FINSIGHT_CACHE_TTL", "300"))
+    SEC_CACHE_TTL_SECONDS: int = int(os.getenv("FINSIGHT_SEC_CACHE_TTL", "21600"))
+    SEC_DOCUMENT_CACHE_TTL_SECONDS: int = int(
+        os.getenv("FINSIGHT_SEC_DOCUMENT_CACHE_TTL", "86400")
+    )
+    SEC_HTTP_TIMEOUT_SECONDS: float = float(
+        os.getenv("FINSIGHT_SEC_HTTP_TIMEOUT", "20")
+    )
+    SEC_USER_AGENT: str = os.getenv(
+        "FINSIGHT_SEC_USER_AGENT",
+        "FinSight DoraAiOvO@users.noreply.github.com",
+    )
     DATABASE_URL: str = normalize_database_url(
         os.getenv("FINSIGHT_DATABASE_URL", "sqlite:///./finsight.db")
     )
