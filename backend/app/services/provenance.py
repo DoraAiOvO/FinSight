@@ -135,12 +135,17 @@ def generated_evidence(
     source: str,
     confidence: float,
     fetched_at: datetime | None = None,
+    citations: list[str] | None = None,
+    statements: list[dict] | None = None,
 ) -> dict | None:
     if not claim:
         return None
     fetched_at = fetched_at or utc_now()
     return evidence(
         claim,
+        generated=True,
+        citations=citations or [],
+        statements=statements or [],
         **provenance(
             provider=provider,
             source=source,

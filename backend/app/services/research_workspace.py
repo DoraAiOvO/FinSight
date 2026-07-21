@@ -37,6 +37,7 @@ from ..models.schemas import (
     WatchlistResponse,
     WhatChangedResponse,
 )
+from . import evidence_auditor
 from .tickers import normalize_ticker
 
 
@@ -309,12 +310,15 @@ def _validated_snapshot(
     assumptions = _current_assumptions(session, customer_id, ticker)
     if not assumptions:
         assumptions = snapshot.thesis_assumptions
-    return snapshot.model_copy(
+    validated = snapshot.model_copy(
         update={
             "overview": snapshot.overview.model_copy(update={"ticker": ticker}),
             "thesis_assumptions": assumptions,
         }
     )
+    # Browser payloads are untrusted. Re-run the same deterministic audit before
+    # either saving a report or using it as a change-tracking baseline.
+    return evidence_auditor.audit_snapshot(validated)
 
 
 def create_research_session(

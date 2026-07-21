@@ -49,6 +49,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 🧠 **Research memory** | Persists grouped watchlists and research snapshots, then shows what changed in metrics, news, filings, signals, and thesis assumptions |
 | 📒 **Thesis Ledger** | Records a research thesis, measurable metric or event assumptions, evidence on both sides, status, and an append-only change history |
 | 🧮 **Valuation & scenarios** | Calculates DCF, reverse DCF, selected-peer multiples, three scenario cases, and a sensitivity matrix entirely in deterministic code |
+| 🛡️ **Evidence Auditor** | Checks every assembled report for unsupported claims, stale evidence, missing citations, source conflicts, incorrect units, and inconsistent numbers before generated conclusions are displayed or saved |
 
 ## Quick start
 
@@ -163,6 +164,7 @@ priorities—is passed to the optional AI narrative layer.
 │   │       ├── research_workspace.py watchlists, snapshots, and deterministic diffs
 │   │       ├── thesis_ledger.py  thesis and assumption CRUD with audit history
 │   │       ├── valuations.py    deterministic DCF, reverse DCF, peers, and sensitivity
+│   │       ├── evidence_auditor.py deterministic report validation and conclusion blocking
 │   │       ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
 │   │       └── ai.py           optional Anthropic layer
 │   ├── alembic/        versioned database migrations
@@ -182,6 +184,7 @@ priorities—is passed to the optional AI narrative layer.
 | `GET /api/compare?tickers=AAPL,MSFT` | Side-by-side comparison (2–5 tickers) |
 | `GET /api/valuation/{ticker}` | Deterministic valuation using disclosed code-defined defaults |
 | `POST /api/valuation/{ticker}` | Recalculate all valuation models from explicit user assumptions |
+| `POST /api/reports/audit` | Validate and sanitize an assembled report before generated factual conclusions are displayed |
 | `GET /api/filings/{ticker}` | Recent 10-K, 10-Q, and 8-K filings from SEC EDGAR |
 | `GET /api/filings/{ticker}/{accession}` | Important extracted sections from one filing |
 | `POST /api/filings/{ticker}/{accession}/questions` | Filing-grounded answer plus original-section citations |
@@ -208,6 +211,10 @@ claims use a shared `Evidence` object. Both include `provider`, `source`,
 `source_url`. This contract applies consistently across overview, price history,
 analysis, comparison, valuation, and news responses; the frontend unwraps the payloads
 without changing the report's presentation.
+
+Generated `Evidence` additionally carries independently auditable statements
+and report-local citation paths. Sourced and deterministic evidence keeps these
+fields empty; it is never forced to cite itself.
 
 SEC results add official filing, reporting-period, acceptance, fetch, and cache
 timestamps. Filing questions retrieve the most relevant extracted passages
@@ -256,6 +263,33 @@ bisection; and P/E or Price/Sales estimates from the automatically selected-peer
 median. Every assumption and result carries provenance. The valuation routes do
 not invoke the optional LLM, and valuation snapshots can be saved with the rest
 of a research session.
+
+### Evidence Auditor and conclusion blocking
+
+The frontend submits every complete company brief and peer-comparison report to
+the deterministic Evidence Auditor before displaying it. The auditor runs six checks:
+
+- every generated factual statement has one or more report-local citations;
+- every citation resolves to a provenance-bearing claim or data point;
+- evidence explicitly marked stale is surfaced as a warning;
+- same-date values for the same fact are compared across report sections and
+  providers;
+- known financial metrics use compatible currency, ratio, percentage, share,
+  factor, or per-share units; and
+- numbers in generated statements match the cited evidence.
+
+AI summaries are requested as independently cited statements. The auditor does
+not use another model to judge them: it resolves their citations and checks the
+structured data directly. A statement with missing or invalid citations, bad
+units, conflicting support, or an uncited number is removed from the sanitized
+report. Supported statements may remain even when another statement in the same
+AI response is blocked. The API returns the sanitized report plus a structured
+audit result with issue counts, paths, severity, and blocked-statement count.
+
+Saved research is re-audited on the server, so a browser cannot bypass the
+control by submitting an unaudited or modified snapshot. Stale or conflicting
+source warnings remain visible for human review; unsupported generated factual
+conclusions never appear as report conclusions.
 
 ### Thesis Ledger
 
@@ -324,6 +358,7 @@ limitations and never trigger a fallback to the old universal thresholds.
 - [x] Add watchlists, saved research sessions, and deterministic change tracking
 - [x] Add the Thesis Ledger with measurable assumptions, two-sided evidence, and change history
 - [x] Add deterministic DCF, reverse DCF, peer multiples, scenarios, and sensitivity analysis
+- [x] Add deterministic evidence auditing and block unsupported generated conclusions
 
 ## Contributing
 

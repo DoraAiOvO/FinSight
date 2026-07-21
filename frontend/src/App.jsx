@@ -13,9 +13,15 @@ import PersonalizationBanner from './components/PersonalizationBanner.jsx'
 import ProfileButton from './components/ProfileButton.jsx'
 import ResearchWorkspace from './components/ResearchWorkspace.jsx'
 import ValuationPanel from './components/ValuationPanel.jsx'
+import EvidenceAuditPanel from './components/EvidenceAuditPanel.jsx'
 import { useCustomerProfile } from './context/CustomerProfileContext.jsx'
 import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
+import {
+  applyAuditResult,
+  buildAuditDraft,
+  buildComparisonAuditDraft,
+} from './lib/evidenceAudit.js'
 
 const STARTER_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'COST']
 
@@ -157,6 +163,7 @@ export default function App() {
   const [notices, setNotices] = useState([])
   const [data, setData] = useState(null)
   const [compare, setCompare] = useState(null)
+  const [compareAudit, setCompareAudit] = useState(null)
   const requestId = useRef(0)
   const lastAnalyzeTicker = useRef(null)
   const previousPreferenceKey = useRef(`${language}:${profile?.updated_at || ''}`)
@@ -184,6 +191,7 @@ export default function App() {
     setNotices([])
     setData(null)
     setCompare(null)
+    setCompareAudit(null)
     lastAnalyzeTicker.current = null
   }
 
@@ -200,6 +208,7 @@ export default function App() {
     setError(null)
     setNotices([])
     setCompare(null)
+    setCompareAudit(null)
 
     try {
       const overview = await api.overview(ticker)
@@ -226,8 +235,7 @@ export default function App() {
       const unavailable = sections.flatMap((result, index) =>
         result.status === 'rejected' ? [{ key: sectionKeys[index] }] : [],
       )
-      setNotices(unavailable)
-      setData({
+      const draft = {
         overview,
         history: sections[0].status === 'fulfilled' ? sections[0].value : null,
         analysis: sections[1].status === 'fulfilled' ? sections[1].value : null,
@@ -235,7 +243,11 @@ export default function App() {
         filings: sections[3].status === 'fulfilled' ? sections[3].value : null,
         valuation: sections[4].status === 'fulfilled' ? sections[4].value : null,
         generatedAt: new Date(),
-      })
+      }
+      const auditResult = await api.auditReport(buildAuditDraft(draft))
+      if (currentRequest !== requestId.current) return
+      setNotices(unavailable)
+      setData(applyAuditResult(draft, auditResult))
     } catch (requestError) {
       if (currentRequest !== requestId.current) return
       setError(requestError.message)
@@ -252,7 +264,10 @@ export default function App() {
     try {
       const history = await api.history(data.overview.ticker, nextPeriod)
       if (parentRequest !== requestId.current) return
-      setData((current) => current && { ...current, history })
+      const draft = { ...data, history }
+      const auditResult = await api.auditReport(buildAuditDraft(draft))
+      if (parentRequest !== requestId.current) return
+      setData(applyAuditResult(draft, auditResult))
       setNotices((current) => current.filter((notice) => !notice.key.startsWith('noticeHistory')))
     } catch (requestError) {
       if (parentRequest !== requestId.current) return
@@ -272,9 +287,15 @@ export default function App() {
     setError(null)
     setNotices([])
     setData(null)
+    setCompare(null)
+    setCompareAudit(null)
     try {
       const result = await api.compare(tickers)
-      if (currentRequest === requestId.current) setCompare(result)
+      const auditResult = await api.auditReport(buildComparisonAuditDraft(result))
+      if (currentRequest === requestId.current) {
+        setCompare(auditResult.report.comparison)
+        setCompareAudit(auditResult.audit)
+      }
     } catch (requestError) {
       if (currentRequest !== requestId.current) return
       setError(requestError.message)
@@ -284,12 +305,17 @@ export default function App() {
     }
   }
 
-  function updateValuation(valuation) {
+  async function updateValuation(valuation) {
+    if (!data || data.overview?.ticker !== valuation.ticker) return valuation
+    const parentRequest = requestId.current
+    const draft = { ...data, valuation }
+    const auditResult = await api.auditReport(buildAuditDraft(draft))
+    if (parentRequest !== requestId.current) return valuation
+    const audited = applyAuditResult(draft, auditResult)
     setData((current) => (
-      current?.overview?.ticker === valuation.ticker
-        ? { ...current, valuation }
-        : current
+      current?.overview?.ticker === valuation.ticker ? audited : current
     ))
+    return audited.valuation
   }
 
   return (
@@ -352,6 +378,7 @@ export default function App() {
             presentation={data.analysis?.presentation}
             onEdit={openOnboarding}
           />
+          <EvidenceAuditPanel audit={data.audit} />
           <ResearchWorkspace
             customerId={customerId}
             data={data}
@@ -375,6 +402,7 @@ export default function App() {
               <h1>{t('compareTitle')} <em>{t('compareTitleEm')}</em></h1>
             </div>
           </div>
+          <EvidenceAuditPanel audit={compareAudit} />
           <CompareTable data={compare} />
         </main>
       )}

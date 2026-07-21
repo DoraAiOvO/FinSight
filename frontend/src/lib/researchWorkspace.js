@@ -22,6 +22,7 @@ export function buildResearchSnapshot(data) {
     filings: data.filings || null,
     valuation: data.valuation || null,
     thesis_assumptions: data.thesisAssumptions || [],
+    ...(data.audit ? { audit: data.audit } : {}),
   }
 }
 
