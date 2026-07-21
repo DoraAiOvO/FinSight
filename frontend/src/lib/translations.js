@@ -2,6 +2,7 @@ import { profileTranslations } from './profileTranslations.js'
 import { thesisTranslations } from './thesisTranslations.js'
 import { valuationTranslations } from './valuationTranslations.js'
 import { workspaceTranslations } from './workspaceTranslations.js'
+import { auditTranslations } from './auditTranslations.js'
 
 // UI translations, mirroring the RoboPrompt language option.
 // `getTranslation` resolves UI strings by key; `translateServerText` maps the
@@ -14,6 +15,7 @@ export const translations = {
     ...thesisTranslations.en,
     ...workspaceTranslations.en,
     ...valuationTranslations.en,
+    ...auditTranslations.en,
     // Header / footer
     headerNote: 'Research assistant · Not investment advice',
     goHome: 'Go to FinSight home',
@@ -193,6 +195,7 @@ export const translations = {
     ...thesisTranslations.es,
     ...workspaceTranslations.es,
     ...valuationTranslations.es,
+    ...auditTranslations.es,
     headerNote: 'Asistente de investigación · No es asesoramiento de inversión',
     goHome: 'Ir al inicio de FinSight',
     footerTagline: 'Ve más allá de los números.',
@@ -361,6 +364,7 @@ export const translations = {
     ...thesisTranslations.fr,
     ...workspaceTranslations.fr,
     ...valuationTranslations.fr,
+    ...auditTranslations.fr,
     headerNote: 'Assistant de recherche · Pas un conseil en investissement',
     goHome: 'Aller à l’accueil FinSight',
     footerTagline: 'Voyez au-delà des chiffres.',
@@ -529,6 +533,7 @@ export const translations = {
     ...thesisTranslations.zh,
     ...workspaceTranslations.zh,
     ...valuationTranslations.zh,
+    ...auditTranslations.zh,
     headerNote: '研究助手 · 不构成投资建议',
     goHome: '返回 FinSight 首页',
     footerTagline: '看见数字背后的故事。',

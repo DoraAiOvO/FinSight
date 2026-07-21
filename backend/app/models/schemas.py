@@ -19,6 +19,26 @@ class FreshnessStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
+class AuditIssueCode(str, Enum):
+    UNSUPPORTED_CLAIM = "unsupported_claim"
+    STALE_EVIDENCE = "stale_evidence"
+    MISSING_CITATION = "missing_citation"
+    CONFLICTING_SOURCES = "conflicting_sources"
+    INCORRECT_UNIT = "incorrect_unit"
+    INCONSISTENT_NUMBER = "inconsistent_number"
+
+
+class AuditSeverity(str, Enum):
+    WARNING = "warning"
+    BLOCKING = "blocking"
+
+
+class AuditStatus(str, Enum):
+    PASSED = "passed"
+    WARNING = "warning"
+    BLOCKED = "blocked"
+
+
 class ExperienceLevel(str, Enum):
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"
@@ -180,10 +200,43 @@ class DataPoint(Provenance):
     display_value: str | None = None
 
 
+class EvidenceStatement(BaseModel):
+    """One independently auditable statement inside a generated conclusion."""
+
+    text: str = Field(min_length=1)
+    citations: list[str] = Field(default_factory=list)
+
+
 class Evidence(Provenance):
     """A sourced or generated claim plus its provenance."""
 
     claim: str
+    generated: bool = False
+    citations: list[str] = Field(default_factory=list)
+    statements: list[EvidenceStatement] = Field(default_factory=list)
+
+
+class AuditIssue(BaseModel):
+    code: AuditIssueCode
+    severity: AuditSeverity
+    section: str
+    path: str
+    message: str
+    claim: str | None = None
+    related_paths: list[str] = Field(default_factory=list)
+
+
+class EvidenceAudit(BaseModel):
+    status: AuditStatus
+    audited_at: datetime
+    checks_performed: list[AuditIssueCode]
+    issues: list[AuditIssue] = Field(default_factory=list)
+    issue_counts: dict[AuditIssueCode, int] = Field(default_factory=dict)
+    blocked_paths: list[str] = Field(default_factory=list)
+    blocked_statements: int = 0
+    evidence_checked: int = 0
+    data_points_checked: int = 0
+    factual_conclusions_allowed: bool = True
 
 
 class Overview(BaseModel):
@@ -743,6 +796,40 @@ class ResearchSnapshot(BaseModel):
     filings: FilingListResponse | None = None
     valuation: ValuationResponse | None = None
     thesis_assumptions: list[ThesisAssumptionSnapshot] = Field(default_factory=list)
+    audit: EvidenceAudit | None = None
+
+
+class ResearchReportDraft(BaseModel):
+    captured_at: datetime
+    overview: Overview | None = None
+    history: HistoryResponse | None = None
+    analysis: AnalysisResponse | None = None
+    news: NewsResponse | None = None
+    filings: FilingListResponse | None = None
+    valuation: ValuationResponse | None = None
+    comparison: CompareResponse | None = None
+
+    @model_validator(mode="after")
+    def contains_a_report(self):
+        if self.overview is None and self.comparison is None:
+            raise ValueError("overview or comparison is required")
+        if self.overview is None and any(
+            section is not None
+            for section in (
+                self.history,
+                self.analysis,
+                self.news,
+                self.filings,
+                self.valuation,
+            )
+        ):
+            raise ValueError("company report sections require an overview")
+        return self
+
+
+class ResearchReportAuditResponse(BaseModel):
+    report: ResearchReportDraft
+    audit: EvidenceAudit
 
 
 class ResearchSessionCreate(BaseModel):

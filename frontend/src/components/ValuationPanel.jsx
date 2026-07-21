@@ -76,8 +76,8 @@ export default function ValuationPanel({ valuation, ticker, onChange }) {
     try {
       const assumptions = valuationRequest(form)
       const updated = await api.valuation.calculate(ticker, assumptions)
-      setForm(valuationFormValues(updated))
-      onChange(updated)
+      const audited = await onChange(updated)
+      setForm(valuationFormValues(audited || updated))
     } catch (requestError) {
       setError(requestError.message.match(/^[a-z_]+$/) ? t('valuationInvalidInput') : requestError.message)
     } finally {

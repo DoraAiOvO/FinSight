@@ -28,6 +28,7 @@ export const api = {
     if (customerId) params.set('customer_id', customerId)
     return get(`/api/analysis/${encodeURIComponent(ticker)}?${params}`)
   },
+  auditReport: (report) => write('/api/reports/audit', 'POST', report),
   compare: (tickers) => get(`/api/compare?tickers=${encodeURIComponent(tickers.join(','))}`),
   valuation: {
     get: (ticker) => get(`/api/valuation/${encodeURIComponent(ticker)}`),

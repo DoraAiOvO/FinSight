@@ -249,6 +249,14 @@ def test_saved_research_sessions_round_trip_and_delete():
         assert saved.status_code == 201, saved.text
         session_id = saved.json()["id"]
         assert saved.json()["snapshot"]["overview"]["ticker"] == "TEST"
+        assert saved.json()["snapshot"]["audit"]["checks_performed"] == [
+            "unsupported_claim",
+            "stale_evidence",
+            "missing_citation",
+            "conflicting_sources",
+            "incorrect_unit",
+            "inconsistent_number",
+        ]
 
         listed = client.get(
             f"/api/customers/{customer_id}/research-sessions?ticker=TEST"
@@ -270,6 +278,36 @@ def test_saved_research_sessions_round_trip_and_delete():
         assert client.get(
             f"/api/customers/{customer_id}/research-sessions/{session_id}"
         ).status_code == 404
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_saved_research_reaudits_and_removes_unsupported_generated_conclusions():
+    client = _client()
+    try:
+        customer_id = _create_customer(client)
+        snapshot = _snapshot()
+        snapshot["news"]["ai_summary"] = {
+            **_claim("Unsupported generated conclusion."),
+            "provider": "Anthropic",
+            "source": "test model",
+            "generated": True,
+            "citations": [],
+            "statements": [
+                {"text": "Unsupported generated conclusion.", "citations": []}
+            ],
+        }
+
+        saved = client.post(
+            f"/api/customers/{customer_id}/research-sessions",
+            json={"language": "en", "snapshot": snapshot},
+        )
+
+        assert saved.status_code == 201, saved.text
+        result = saved.json()["snapshot"]
+        assert result["news"]["ai_summary"] is None
+        assert result["audit"]["status"] == "blocked"
+        assert result["audit"]["blocked_statements"] == 1
     finally:
         app.dependency_overrides.clear()
 

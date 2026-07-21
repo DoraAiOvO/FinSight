@@ -20,6 +20,8 @@ from .models.schemas import (
     HistoryResponse,
     NewsResponse,
     Overview,
+    ResearchReportAuditResponse,
+    ResearchReportDraft,
     ResearchSessionCreate,
     ResearchSessionResponse,
     ResearchSessionSummary,
@@ -41,6 +43,7 @@ from .models.schemas import (
 from .services import (
     ai,
     benchmarks,
+    evidence_auditor,
     market_data,
     research_workspace,
     sec_filings,
@@ -550,6 +553,12 @@ def stock_history(ticker: str, period: str = Query("6mo", pattern="^(1mo|3mo|6mo
     if not points:
         raise HTTPException(status_code=404, detail=f"No price history for '{ticker}'")
     return {"ticker": ticker.upper(), "period": period, "points": points}
+
+
+@app.post("/api/reports/audit", response_model=ResearchReportAuditResponse)
+def audit_research_report(report: ResearchReportDraft):
+    """Audit and sanitize a complete report before factual conclusions display."""
+    return evidence_auditor.audit_research_report(report)
 
 
 @app.get("/api/news/{ticker}", response_model=NewsResponse)
