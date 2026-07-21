@@ -19,6 +19,7 @@ EXPECTED_TABLES = {
     "saved_reports",
     "theses",
     "thesis_assumptions",
+    "thesis_assumption_history",
     "feedback",
     "alert_preferences",
 }

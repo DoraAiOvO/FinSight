@@ -20,6 +20,7 @@ from app.db.models import (  # noqa: E402
     SavedReport,
     Thesis,
     ThesisAssumption,
+    ThesisAssumptionHistory,
     User,
     Watchlist,
     WatchlistItem,
@@ -35,6 +36,7 @@ EXPECTED_TABLES = {
     "saved_reports",
     "theses",
     "thesis_assumptions",
+    "thesis_assumption_history",
     "feedback",
     "alert_preferences",
 }
@@ -100,6 +102,12 @@ def test_models_persist_a_complete_customer_research_graph():
                 operator=">",
                 target_value="0",
                 position=1,
+                history=[
+                    ThesisAssumptionHistory(
+                        change_type="created",
+                        current_values={"current_status": "unreviewed"},
+                    )
+                ],
             )
         ],
     )
@@ -135,6 +143,7 @@ def test_models_persist_a_complete_customer_research_graph():
             "Evidence"
         )
         assert stored.theses[0].assumptions[0].target_value == "0"
+        assert stored.theses[0].assumptions[0].history[0].change_type == "created"
         assert stored.alert_preferences[0].is_enabled is True
 
         stored.customer_profile.priorities.append("income")

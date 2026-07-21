@@ -140,6 +140,20 @@ def test_openapi_exposes_standardized_data_point_and_evidence_contracts():
     assert models["FilingQuestionResponse"]["properties"]["answer"][
         "$ref"
     ].endswith("/Evidence")
+    assert models["ThesisResponse"]["properties"]["assumptions"]["items"][
+        "$ref"
+    ].endswith("/ThesisAssumptionResponse")
+    assert models["ThesisAssumptionResponse"]["properties"]["history"]["items"][
+        "$ref"
+    ].endswith("/ThesisAssumptionHistoryResponse")
+    assert models["ThesisAssumptionCreate"]["properties"]["condition_type"][
+        "$ref"
+    ].endswith("/AssumptionConditionType")
+    assert "/api/customers/{customer_id}/theses" in schema["paths"]
+    assert (
+        "/api/customers/{customer_id}/theses/{thesis_id}/assumptions/{assumption_id}"
+        in schema["paths"]
+    )
 
 
 def test_overview_analysis_comparison_and_news_responses_include_provenance(monkeypatch):

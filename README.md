@@ -47,6 +47,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 🏛️ **SEC filings** | Lists recent 10-K, 10-Q, and 8-K filings, extracts decision-useful sections and earnings exhibits, and answers questions with citations to the original filing |
 | 📐 **Relative benchmarks** | Compares metrics with industry, sector, automatically selected peers, and the company’s own annual history—and explains which benchmark is primary and why |
 | 🧠 **Research memory** | Persists grouped watchlists and research snapshots, then shows what changed in metrics, news, filings, signals, and thesis assumptions |
+| 📒 **Thesis Ledger** | Records a research thesis, measurable metric or event assumptions, evidence on both sides, status, and an append-only change history |
 
 ## Quick start
 
@@ -159,6 +160,7 @@ priorities—is passed to the optional AI narrative layer.
 │   │       ├── presentation.py profile-driven organization and highlights
 │   │       ├── customer_profiles.py  onboarding persistence
 │   │       ├── research_workspace.py watchlists, snapshots, and deterministic diffs
+│   │       ├── thesis_ledger.py  thesis and assumption CRUD with audit history
 │   │       ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
 │   │       └── ai.py           optional Anthropic layer
 │   ├── alembic/        versioned database migrations
@@ -185,6 +187,10 @@ priorities—is passed to the optional AI narrative layer.
 | `GET/POST /api/customers/{customer_id}/watchlists` | List or create persistent watchlist groups |
 | `POST /api/customers/{customer_id}/watchlists/{watchlist_id}/items` | Add a normalized ticker to a watchlist |
 | `DELETE /api/customers/{customer_id}/watchlists/{watchlist_id}/items/{ticker}` | Remove a ticker from a watchlist |
+| `GET/POST /api/customers/{customer_id}/theses` | List or create research theses, optionally filtered by ticker and status |
+| `GET/PUT/DELETE /api/customers/{customer_id}/theses/{thesis_id}` | Read, update, or delete one owned thesis |
+| `POST /api/customers/{customer_id}/theses/{thesis_id}/assumptions` | Add a measurable metric or event assumption |
+| `PUT/DELETE /api/customers/{customer_id}/theses/{thesis_id}/assumptions/{assumption_id}` | Update or delete an assumption; updates append history |
 | `GET/POST /api/customers/{customer_id}/research-sessions` | List or save validated research snapshots |
 | `GET/DELETE /api/customers/{customer_id}/research-sessions/{session_id}` | Restore or delete a saved research session |
 | `POST /api/customers/{customer_id}/what-changed/{ticker}` | Compare current evidence with the latest or selected saved session |
@@ -226,9 +232,24 @@ The “What changed since last research?” report is deterministic. It compares
 
 Price, valuation multiples, market capitalization, beta, dividend yield, and
 analyst targets are labeled as changed rather than automatically better or worse.
-The optional LLM is not used to calculate or classify any difference. Thesis
-editing remains a separate roadmap phase; this report already reads persisted
-assumptions so it can integrate with that phase without changing its API shape.
+The optional LLM is not used to calculate or classify any difference. The
+current Thesis Ledger assumptions are injected into each saved snapshot, so a
+later status or condition update appears in the next deterministic change report.
+
+### Thesis Ledger
+
+Customers can record multiple company-specific research theses. Each thesis can
+contain up to 20 assumptions, expressed either as a metric threshold (for
+example, `revenue_growth >= 20%`) or as an observable event condition. Every
+assumption has one of five explicit states: unreviewed, monitoring, supported,
+challenged, or invalidated.
+
+Supporting and contradicting evidence are stored separately with a source,
+as-of date, optional URL, recorded timestamp, and user-selected confidence.
+Creating an assumption and every later status, condition, description, or
+evidence update writes an append-only history entry with the before/after values
+and an optional reason. This is user-authored research memory; it does not
+generate buy, sell, or suitability instructions.
 
 ### Benchmark methodology
 
@@ -280,6 +301,7 @@ limitations and never trigger a fallback to the old universal thresholds.
 - [ ] Add earnings-call transcript sources
 - [ ] Exportable research briefs (PDF)
 - [x] Add watchlists, saved research sessions, and deterministic change tracking
+- [x] Add the Thesis Ledger with measurable assumptions, two-sided evidence, and change history
 
 ## Contributing
 

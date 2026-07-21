@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -224,6 +224,7 @@ class ThesisAssumption(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     metric_key: Mapped[str | None] = mapped_column(String(120))
     operator: Mapped[str | None] = mapped_column(String(24))
     target_value: Mapped[str | None] = mapped_column(String(120))
+    event_condition: Mapped[str | None] = mapped_column(Text)
     current_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="unreviewed"
     )
@@ -237,6 +238,35 @@ class ThesisAssumption(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     last_evaluated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     thesis: Mapped[Thesis] = relationship(back_populates="assumptions")
+    history: Mapped[list[ThesisAssumptionHistory]] = relationship(
+        back_populates="assumption",
+        cascade="all, delete-orphan",
+        order_by="ThesisAssumptionHistory.changed_at.desc()",
+    )
+
+
+class ThesisAssumptionHistory(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "thesis_assumption_history"
+
+    assumption_id: Mapped[UUID] = mapped_column(
+        ForeignKey("thesis_assumptions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    change_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text)
+    previous_values: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    current_values: Mapped[dict[str, Any]] = mapped_column(
+        JSON_DICT, nullable=False, default=dict
+    )
+    changed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+    )
+
+    assumption: Mapped[ThesisAssumption] = relationship(back_populates="history")
 
 
 class Feedback(UUIDPrimaryKeyMixin, Base):

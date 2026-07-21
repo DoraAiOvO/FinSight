@@ -4,12 +4,12 @@ Financial values and claims deliberately carry their provenance alongside the
 payload.  Keeping these two primitives in the API contract makes it difficult
 for a new endpoint to accidentally return an unattributed number or narrative.
 """
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Literal, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class FreshnessStatus(str, Enum):
@@ -62,6 +62,33 @@ class ExplanationDepth(str, Enum):
     SIMPLE = "simple"
     STANDARD = "standard"
     PROFESSIONAL = "professional"
+
+
+class ThesisStatus(str, Enum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+class AssumptionConditionType(str, Enum):
+    METRIC = "metric"
+    EVENT = "event"
+
+
+class AssumptionOperator(str, Enum):
+    GREATER_THAN = ">"
+    GREATER_THAN_OR_EQUAL = ">="
+    LESS_THAN = "<"
+    LESS_THAN_OR_EQUAL = "<="
+    EQUAL = "=="
+    NOT_EQUAL = "!="
+
+
+class AssumptionStatus(str, Enum):
+    UNREVIEWED = "unreviewed"
+    MONITORING = "monitoring"
+    SUPPORTED = "supported"
+    CHALLENGED = "challenged"
+    INVALIDATED = "invalidated"
 
 
 class ReportSection(str, Enum):
@@ -403,12 +430,181 @@ class WatchlistResponse(BaseModel):
     updated_at: datetime
 
 
+class ThesisEvidence(BaseModel):
+    claim: str = Field(min_length=1, max_length=2000)
+    source: str = Field(min_length=1, max_length=300)
+    source_url: str | None = Field(default=None, max_length=2000)
+    as_of_date: date = Field(default_factory=date.today)
+    recorded_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    confidence: float = Field(default=0.5, ge=0, le=1)
+
+    @field_validator("claim", "source")
+    @classmethod
+    def normalize_required_text(cls, value: str):
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("value cannot be empty")
+        return normalized
+
+    @field_validator("source_url")
+    @classmethod
+    def normalize_optional_url(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+
+class ThesisAssumptionCreate(BaseModel):
+    description: str = Field(min_length=1, max_length=2000)
+    condition_type: AssumptionConditionType
+    metric_key: str | None = Field(default=None, max_length=120)
+    operator: AssumptionOperator | None = None
+    target_value: str | None = Field(default=None, max_length=120)
+    event_condition: str | None = Field(default=None, max_length=2000)
+    current_status: AssumptionStatus = AssumptionStatus.UNREVIEWED
+    supporting_evidence: list[ThesisEvidence] = Field(
+        default_factory=list, max_length=20
+    )
+    contradicting_evidence: list[ThesisEvidence] = Field(
+        default_factory=list, max_length=20
+    )
+    position: int = Field(default=0, ge=0, le=100)
+
+    @field_validator("description", "metric_key", "target_value", "event_condition")
+    @classmethod
+    def normalize_assumption_text(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+    @model_validator(mode="after")
+    def condition_is_complete(self):
+        if not self.description:
+            raise ValueError("description cannot be empty")
+        if self.condition_type == AssumptionConditionType.METRIC:
+            if not self.metric_key or self.operator is None or not self.target_value:
+                raise ValueError(
+                    "metric conditions require metric_key, operator, and target_value"
+                )
+            if self.event_condition is not None:
+                raise ValueError("metric conditions cannot include event_condition")
+        else:
+            if not self.event_condition:
+                raise ValueError("event conditions require event_condition")
+            if any(
+                value is not None
+                for value in (self.metric_key, self.operator, self.target_value)
+            ):
+                raise ValueError("event conditions cannot include metric fields")
+        return self
+
+
+class ThesisAssumptionUpdate(BaseModel):
+    description: str | None = Field(default=None, min_length=1, max_length=2000)
+    condition_type: AssumptionConditionType | None = None
+    metric_key: str | None = Field(default=None, max_length=120)
+    operator: AssumptionOperator | None = None
+    target_value: str | None = Field(default=None, max_length=120)
+    event_condition: str | None = Field(default=None, max_length=2000)
+    current_status: AssumptionStatus | None = None
+    supporting_evidence: list[ThesisEvidence] | None = Field(
+        default=None, max_length=20
+    )
+    contradicting_evidence: list[ThesisEvidence] | None = Field(
+        default=None, max_length=20
+    )
+    position: int | None = Field(default=None, ge=0, le=100)
+    change_reason: str | None = Field(default=None, max_length=1000)
+
+    @field_validator(
+        "description", "metric_key", "target_value", "event_condition", "change_reason"
+    )
+    @classmethod
+    def normalize_update_text(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+
+class ThesisAssumptionHistoryResponse(BaseModel):
+    id: UUID
+    change_type: Literal["created", "updated", "status_changed"]
+    reason: str | None = None
+    previous_values: dict | None = None
+    current_values: dict
+    changed_at: datetime
+
+
+class ThesisAssumptionResponse(ThesisAssumptionCreate):
+    id: UUID
+    last_evaluated_at: datetime | None = None
+    history: list[ThesisAssumptionHistoryResponse] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+
+class ThesisCreate(BaseModel):
+    ticker: str = Field(min_length=1, max_length=32)
+    title: str = Field(min_length=1, max_length=200)
+    statement: str = Field(min_length=1, max_length=5000)
+    status: ThesisStatus = ThesisStatus.ACTIVE
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    research_session_id: UUID | None = None
+    assumptions: list[ThesisAssumptionCreate] = Field(
+        default_factory=list, max_length=20
+    )
+
+    @field_validator("title", "statement")
+    @classmethod
+    def normalize_thesis_text(cls, value: str):
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("value cannot be empty")
+        return normalized
+
+
+class ThesisUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    statement: str | None = Field(default=None, min_length=1, max_length=5000)
+    status: ThesisStatus | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+    @field_validator("title", "statement")
+    @classmethod
+    def normalize_optional_thesis_text(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+
+class ThesisResponse(BaseModel):
+    id: UUID
+    ticker: str
+    title: str
+    statement: str
+    status: ThesisStatus
+    confidence: float | None = None
+    research_session_id: UUID | None = None
+    assumptions: list[ThesisAssumptionResponse] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+
 class ThesisAssumptionSnapshot(BaseModel):
     assumption_id: UUID | None = None
     description: str = Field(min_length=1, max_length=2000)
     current_status: str = Field(min_length=1, max_length=32)
+    condition_type: AssumptionConditionType | None = None
     metric_key: str | None = Field(default=None, max_length=120)
+    operator: AssumptionOperator | None = None
     target_value: str | None = Field(default=None, max_length=120)
+    event_condition: str | None = Field(default=None, max_length=2000)
 
 
 class ResearchSnapshot(BaseModel):
