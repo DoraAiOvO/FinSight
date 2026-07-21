@@ -93,7 +93,9 @@ MULTIPLE_KEYS = {
 }
 
 NUMBER_RE = re.compile(
-    r"(?<![\w.])(?P<currency>[$€£])?"
+    # ASCII boundaries keep identifiers such as Q2 out while still allowing
+    # numbers next to CJK text (for example, "收入增长24%").
+    r"(?<![A-Za-z0-9_.])(?P<currency>[$€£])?"
     r"(?P<number>[-+]?\d[\d,]*(?:\.\d+)?)\s*"
     r"(?P<suffix>%|[KMBT]|thousand|million|billion|trillion)?",
     re.IGNORECASE,

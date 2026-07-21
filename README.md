@@ -50,6 +50,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 📒 **Thesis Ledger** | Records a research thesis, measurable metric or event assumptions, evidence on both sides, status, and an append-only change history |
 | 🧮 **Valuation & scenarios** | Calculates DCF, reverse DCF, selected-peer multiples, three scenario cases, and a sensitivity matrix entirely in deterministic code |
 | 🛡️ **Evidence Auditor** | Checks every assembled report for unsupported claims, stale evidence, missing citations, source conflicts, incorrect units, and inconsistent numbers before generated conclusions are displayed or saved |
+| ✅ **Product evaluation** | Runs a fixed offline report suite across citation, numeric, freshness, contradiction, coverage, readability, personalization, and multilingual quality gates |
 
 ## Quick start
 
@@ -155,18 +156,20 @@ priorities—is passed to the optional AI narrative layer.
 │   │   ├── config.py           env-based settings
 │   │   ├── db/                  SQLAlchemy models + session factory
 │   │   ├── models/schemas.py   Pydantic response models
-│   │   └── services/
-│   │       ├── market_data.py  Yahoo Finance access + cache
-│   │       ├── benchmarks.py   industry, sector, peer, and historical context
-│   │       ├── analysis.py     transparent risk/opportunity rules
-│   │       ├── presentation.py profile-driven organization and highlights
-│   │       ├── customer_profiles.py  onboarding persistence
-│   │       ├── research_workspace.py watchlists, snapshots, and deterministic diffs
-│   │       ├── thesis_ledger.py  thesis and assumption CRUD with audit history
-│   │       ├── valuations.py    deterministic DCF, reverse DCF, peers, and sensitivity
-│   │       ├── evidence_auditor.py deterministic report validation and conclusion blocking
-│   │       ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
-│   │       └── ai.py           optional Anthropic layer
+│   │   ├── services/
+│   │   │   ├── market_data.py  Yahoo Finance access + cache
+│   │   │   ├── benchmarks.py   industry, sector, peer, and historical context
+│   │   │   ├── analysis.py     transparent risk/opportunity rules
+│   │   │   ├── presentation.py profile-driven organization and highlights
+│   │   │   ├── customer_profiles.py  onboarding persistence
+│   │   │   ├── research_workspace.py watchlists, snapshots, and deterministic diffs
+│   │   │   ├── thesis_ledger.py  thesis and assumption CRUD with audit history
+│   │   │   ├── valuations.py    deterministic DCF, reverse DCF, peers, and sensitivity
+│   │   │   ├── evidence_auditor.py deterministic report validation and conclusion blocking
+│   │   │   ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
+│   │   │   └── ai.py           optional Anthropic layer
+│   │   └── evaluation/          deterministic product-quality metrics and CLI
+│   ├── evals/          versioned report datasets and evaluation methodology
 │   ├── alembic/        versioned database migrations
 │   └── tests/          unit tests (no network needed)
 └── frontend/           React + Vite single-page app
@@ -291,6 +294,26 @@ control by submitting an unaudited or modified snapshot. Stale or conflicting
 source warnings remain visible for human review; unsupported generated factual
 conclusions never appear as report conclusions.
 
+### Repeatable product evaluation
+
+The versioned offline suite evaluates complete report variants without calling
+market-data providers or using an LLM to grade another LLM. From `backend/`:
+
+```bash
+python -m app.evaluation evals/stock_research_reports.v1.json
+python -m app.evaluation evals/stock_research_reports.v1.json \
+  --output /tmp/finsight-evaluation.json
+```
+
+The command exits non-zero when any configured quality threshold fails. A prior
+JSON result can be supplied with `--baseline`; a score drop greater than the
+dataset's maximum regression allowance also fails the run. Results contain the
+eight dimension scores, thresholds, individual observations, overall score,
+and pass/fail status in machine-readable JSON. The fixture includes profile
+variants plus English, Spanish, French, and Simplified Chinese narratives over
+the same sourced facts. See [the evaluation methodology](backend/evals/README.md)
+for scoring rules and instructions for adding cases.
+
 ### Thesis Ledger
 
 Customers can record multiple company-specific research theses. Each thesis can
@@ -350,7 +373,7 @@ limitations and never trigger a fallback to the old universal thresholds.
 - [x] Add risk and opportunity reporting with source references
 - [x] Add the SQLAlchemy and Alembic persistence foundation
 - [x] Add customer onboarding and presentation-only research profiles
-- [ ] Test the quality, clarity, and consistency of generated research
+- [x] Add repeatable quality gates for generated research reports
 - [x] Add SEC 10-K, 10-Q, and earnings-related 8-K sources
 - [x] Replace universal metric cutoffs with industry, sector, peer, and historical benchmarks
 - [ ] Add earnings-call transcript sources
