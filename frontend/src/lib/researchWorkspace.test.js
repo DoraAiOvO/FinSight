@@ -10,7 +10,7 @@ import {
 } from './researchWorkspace.js'
 
 
-test('buildResearchSnapshot keeps the six change-report evidence inputs', () => {
+test('buildResearchSnapshot keeps report evidence and deterministic valuation', () => {
   const generatedAt = new Date('2026-07-20T12:00:00Z')
   const data = {
     generatedAt,
@@ -18,6 +18,7 @@ test('buildResearchSnapshot keeps the six change-report evidence inputs', () => 
     analysis: { ticker: 'AAPL', insights: [] },
     news: { ticker: 'AAPL', items: [] },
     filings: { ticker: 'AAPL', filings: [] },
+    valuation: { ticker: 'AAPL', base_case: {} },
     thesisAssumptions: [{ description: 'Growth remains positive' }],
   }
 
@@ -27,6 +28,7 @@ test('buildResearchSnapshot keeps the six change-report evidence inputs', () => 
     analysis: data.analysis,
     news: data.news,
     filings: data.filings,
+    valuation: data.valuation,
     thesis_assumptions: data.thesisAssumptions,
   })
 })

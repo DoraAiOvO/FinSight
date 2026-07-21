@@ -12,13 +12,14 @@ import LanguageSwitcher from './components/LanguageSwitcher.jsx'
 import PersonalizationBanner from './components/PersonalizationBanner.jsx'
 import ProfileButton from './components/ProfileButton.jsx'
 import ResearchWorkspace from './components/ResearchWorkspace.jsx'
+import ValuationPanel from './components/ValuationPanel.jsx'
 import { useCustomerProfile } from './context/CustomerProfileContext.jsx'
 import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
 
 const STARTER_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'COST']
 
-function ReportSections({ data, historyLoading, onPeriodChange }) {
+function ReportSections({ data, historyLoading, onPeriodChange, onValuationChange }) {
   const presentation = data.analysis?.presentation
   const sections = {
     overview: (
@@ -41,6 +42,13 @@ function ReportSections({ data, historyLoading, onPeriodChange }) {
     benchmarks: data.analysis?.benchmarks && (
       <BenchmarkPanel benchmarks={data.analysis.benchmarks} />
     ),
+    valuation: data.valuation && (
+      <ValuationPanel
+        valuation={data.valuation}
+        ticker={data.overview.ticker}
+        onChange={onValuationChange}
+      />
+    ),
     news: data.news && <NewsFeed news={data.news} />,
     filings: data.filings && <FilingsPanel data={data.filings} ticker={data.overview.ticker} />,
   }
@@ -51,6 +59,7 @@ function ReportSections({ data, historyLoading, onPeriodChange }) {
         {sections.overview}
         {sections.price_history}
         {sections.benchmarks}
+        {sections.valuation}
         <div className="research-grid">
           {sections.analysis}
           {sections.news}
@@ -72,6 +81,7 @@ function ReportSections({ data, historyLoading, onPeriodChange }) {
           ) : null
         ))}
       </div>
+      {sections.valuation}
       {sections.filings}
     </>
   )
@@ -193,15 +203,26 @@ export default function App() {
 
     try {
       const overview = await api.overview(ticker)
+      const analysisRequest = api.analysis(ticker, language, customerId)
       const sections = await Promise.allSettled([
         api.history(ticker, '6mo'),
-        api.analysis(ticker, language, customerId),
+        analysisRequest,
         api.news(ticker, language),
         api.filings(ticker),
+        analysisRequest.then(
+          () => api.valuation.get(ticker),
+          () => api.valuation.get(ticker),
+        ),
       ])
       if (currentRequest !== requestId.current) return
 
-      const sectionKeys = ['noticeHistory', 'noticeAnalysis', 'noticeNews', 'noticeFilings']
+      const sectionKeys = [
+        'noticeHistory',
+        'noticeAnalysis',
+        'noticeNews',
+        'noticeFilings',
+        'noticeValuation',
+      ]
       const unavailable = sections.flatMap((result, index) =>
         result.status === 'rejected' ? [{ key: sectionKeys[index] }] : [],
       )
@@ -212,6 +233,7 @@ export default function App() {
         analysis: sections[1].status === 'fulfilled' ? sections[1].value : null,
         news: sections[2].status === 'fulfilled' ? sections[2].value : null,
         filings: sections[3].status === 'fulfilled' ? sections[3].value : null,
+        valuation: sections[4].status === 'fulfilled' ? sections[4].value : null,
         generatedAt: new Date(),
       })
     } catch (requestError) {
@@ -260,6 +282,14 @@ export default function App() {
     } finally {
       if (currentRequest === requestId.current) setLoading(false)
     }
+  }
+
+  function updateValuation(valuation) {
+    setData((current) => (
+      current?.overview?.ticker === valuation.ticker
+        ? { ...current, valuation }
+        : current
+    ))
   }
 
   return (
@@ -332,6 +362,7 @@ export default function App() {
             data={data}
             historyLoading={historyLoading}
             onPeriodChange={changePeriod}
+            onValuationChange={updateValuation}
           />
         </main>
       )}

@@ -20,6 +20,7 @@ export function buildResearchSnapshot(data) {
     analysis: data.analysis || null,
     news: data.news || null,
     filings: data.filings || null,
+    valuation: data.valuation || null,
     thesis_assumptions: data.thesisAssumptions || [],
   }
 }

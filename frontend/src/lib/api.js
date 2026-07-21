@@ -29,6 +29,14 @@ export const api = {
     return get(`/api/analysis/${encodeURIComponent(ticker)}?${params}`)
   },
   compare: (tickers) => get(`/api/compare?tickers=${encodeURIComponent(tickers.join(','))}`),
+  valuation: {
+    get: (ticker) => get(`/api/valuation/${encodeURIComponent(ticker)}`),
+    calculate: (ticker, assumptions) => write(
+      `/api/valuation/${encodeURIComponent(ticker)}`,
+      'POST',
+      assumptions,
+    ),
+  },
   filings: (ticker, limit = 12) => (
     get(`/api/filings/${encodeURIComponent(ticker)}?limit=${limit}`)
   ),

@@ -12,6 +12,7 @@ from app.services.market_data import (  # noqa: E402
     extract_metrics,
     get_historical_financial_metrics,
     get_overview,
+    get_valuation_inputs,
     normalize_dividend_yield,
     normalize_history_points,
 )
@@ -144,3 +145,33 @@ def test_overview_wraps_financial_values_and_summary_with_provenance(monkeypatch
     assert overview["price"]["source_url"].endswith("/quote/TEST")
     assert overview["change_percent"]["provider"] == "FinSight"
     assert overview["summary"]["claim"] == "A test company."
+
+
+def test_valuation_inputs_keep_provider_facts_and_derived_margin_separate(monkeypatch):
+    fetched_at = datetime(2026, 7, 20, 12, 0, tzinfo=timezone.utc)
+    info = {
+        "symbol": "TEST",
+        "currency": "USD",
+        "currentPrice": 20.0,
+        "totalRevenue": 1_000.0,
+        "freeCashflow": 125.0,
+        "totalCash": 100.0,
+        "totalDebt": 40.0,
+        "sharesOutstanding": 50.0,
+        "trailingEps": 2.0,
+        "revenueGrowth": 0.08,
+        "regularMarketTime": int(datetime(2026, 7, 19, tzinfo=timezone.utc).timestamp()),
+    }
+    monkeypatch.setattr(
+        "app.services.market_data._info_with_fetch_time",
+        lambda ticker: (info, fetched_at),
+    )
+
+    inputs = get_valuation_inputs("TEST")
+
+    assert inputs["total_cash"]["value"] == 100.0
+    assert inputs["total_cash"]["provider"] == "Yahoo Finance"
+    assert inputs["shares_outstanding"]["unit"] == "shares"
+    assert inputs["free_cash_flow_margin"]["value"] == pytest.approx(0.125)
+    assert inputs["free_cash_flow_margin"]["provider"] == "FinSight"
+    assert "freeCashflow / totalRevenue" in inputs["free_cash_flow_margin"]["source"]

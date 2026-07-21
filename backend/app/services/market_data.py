@@ -229,6 +229,97 @@ def get_overview(ticker: str) -> dict:
     return metrics
 
 
+def _finite_info_number(value) -> float | None:
+    try:
+        normalized = float(value)
+    except (TypeError, ValueError):
+        return None
+    return normalized if math.isfinite(normalized) else None
+
+
+def get_valuation_inputs(ticker: str) -> dict:
+    """Return sourced facts needed by the deterministic valuation engine."""
+    info, fetched_at = _info_with_fetch_time(ticker)
+    as_of_date, has_provider_date = _provider_date(
+        info.get("regularMarketTime"), fetched_at.date()
+    )
+    freshness = (
+        freshness_for(as_of_date, fetched_at)
+        if has_provider_date
+        else FreshnessStatus.UNKNOWN.value
+    )
+    currency = info.get("currency")
+    source_url = f"https://finance.yahoo.com/quote/{ticker.upper()}"
+    fields = {
+        "total_revenue": (info.get("totalRevenue"), "totalRevenue", currency),
+        "free_cash_flow": (info.get("freeCashflow"), "freeCashflow", currency),
+        "total_cash": (info.get("totalCash"), "totalCash", currency),
+        "total_debt": (info.get("totalDebt"), "totalDebt", currency),
+        "shares_outstanding": (
+            info.get("sharesOutstanding"),
+            "sharesOutstanding",
+            "shares",
+        ),
+        "current_price": (
+            info.get("currentPrice") or info.get("regularMarketPrice"),
+            "currentPrice or regularMarketPrice",
+            currency,
+        ),
+        "trailing_eps": (info.get("trailingEps"), "trailingEps", currency),
+        "revenue_growth": (info.get("revenueGrowth"), "revenueGrowth", "ratio"),
+    }
+    points = {}
+    for key, (raw_value, source_field, unit) in fields.items():
+        value = _finite_info_number(raw_value)
+        points[key] = (
+            data_point(
+                value,
+                unit=unit,
+                **provenance(
+                    provider="Yahoo Finance",
+                    source=f"yfinance Ticker.info: {source_field}",
+                    as_of_date=as_of_date,
+                    fetched_at=fetched_at,
+                    freshness_status=freshness,
+                    confidence=0.9,
+                    source_url=source_url,
+                ),
+            )
+            if value is not None
+            else None
+        )
+
+    revenue = _finite_info_number(info.get("totalRevenue"))
+    free_cash_flow = _finite_info_number(info.get("freeCashflow"))
+    margin = (
+        free_cash_flow / revenue
+        if revenue not in {None, 0} and free_cash_flow is not None
+        else None
+    )
+    points["free_cash_flow_margin"] = (
+        data_point(
+            margin,
+            unit="ratio",
+            **provenance(
+                provider="FinSight",
+                source="deterministic ratio: freeCashflow / totalRevenue",
+                as_of_date=as_of_date,
+                fetched_at=fetched_at,
+                freshness_status=freshness,
+                confidence=0.8,
+                source_url=source_url,
+            ),
+        )
+        if margin is not None and math.isfinite(margin)
+        else None
+    )
+    return {
+        "ticker": ticker.upper(),
+        "currency": currency,
+        **points,
+    }
+
+
 def normalize_history_points(
     rows,
     *,
