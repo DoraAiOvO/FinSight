@@ -1,12 +1,15 @@
 """FinSight API — evidence-first stock analysis."""
+from contextlib import asynccontextmanager
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from .config import settings
+from .db.migrations import upgrade_database
 from .db.session import get_db
 from .models.schemas import (
     AnalysisResponse,
@@ -60,7 +63,14 @@ from .services.customer_profiles import (
 from .services.presentation import organize_report
 from .services.tickers import normalize_comparison, normalize_ticker
 
-app = FastAPI(title="FinSight API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    if settings.AUTO_MIGRATE_DATABASE:
+        await run_in_threadpool(upgrade_database)
+    yield
+
+
+app = FastAPI(title="FinSight API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

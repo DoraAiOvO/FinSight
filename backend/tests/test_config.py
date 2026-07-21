@@ -5,7 +5,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.config import database_url_from_environment, normalize_database_url  # noqa: E402
+from app.config import (  # noqa: E402
+    auto_migrate_database_from_environment,
+    database_url_from_environment,
+    normalize_database_url,
+)
 
 
 def test_hosted_postgres_urls_use_psycopg_driver():
@@ -32,3 +36,18 @@ def test_vercel_marketplace_database_url_is_supported(monkeypatch):
     assert database_url_from_environment() == (
         "postgresql+psycopg://marketplace:secret@db/finsight"
     )
+
+
+def test_vercel_postgres_enables_startup_migrations(monkeypatch):
+    monkeypatch.delenv("FINSIGHT_AUTO_MIGRATE", raising=False)
+    monkeypatch.setenv("VERCEL", "1")
+
+    assert auto_migrate_database_from_environment(
+        "postgresql+psycopg://db/finsight"
+    ) is True
+    assert auto_migrate_database_from_environment("sqlite:///./finsight.db") is False
+
+    monkeypatch.setenv("FINSIGHT_AUTO_MIGRATE", "false")
+    assert auto_migrate_database_from_environment(
+        "postgresql+psycopg://db/finsight"
+    ) is False

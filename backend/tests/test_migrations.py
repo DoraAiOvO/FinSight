@@ -41,3 +41,18 @@ def test_initial_migration_upgrades_and_downgrades(tmp_path):
 
     command.downgrade(config, "base")
     assert set(inspect(engine).get_table_names()) <= {"alembic_version"}
+
+
+def test_hosted_startup_migration_uses_alembic_head(tmp_path):
+    from app.db.migrations import upgrade_database
+
+    database_path = tmp_path / "hosted-startup.sqlite3"
+    engine = create_engine(f"sqlite:///{database_path}")
+
+    upgrade_database(engine)
+
+    assert EXPECTED_TABLES <= set(inspect(engine).get_table_names())
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql(
+            "SELECT version_num FROM alembic_version"
+        ).scalar_one() == "20260721_0003"

@@ -129,6 +129,11 @@ Run `alembic upgrade head` before using future authenticated or saved-research
 features. The application never calls `create_all()` at startup; Alembic is the
 single source of truth for schema changes.
 
+On Vercel, a Marketplace Postgres connection exposed as `DATABASE_URL` or
+`POSTGRES_URL` is detected automatically. The serverless app runs the same
+Alembic migrations before accepting requests, protected by a Postgres advisory
+lock so concurrent cold starts cannot migrate the schema at the same time.
+
 ### Customer onboarding and safe personalization
 
 On first visit, customers can complete or skip a three-step research-profile

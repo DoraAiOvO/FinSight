@@ -21,6 +21,14 @@ def database_url_from_environment() -> str:
     )
 
 
+def auto_migrate_database_from_environment(database_url: str) -> bool:
+    """Enable Alembic startup migrations explicitly or for hosted Vercel Postgres."""
+    configured = os.getenv("FINSIGHT_AUTO_MIGRATE")
+    if configured is not None:
+        return configured.strip().lower() in {"1", "true", "yes", "on"}
+    return os.getenv("VERCEL") == "1" and database_url.startswith("postgresql")
+
+
 class Settings:
     ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY")
     AI_MODEL: str = os.getenv("FINSIGHT_AI_MODEL", "claude-sonnet-5")
@@ -40,6 +48,7 @@ class Settings:
         "FinSight DoraAiOvO@users.noreply.github.com",
     )
     DATABASE_URL: str = database_url_from_environment()
+    AUTO_MIGRATE_DATABASE: bool = auto_migrate_database_from_environment(DATABASE_URL)
 
 
 settings = Settings()

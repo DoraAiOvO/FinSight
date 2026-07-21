@@ -36,18 +36,24 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    url = database_url()
-    connectable = create_engine(url, poolclass=pool.NullPool)
-
-    with connectable.connect() as connection:
+    def migrate(connection) -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=url.startswith("sqlite"),
+            render_as_batch=connection.dialect.name == "sqlite",
         )
 
         with context.begin_transaction():
             context.run_migrations()
+
+    supplied_connection = config.attributes.get("connection")
+    if supplied_connection is not None:
+        migrate(supplied_connection)
+        return
+
+    connectable = create_engine(database_url(), poolclass=pool.NullPool)
+    with connectable.connect() as connection:
+        migrate(connection)
 
 
 if context.is_offline_mode():
