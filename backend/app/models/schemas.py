@@ -365,3 +365,161 @@ class FilingQuestionResponse(BaseModel):
     citations: list[FilingCitation]
     answered_at: datetime
     ai_used: bool
+
+
+class WatchlistCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=2000)
+    is_default: bool = False
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str):
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("watchlist name cannot be empty")
+        return normalized
+
+
+class WatchlistItemCreate(BaseModel):
+    ticker: str = Field(min_length=1, max_length=32)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class WatchlistItemResponse(BaseModel):
+    id: UUID
+    ticker: str
+    notes: str | None = None
+    added_at: datetime
+
+
+class WatchlistResponse(BaseModel):
+    id: UUID
+    name: str
+    description: str | None = None
+    is_default: bool
+    items: list[WatchlistItemResponse] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+
+class ThesisAssumptionSnapshot(BaseModel):
+    assumption_id: UUID | None = None
+    description: str = Field(min_length=1, max_length=2000)
+    current_status: str = Field(min_length=1, max_length=32)
+    metric_key: str | None = Field(default=None, max_length=120)
+    target_value: str | None = Field(default=None, max_length=120)
+
+
+class ResearchSnapshot(BaseModel):
+    captured_at: datetime
+    overview: Overview
+    analysis: AnalysisResponse | None = None
+    news: NewsResponse | None = None
+    filings: FilingListResponse | None = None
+    thesis_assumptions: list[ThesisAssumptionSnapshot] = Field(default_factory=list)
+
+
+class ResearchSessionCreate(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    language: PreferredLanguage = PreferredLanguage.ENGLISH
+    snapshot: ResearchSnapshot
+
+    @field_validator("title")
+    @classmethod
+    def normalize_title(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+
+class ResearchSessionSummary(BaseModel):
+    id: UUID
+    ticker: str
+    title: str | None = None
+    status: str
+    language: PreferredLanguage
+    created_at: datetime
+    completed_at: datetime | None = None
+
+
+class ResearchSessionResponse(ResearchSessionSummary):
+    snapshot: ResearchSnapshot
+
+
+class WhatChangedRequest(BaseModel):
+    snapshot: ResearchSnapshot
+    baseline_session_id: UUID | None = None
+
+
+ChangeDirection = Literal[
+    "new",
+    "removed",
+    "improved",
+    "worsened",
+    "changed",
+    "resolved",
+    "unchanged",
+]
+
+
+class MetricChange(BaseModel):
+    metric_key: str
+    label: str
+    direction: ChangeDirection
+    previous: DataPoint | None = None
+    current: DataPoint | None = None
+    relative_change: float | None = None
+
+
+class NewsChange(BaseModel):
+    change_key: str
+    direction: Literal["new", "removed"]
+    item: NewsItem
+
+
+class FilingChange(BaseModel):
+    accession_number: str
+    direction: Literal["new"] = "new"
+    filing: FilingSummary
+
+
+class SignalChange(BaseModel):
+    code: str
+    kind: Literal["risk", "opportunity"]
+    direction: ChangeDirection
+    title: Evidence
+    previous_severity: str | None = None
+    current_severity: str | None = None
+
+
+class ThesisAssumptionChange(BaseModel):
+    change_key: str
+    description: str
+    direction: ChangeDirection
+    previous_status: str | None = None
+    current_status: str | None = None
+
+
+class ChangeSummary(BaseModel):
+    new: int = 0
+    improved: int = 0
+    worsened: int = 0
+    changed: int = 0
+    resolved: int = 0
+    unchanged: int = 0
+
+
+class WhatChangedResponse(BaseModel):
+    ticker: str
+    compared_at: datetime
+    has_baseline: bool
+    baseline_session: ResearchSessionSummary | None = None
+    summary: ChangeSummary = Field(default_factory=ChangeSummary)
+    financial_metrics: list[MetricChange] = Field(default_factory=list)
+    news: list[NewsChange] = Field(default_factory=list)
+    filings: list[FilingChange] = Field(default_factory=list)
+    risk_signals: list[SignalChange] = Field(default_factory=list)
+    opportunity_signals: list[SignalChange] = Field(default_factory=list)
+    thesis_assumptions: list[ThesisAssumptionChange] = Field(default_factory=list)

@@ -1,4 +1,5 @@
 import { profileTranslations } from './profileTranslations.js'
+import { workspaceTranslations } from './workspaceTranslations.js'
 
 // UI translations, mirroring the RoboPrompt language option.
 // `getTranslation` resolves UI strings by key; `translateServerText` maps the
@@ -8,6 +9,7 @@ import { profileTranslations } from './profileTranslations.js'
 export const translations = {
   en: {
     ...profileTranslations.en,
+    ...workspaceTranslations.en,
     // Header / footer
     headerNote: 'Research assistant · Not investment advice',
     goHome: 'Go to FinSight home',
@@ -184,6 +186,7 @@ export const translations = {
   },
   es: {
     ...profileTranslations.es,
+    ...workspaceTranslations.es,
     headerNote: 'Asistente de investigación · No es asesoramiento de inversión',
     goHome: 'Ir al inicio de FinSight',
     footerTagline: 'Ve más allá de los números.',
@@ -349,6 +352,7 @@ export const translations = {
   },
   fr: {
     ...profileTranslations.fr,
+    ...workspaceTranslations.fr,
     headerNote: 'Assistant de recherche · Pas un conseil en investissement',
     goHome: 'Aller à l’accueil FinSight',
     footerTagline: 'Voyez au-delà des chiffres.',
@@ -514,6 +518,7 @@ export const translations = {
   },
   zh: {
     ...profileTranslations.zh,
+    ...workspaceTranslations.zh,
     headerNote: '研究助手 · 不构成投资建议',
     goHome: '返回 FinSight 首页',
     footerTagline: '看见数字背后的故事。',
@@ -738,11 +743,19 @@ const SERVER_TEXT = {
     'The benchmark cohort is a selected Yahoo Finance sample, not every company in the market; classifications and reported metrics may be incomplete.': 'La cohorte es una muestra seleccionada de Yahoo Finance, no todo el mercado; las clasificaciones y métricas pueden estar incompletas.',
     // Compare table labels
     'Market cap': 'Capitalización',
+    'Share price': 'Precio de la acción',
+    'Market capitalization': 'Capitalización bursátil',
     'Forward P/E': 'PER adelantado',
     'Price / Sales': 'Precio / Ventas',
     'Net margin': 'Margen neto',
     'Operating margin': 'Margen operativo',
     'Free cash flow': 'Flujo de caja libre',
+    'Total revenue': 'Ingresos totales',
+    'Revenue growth': 'Crecimiento de ingresos',
+    'Earnings growth': 'Crecimiento de beneficios',
+    '52-week low': 'Mínimo de 52 semanas',
+    '52-week high': 'Máximo de 52 semanas',
+    'Analyst target mean': 'Objetivo medio de analistas',
     Beta: 'Beta',
   },
   fr: {
@@ -796,11 +809,19 @@ const SERVER_TEXT = {
     'Historical statements did not contain enough comparable annual observations.': 'Les états historiques ne contenaient pas assez d’observations annuelles comparables.',
     'The benchmark cohort is a selected Yahoo Finance sample, not every company in the market; classifications and reported metrics may be incomplete.': 'Le groupe de référence est un échantillon Yahoo Finance, pas l’ensemble du marché ; les classifications et métriques peuvent être incomplètes.',
     'Market cap': 'Capitalisation',
+    'Share price': 'Cours de l’action',
+    'Market capitalization': 'Capitalisation boursière',
     'Forward P/E': 'PER prévisionnel',
     'Price / Sales': 'Cours / CA',
     'Net margin': 'Marge nette',
     'Operating margin': 'Marge opérationnelle',
     'Free cash flow': 'Flux de trésorerie disponible',
+    'Total revenue': 'Chiffre d’affaires total',
+    'Revenue growth': 'Croissance du chiffre d’affaires',
+    'Earnings growth': 'Croissance des bénéfices',
+    '52-week low': 'Plus bas sur 52 semaines',
+    '52-week high': 'Plus haut sur 52 semaines',
+    'Analyst target mean': 'Objectif moyen des analystes',
     Beta: 'Bêta',
   },
   zh: {
@@ -854,11 +875,19 @@ const SERVER_TEXT = {
     'Historical statements did not contain enough comparable annual observations.': '历史财务报表中没有足够的可比年度观测值。',
     'The benchmark cohort is a selected Yahoo Finance sample, not every company in the market; classifications and reported metrics may be incomplete.': '基准样本来自 Yahoo Finance 的筛选结果，并非市场全部公司；分类和已披露指标可能不完整。',
     'Market cap': '市值',
+    'Share price': '股价',
+    'Market capitalization': '总市值',
     'Forward P/E': '预期市盈率',
     'Price / Sales': '市销率',
     'Net margin': '净利率',
     'Operating margin': '营业利润率',
     'Free cash flow': '自由现金流',
+    'Total revenue': '总营收',
+    'Revenue growth': '营收增长',
+    'Earnings growth': '盈利增长',
+    '52-week low': '52 周低点',
+    '52-week high': '52 周高点',
+    'Analyst target mean': '分析师平均目标价',
     Beta: '贝塔系数',
   },
 }

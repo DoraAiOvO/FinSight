@@ -20,8 +20,16 @@ from .models.schemas import (
     HistoryResponse,
     NewsResponse,
     Overview,
+    ResearchSessionCreate,
+    ResearchSessionResponse,
+    ResearchSessionSummary,
+    WatchlistCreate,
+    WatchlistItemCreate,
+    WatchlistResponse,
+    WhatChangedRequest,
+    WhatChangedResponse,
 )
-from .services import ai, benchmarks, market_data, sec_filings
+from .services import ai, benchmarks, market_data, research_workspace, sec_filings
 from .services.analysis import DISCLAIMER, build_comparison, build_insights
 from .services.customer_profiles import (
     create_customer_profile,
@@ -54,6 +62,16 @@ def _raise_sec_error(error: sec_filings.SecError):
             headers={"Retry-After": "60"},
         )
     raise HTTPException(status_code=502, detail=str(error))
+
+
+def _raise_workspace_error(error: research_workspace.WorkspaceError):
+    if isinstance(error, research_workspace.WorkspaceNotFoundError):
+        raise HTTPException(status_code=404, detail=str(error))
+    if isinstance(error, research_workspace.WorkspaceConflictError):
+        raise HTTPException(status_code=409, detail=str(error))
+    if isinstance(error, research_workspace.WorkspaceValidationError):
+        raise HTTPException(status_code=400, detail=str(error))
+    raise HTTPException(status_code=500, detail="Research workspace error")
 
 
 @app.get("/api/health")
@@ -112,6 +130,208 @@ def replace_profile(
         db.rollback()
         raise HTTPException(status_code=503, detail="Customer profiles are unavailable")
     return serialize_profile(profile)
+
+
+@app.get(
+    "/api/customers/{customer_id}/watchlists",
+    response_model=list[WatchlistResponse],
+)
+def read_watchlists(customer_id: UUID, db: Session = Depends(get_db)):
+    try:
+        return research_workspace.list_watchlists(db, customer_id)
+    except research_workspace.WorkspaceError as error:
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="Watchlists are unavailable")
+
+
+@app.post(
+    "/api/customers/{customer_id}/watchlists",
+    response_model=WatchlistResponse,
+    status_code=201,
+)
+def create_watchlist(
+    customer_id: UUID,
+    request: WatchlistCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return research_workspace.create_watchlist(db, customer_id, request)
+    except research_workspace.WorkspaceError as error:
+        db.rollback()
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Watchlists are unavailable")
+
+
+@app.delete(
+    "/api/customers/{customer_id}/watchlists/{watchlist_id}",
+    status_code=204,
+)
+def remove_watchlist(
+    customer_id: UUID,
+    watchlist_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        research_workspace.delete_watchlist(db, customer_id, watchlist_id)
+    except research_workspace.WorkspaceError as error:
+        db.rollback()
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Watchlists are unavailable")
+
+
+@app.post(
+    "/api/customers/{customer_id}/watchlists/{watchlist_id}/items",
+    response_model=WatchlistResponse,
+    status_code=201,
+)
+def add_watchlist_stock(
+    customer_id: UUID,
+    watchlist_id: UUID,
+    request: WatchlistItemCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return research_workspace.add_watchlist_item(
+            db, customer_id, watchlist_id, request
+        )
+    except research_workspace.WorkspaceError as error:
+        db.rollback()
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Watchlists are unavailable")
+
+
+@app.delete(
+    "/api/customers/{customer_id}/watchlists/{watchlist_id}/items/{ticker}",
+    response_model=WatchlistResponse,
+)
+def remove_watchlist_stock(
+    customer_id: UUID,
+    watchlist_id: UUID,
+    ticker: str,
+    db: Session = Depends(get_db),
+):
+    try:
+        return research_workspace.remove_watchlist_item(
+            db, customer_id, watchlist_id, ticker
+        )
+    except research_workspace.WorkspaceError as error:
+        db.rollback()
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Watchlists are unavailable")
+
+
+@app.get(
+    "/api/customers/{customer_id}/research-sessions",
+    response_model=list[ResearchSessionSummary],
+)
+def read_research_sessions(
+    customer_id: UUID,
+    ticker: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    try:
+        return research_workspace.list_research_sessions(
+            db, customer_id, ticker=ticker, limit=limit
+        )
+    except research_workspace.WorkspaceError as error:
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="Saved research is unavailable")
+
+
+@app.post(
+    "/api/customers/{customer_id}/research-sessions",
+    response_model=ResearchSessionResponse,
+    status_code=201,
+)
+def save_research_session(
+    customer_id: UUID,
+    request: ResearchSessionCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return research_workspace.create_research_session(db, customer_id, request)
+    except research_workspace.WorkspaceError as error:
+        db.rollback()
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Saved research is unavailable")
+
+
+@app.get(
+    "/api/customers/{customer_id}/research-sessions/{research_session_id}",
+    response_model=ResearchSessionResponse,
+)
+def read_research_session(
+    customer_id: UUID,
+    research_session_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        research = research_workspace.get_research_session(
+            db, customer_id, research_session_id
+        )
+        return research_workspace.serialize_research_session(research)
+    except research_workspace.WorkspaceError as error:
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="Saved research is unavailable")
+
+
+@app.delete(
+    "/api/customers/{customer_id}/research-sessions/{research_session_id}",
+    status_code=204,
+)
+def remove_research_session(
+    customer_id: UUID,
+    research_session_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        research_workspace.delete_research_session(
+            db, customer_id, research_session_id
+        )
+    except research_workspace.WorkspaceError as error:
+        db.rollback()
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Saved research is unavailable")
+
+
+@app.post(
+    "/api/customers/{customer_id}/what-changed/{ticker}",
+    response_model=WhatChangedResponse,
+)
+def what_changed_since_last_research(
+    customer_id: UUID,
+    ticker: str,
+    request: WhatChangedRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        return research_workspace.what_changed(
+            db,
+            customer_id,
+            ticker,
+            request.snapshot,
+            baseline_session_id=request.baseline_session_id,
+        )
+    except research_workspace.WorkspaceError as error:
+        _raise_workspace_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="Change tracking is unavailable")
 
 
 @app.get("/api/stocks/{ticker}", response_model=Overview)
