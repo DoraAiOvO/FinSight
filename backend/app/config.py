@@ -11,6 +11,16 @@ def normalize_database_url(url: str) -> str:
     return url
 
 
+def database_url_from_environment() -> str:
+    """Resolve local and Vercel Marketplace database variable names."""
+    return normalize_database_url(
+        os.getenv("FINSIGHT_DATABASE_URL")
+        or os.getenv("DATABASE_URL")
+        or os.getenv("POSTGRES_URL")
+        or "sqlite:///./finsight.db"
+    )
+
+
 class Settings:
     ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY")
     AI_MODEL: str = os.getenv("FINSIGHT_AI_MODEL", "claude-sonnet-5")
@@ -29,9 +39,7 @@ class Settings:
         "FINSIGHT_SEC_USER_AGENT",
         "FinSight DoraAiOvO@users.noreply.github.com",
     )
-    DATABASE_URL: str = normalize_database_url(
-        os.getenv("FINSIGHT_DATABASE_URL", "sqlite:///./finsight.db")
-    )
+    DATABASE_URL: str = database_url_from_environment()
 
 
 settings = Settings()
