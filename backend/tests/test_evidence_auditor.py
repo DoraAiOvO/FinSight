@@ -154,6 +154,17 @@ def test_numeric_support_normalizes_ratios_but_not_unrelated_currency_values():
     ) == [10_000.0]
 
 
+def test_numeric_support_reads_numbers_next_to_cjk_text():
+    assert evidence_auditor._unsupported_numbers(
+        "收入同比增长15%。",
+        [point(0.15, "ratio")],
+    ) == []
+    assert evidence_auditor._unsupported_numbers(
+        "收入同比增长99%。",
+        [point(0.15, "ratio")],
+    ) == [99.0]
+
+
 def test_missing_citation_is_blocked_from_the_sanitized_report():
     draft = report(summary=generated_claim("Revenue accelerated.", []))
 

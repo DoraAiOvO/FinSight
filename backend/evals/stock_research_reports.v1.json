@@ -1,0 +1,520 @@
+{
+  "schema_version": 1,
+  "name": "FinSight stock research report evaluation v1",
+  "description": "A fixed, offline suite covering evidence quality, customer-safe presentation changes, and English, Spanish, French, and Simplified Chinese report variants.",
+  "thresholds": {
+    "citation_coverage": 1.0,
+    "numeric_accuracy": 1.0,
+    "source_freshness": 1.0,
+    "contradiction_handling": 1.0,
+    "important_information_coverage": 1.0,
+    "readability": 0.8,
+    "personalization_consistency": 1.0,
+    "multilingual_consistency": 1.0
+  },
+  "overall_threshold": 0.95,
+  "maximum_regression": 0.02,
+  "maximum_source_age_days": 30,
+  "numeric_expectations": [
+    {
+      "id": "current-price",
+      "path": "overview.price",
+      "expected": 125.5
+    },
+    {
+      "id": "revenue-growth",
+      "path": "overview.revenue_growth",
+      "expected": 0.24
+    },
+    {
+      "id": "reported-leverage",
+      "path": "overview.debt_to_equity",
+      "expected": 180.0
+    }
+  ],
+  "important_information": [
+    {
+      "id": "current-price",
+      "paths": ["overview.price"]
+    },
+    {
+      "id": "growth-driver",
+      "paths": ["overview.revenue_growth", "analysis.insights.1"] ,
+      "mode": "all"
+    },
+    {
+      "id": "material-risk",
+      "paths": ["analysis.insights.0"]
+    },
+    {
+      "id": "two-sided-analysis",
+      "paths": ["analysis.insights.0", "analysis.insights.1"],
+      "mode": "all"
+    },
+    {
+      "id": "current-company-event",
+      "paths": ["news.items.0.title"]
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "leverage-provider-conflict",
+      "fact_paths": [
+        "overview.debt_to_equity",
+        "analysis.insights.0.evidence.0.value"
+      ],
+      "required_issue_code": "conflicting_sources",
+      "acknowledgement_paths": ["analysis.insights.0.explanation"],
+      "acknowledgement_terms": ["disagree", "review"]
+    }
+  ],
+  "readability_paths": [
+    "analysis.ai_narrative.statements.0.text",
+    "analysis.ai_narrative.statements.1.text",
+    "news.ai_summary.statements.0.text"
+  ],
+  "base_report": {
+    "captured_at": "2026-07-21T12:00:00Z",
+    "overview": {
+      "ticker": "EVAL",
+      "name": "Evaluation Corp",
+      "sector": "Technology",
+      "industry": "Software Infrastructure",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "price": {
+        "value": 125.5,
+        "unit": "USD",
+        "display_value": "$125.50",
+        "provider": "Yahoo Finance",
+        "source": "evaluation market fixture",
+        "as_of_date": "2026-07-20",
+        "fetched_at": "2026-07-21T11:55:00Z",
+        "freshness_status": "fresh",
+        "confidence": 0.9,
+        "source_url": "https://example.com/market"
+      },
+      "revenue_growth": {
+        "value": 0.24,
+        "unit": "ratio",
+        "display_value": "24%",
+        "provider": "SEC EDGAR",
+        "source": "evaluation 10-Q income statement",
+        "as_of_date": "2026-07-20",
+        "fetched_at": "2026-07-21T11:50:00Z",
+        "freshness_status": "fresh",
+        "confidence": 0.98,
+        "source_url": "https://example.com/filing"
+      },
+      "debt_to_equity": {
+        "value": 180.0,
+        "unit": "percent",
+        "display_value": "180%",
+        "provider": "Yahoo Finance",
+        "source": "evaluation market fixture",
+        "as_of_date": "2026-07-20",
+        "fetched_at": "2026-07-21T11:55:00Z",
+        "freshness_status": "fresh",
+        "confidence": 0.82,
+        "source_url": "https://example.com/market"
+      },
+      "summary": {
+        "claim": "Evaluation Corp provides infrastructure software to enterprise customers.",
+        "provider": "SEC EDGAR",
+        "source": "evaluation 10-K business section",
+        "as_of_date": "2026-07-20",
+        "fetched_at": "2026-07-21T11:50:00Z",
+        "freshness_status": "fresh",
+        "confidence": 0.96,
+        "source_url": "https://example.com/filing"
+      }
+    },
+    "analysis": {
+      "ticker": "EVAL",
+      "insights": [
+        {
+          "code": "leverage_source_conflict",
+          "kind": "risk",
+          "title": {
+            "claim": "Leverage requires source review",
+            "provider": "FinSight",
+            "source": "evaluation rules engine",
+            "as_of_date": "2026-07-20",
+            "fetched_at": "2026-07-21T11:58:00Z",
+            "freshness_status": "fresh",
+            "confidence": 0.95,
+            "source_url": "https://example.com/methodology"
+          },
+          "severity": "high",
+          "explanation": {
+            "claim": "Yahoo Finance and the latest filing disagree on leverage, so both values require review.",
+            "provider": "FinSight",
+            "source": "evaluation conflict rule",
+            "as_of_date": "2026-07-20",
+            "fetched_at": "2026-07-21T11:58:00Z",
+            "freshness_status": "fresh",
+            "confidence": 0.95,
+            "source_url": "https://example.com/methodology"
+          },
+          "evidence": [
+            {
+              "metric": "Debt to equity",
+              "metric_key": "debt_to_equity",
+              "value": {
+                "value": 220.0,
+                "unit": "percent",
+                "display_value": "220%",
+                "provider": "SEC EDGAR",
+                "source": "evaluation 10-Q balance sheet",
+                "as_of_date": "2026-07-20",
+                "fetched_at": "2026-07-21T11:50:00Z",
+                "freshness_status": "fresh",
+                "confidence": 0.98,
+                "source_url": "https://example.com/filing"
+              },
+              "benchmark": {
+                "claim": "The comparable-company median is 120%.",
+                "provider": "FinSight",
+                "source": "evaluation peer benchmark fixture",
+                "as_of_date": "2026-07-20",
+                "fetched_at": "2026-07-21T11:58:00Z",
+                "freshness_status": "fresh",
+                "confidence": 0.9,
+                "source_url": "https://example.com/peers"
+              }
+            }
+          ],
+          "highlighted": true
+        },
+        {
+          "code": "fast_revenue_growth",
+          "kind": "opportunity",
+          "title": {
+            "claim": "Revenue growth is above the peer median",
+            "provider": "FinSight",
+            "source": "evaluation rules engine",
+            "as_of_date": "2026-07-20",
+            "fetched_at": "2026-07-21T11:58:00Z",
+            "freshness_status": "fresh",
+            "confidence": 0.95,
+            "source_url": "https://example.com/methodology"
+          },
+          "severity": "medium",
+          "explanation": {
+            "claim": "Revenue grew 24% year over year, compared with an 18% peer median.",
+            "provider": "FinSight",
+            "source": "evaluation benchmark rule",
+            "as_of_date": "2026-07-20",
+            "fetched_at": "2026-07-21T11:58:00Z",
+            "freshness_status": "fresh",
+            "confidence": 0.95,
+            "source_url": "https://example.com/methodology"
+          },
+          "evidence": [
+            {
+              "metric": "Revenue growth",
+              "metric_key": "revenue_growth",
+              "value": {
+                "value": 0.24,
+                "unit": "ratio",
+                "display_value": "24%",
+                "provider": "SEC EDGAR",
+                "source": "evaluation 10-Q income statement",
+                "as_of_date": "2026-07-20",
+                "fetched_at": "2026-07-21T11:50:00Z",
+                "freshness_status": "fresh",
+                "confidence": 0.98,
+                "source_url": "https://example.com/filing"
+              },
+              "benchmark": {
+                "claim": "The comparable-company median is 18%.",
+                "provider": "FinSight",
+                "source": "evaluation peer benchmark fixture",
+                "as_of_date": "2026-07-20",
+                "fetched_at": "2026-07-21T11:58:00Z",
+                "freshness_status": "fresh",
+                "confidence": 0.9,
+                "source_url": "https://example.com/peers"
+              }
+            }
+          ],
+          "highlighted": false
+        }
+      ],
+      "benchmarks": {
+        "industry": "Software Infrastructure",
+        "sector": "Technology",
+        "selected_peers": [],
+        "metrics": [],
+        "methodology": {
+          "claim": "Benchmarks use the fixed evaluation peer cohort.",
+          "provider": "FinSight",
+          "source": "evaluation benchmark fixture",
+          "as_of_date": "2026-07-20",
+          "fetched_at": "2026-07-21T11:58:00Z",
+          "freshness_status": "fresh",
+          "confidence": 0.9,
+          "source_url": "https://example.com/peers"
+        },
+        "limitations": []
+      },
+      "ai_narrative": {
+        "claim": "Revenue grew 24% year over year. Two leverage sources disagree, so the difference requires review.",
+        "generated": true,
+        "citations": [
+          "analysis.insights.1.explanation",
+          "analysis.insights.0.explanation"
+        ],
+        "statements": [
+          {
+            "text": "Revenue grew 24% year over year.",
+            "citations": ["analysis.insights.1.explanation"]
+          },
+          {
+            "text": "Two leverage sources disagree, so the difference requires review.",
+            "citations": ["analysis.insights.0.explanation"]
+          }
+        ],
+        "provider": "Anthropic",
+        "source": "evaluation generated narrative",
+        "as_of_date": "2026-07-20",
+        "fetched_at": "2026-07-21T11:59:00Z",
+        "freshness_status": "fresh",
+        "confidence": 0.8,
+        "source_url": null
+      },
+      "presentation": {
+        "personalized": true,
+        "section_order": ["overview", "analysis", "news", "price_history"],
+        "explanation_depth": "simple",
+        "report_depth": "quick",
+        "highlighted_insight_codes": ["leverage_source_conflict"],
+        "highlighted_metric_keys": ["debt_to_equity"],
+        "industry_match": true
+      },
+      "disclaimer": "Educational research only; verify important information independently."
+    },
+    "news": {
+      "ticker": "EVAL",
+      "items": [
+        {
+          "title": {
+            "claim": "Management raised annual revenue guidance by 12%.",
+            "provider": "Example Newswire",
+            "source": "evaluation news fixture",
+            "as_of_date": "2026-07-20",
+            "fetched_at": "2026-07-21T11:57:00Z",
+            "freshness_status": "fresh",
+            "confidence": 0.9,
+            "source_url": "https://example.com/news"
+          },
+          "publisher": "Example Newswire",
+          "link": "https://example.com/news",
+          "published_at": "2026-07-20T15:00:00Z"
+        }
+      ],
+      "ai_summary": {
+        "claim": "Management increased annual revenue guidance by 12%.",
+        "generated": true,
+        "citations": ["news.items.0.title"],
+        "statements": [
+          {
+            "text": "Management increased annual revenue guidance by 12%.",
+            "citations": ["news.items.0.title"]
+          }
+        ],
+        "provider": "Anthropic",
+        "source": "evaluation generated news summary",
+        "as_of_date": "2026-07-20",
+        "fetched_at": "2026-07-21T11:59:00Z",
+        "freshness_status": "fresh",
+        "confidence": 0.8,
+        "source_url": null
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "en-beginner-stability",
+      "description": "English quick report for a beginner who prioritizes stability.",
+      "locale": "en",
+      "personalization_group": "english-profile-pair",
+      "multilingual_group": "quick-report-languages",
+      "language_markers": ["revenue", "sources"],
+      "expected_presentation": {
+        "personalized": true,
+        "section_order": ["overview", "analysis", "news", "price_history"],
+        "explanation_depth": "simple",
+        "report_depth": "quick",
+        "highlighted_insight_codes": ["leverage_source_conflict"],
+        "highlighted_metric_keys": ["debt_to_equity"],
+        "industry_match": true
+      }
+    },
+    {
+      "id": "en-advanced-growth",
+      "description": "English deep report for an advanced customer who prioritizes growth.",
+      "locale": "en",
+      "personalization_group": "english-profile-pair",
+      "language_markers": ["revenue", "sources"],
+      "report_overrides": {
+        "analysis": {
+          "presentation": {
+            "personalized": true,
+            "section_order": ["overview", "analysis", "price_history", "news"],
+            "explanation_depth": "professional",
+            "report_depth": "deep",
+            "highlighted_insight_codes": ["fast_revenue_growth"],
+            "highlighted_metric_keys": ["revenue_growth"],
+            "industry_match": true
+          }
+        }
+      },
+      "report_path_overrides": {
+        "analysis.insights.0.highlighted": false,
+        "analysis.insights.1.highlighted": true
+      },
+      "expected_presentation": {
+        "personalized": true,
+        "section_order": ["overview", "analysis", "price_history", "news"],
+        "explanation_depth": "professional",
+        "report_depth": "deep",
+        "highlighted_insight_codes": ["fast_revenue_growth"],
+        "highlighted_metric_keys": ["revenue_growth"],
+        "industry_match": true
+      }
+    },
+    {
+      "id": "es-beginner-stability",
+      "description": "Spanish quick report with the same evidence and presentation contract.",
+      "locale": "es",
+      "multilingual_group": "quick-report-languages",
+      "language_markers": ["ingresos", "fuentes"],
+      "report_overrides": {
+        "analysis": {
+          "ai_narrative": {
+            "claim": "Los ingresos crecieron un 24% interanual. Dos fuentes de apalancamiento discrepan, por lo que la diferencia requiere revisión.",
+            "statements": [
+              {
+                "text": "Los ingresos crecieron un 24% interanual.",
+                "citations": ["analysis.insights.1.explanation"]
+              },
+              {
+                "text": "Dos fuentes de apalancamiento discrepan, por lo que la diferencia requiere revisión.",
+                "citations": ["analysis.insights.0.explanation"]
+              }
+            ]
+          }
+        },
+        "news": {
+          "ai_summary": {
+            "claim": "La dirección aumentó la previsión anual de ingresos un 12%.",
+            "statements": [
+              {
+                "text": "La dirección aumentó la previsión anual de ingresos un 12%.",
+                "citations": ["news.items.0.title"]
+              }
+            ]
+          }
+        }
+      },
+      "expected_presentation": {
+        "personalized": true,
+        "section_order": ["overview", "analysis", "news", "price_history"],
+        "explanation_depth": "simple",
+        "report_depth": "quick",
+        "highlighted_insight_codes": ["leverage_source_conflict"],
+        "highlighted_metric_keys": ["debt_to_equity"],
+        "industry_match": true
+      }
+    },
+    {
+      "id": "fr-beginner-stability",
+      "description": "French quick report with the same evidence and presentation contract.",
+      "locale": "fr",
+      "multilingual_group": "quick-report-languages",
+      "language_markers": ["chiffre", "sources"],
+      "report_overrides": {
+        "analysis": {
+          "ai_narrative": {
+            "claim": "Le chiffre d’affaires a progressé de 24% sur un an. Deux sources sur l’endettement divergent, la différence doit donc être vérifiée.",
+            "statements": [
+              {
+                "text": "Le chiffre d’affaires a progressé de 24% sur un an.",
+                "citations": ["analysis.insights.1.explanation"]
+              },
+              {
+                "text": "Deux sources sur l’endettement divergent, la différence doit donc être vérifiée.",
+                "citations": ["analysis.insights.0.explanation"]
+              }
+            ]
+          }
+        },
+        "news": {
+          "ai_summary": {
+            "claim": "La direction a relevé de 12% ses prévisions annuelles de chiffre d’affaires.",
+            "statements": [
+              {
+                "text": "La direction a relevé de 12% ses prévisions annuelles de chiffre d’affaires.",
+                "citations": ["news.items.0.title"]
+              }
+            ]
+          }
+        }
+      },
+      "expected_presentation": {
+        "personalized": true,
+        "section_order": ["overview", "analysis", "news", "price_history"],
+        "explanation_depth": "simple",
+        "report_depth": "quick",
+        "highlighted_insight_codes": ["leverage_source_conflict"],
+        "highlighted_metric_keys": ["debt_to_equity"],
+        "industry_match": true
+      }
+    },
+    {
+      "id": "zh-beginner-stability",
+      "description": "Simplified Chinese quick report with the same evidence and presentation contract.",
+      "locale": "zh",
+      "multilingual_group": "quick-report-languages",
+      "language_markers": ["收入", "来源"],
+      "report_overrides": {
+        "analysis": {
+          "ai_narrative": {
+            "claim": "收入同比增长24%。两个杠杆数据来源不一致，因此需要复核差异。",
+            "statements": [
+              {
+                "text": "收入同比增长24%。",
+                "citations": ["analysis.insights.1.explanation"]
+              },
+              {
+                "text": "两个杠杆数据来源不一致，因此需要复核差异。",
+                "citations": ["analysis.insights.0.explanation"]
+              }
+            ]
+          }
+        },
+        "news": {
+          "ai_summary": {
+            "claim": "管理层将全年收入指引上调12%。",
+            "statements": [
+              {
+                "text": "管理层将全年收入指引上调12%。",
+                "citations": ["news.items.0.title"]
+              }
+            ]
+          }
+        }
+      },
+      "expected_presentation": {
+        "personalized": true,
+        "section_order": ["overview", "analysis", "news", "price_history"],
+        "explanation_depth": "simple",
+        "report_depth": "quick",
+        "highlighted_insight_codes": ["leverage_source_conflict"],
+        "highlighted_metric_keys": ["debt_to_equity"],
+        "industry_match": true
+      }
+    }
+  ]
+}
