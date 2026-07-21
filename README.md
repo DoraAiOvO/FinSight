@@ -45,6 +45,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 🌐 **Multilingual research** | Localizes the interface, rule-based evidence, and AI summaries in English, Spanish, French, or Simplified Chinese |
 | 🧭 **Customer research profile** | Organizes the same evidence around experience, horizon, priorities, risk comfort, report depth, language, and industries of interest |
 | 🏛️ **SEC filings** | Lists recent 10-K, 10-Q, and 8-K filings, extracts decision-useful sections and earnings exhibits, and answers questions with citations to the original filing |
+| 📐 **Relative benchmarks** | Compares metrics with industry, sector, automatically selected peers, and the company’s own annual history—and explains which benchmark is primary and why |
 
 ## Quick start
 
@@ -152,6 +153,7 @@ priorities—is passed to the optional AI narrative layer.
 │   │   ├── models/schemas.py   Pydantic response models
 │   │   └── services/
 │   │       ├── market_data.py  Yahoo Finance access + cache
+│   │       ├── benchmarks.py   industry, sector, peer, and historical context
 │   │       ├── analysis.py     transparent risk/opportunity rules
 │   │       ├── presentation.py profile-driven organization and highlights
 │   │       ├── customer_profiles.py  onboarding persistence
@@ -169,7 +171,7 @@ priorities—is passed to the optional AI narrative layer.
 | `GET /api/stocks/{ticker}` | Normalized fundamentals overview |
 | `GET /api/stocks/{ticker}/history?period=6mo` | Daily closes (1mo–5y) |
 | `GET /api/news/{ticker}` | Recent headlines + optional AI theme summary |
-| `GET /api/analysis/{ticker}` | Evidence-backed risks & opportunities |
+| `GET /api/analysis/{ticker}` | Benchmark-aware risks, opportunities, peer selection, and historical ranges |
 | `GET /api/analysis/{ticker}?customer_id={uuid}` | Same evidence with a customer-specific presentation plan |
 | `GET /api/compare?tickers=AAPL,MSFT` | Side-by-side comparison (2–5 tickers) |
 | `GET /api/filings/{ticker}` | Recent 10-K, 10-Q, and 8-K filings from SEC EDGAR |
@@ -197,6 +199,24 @@ For earnings-related 8-K filings, FinSight also reads matching EX-99 earnings
 release exhibits from the same EDGAR filing package.
 Without an Anthropic key, the endpoint returns an extractive answer with the
 same citations instead of disabling filing questions.
+
+### Benchmark methodology
+
+The analysis endpoint no longer judges company fundamentals against universal
+P/E, margin, growth, leverage, liquidity, beta, or dividend cutoffs. It asks
+Yahoo Finance for companies in the same industry and sector, prioritizes the
+same trading region, removes duplicate listings, and ranks candidates by market
+capitalization proximity. The four closest same-industry companies become the
+selected peers; a broader sector cohort adds up to five nearby companies from
+other industries.
+
+For every available metric, FinSight displays the cohort median and middle 50%
+range. Annual Yahoo Finance income statements, balance sheets, and cash-flow
+statements provide the company’s own reported range for revenue growth, margins,
+leverage, liquidity, and free-cash-flow margin. The primary benchmark favors the
+most specific cohort with enough observations: industry, selected peers, sector,
+then company history. Missing providers or sparse samples are shown as explicit
+limitations and never trigger a fallback to the old universal thresholds.
 
 ## How a research brief comes together
 
@@ -226,6 +246,7 @@ same citations instead of disabling filing questions.
 - [x] Add customer onboarding and presentation-only research profiles
 - [ ] Test the quality, clarity, and consistency of generated research
 - [x] Add SEC 10-K, 10-Q, and earnings-related 8-K sources
+- [x] Replace universal metric cutoffs with industry, sector, peer, and historical benchmarks
 - [ ] Add earnings-call transcript sources
 - [ ] Exportable research briefs (PDF)
 - [ ] Watchlists and saved research sessions

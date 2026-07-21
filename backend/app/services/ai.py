@@ -91,7 +91,8 @@ def narrate_analysis(
     bullet = "\n".join(
         f"- [{i['kind']}/{i['severity']}] {evidence_text(i['title'])}: "
         + "; ".join(
-            f"{e['metric']}={e['value'].get('display_value') or e['value']['value']}"
+            f"{e['metric']}={e['value'].get('display_value') or e['value']['value']} "
+            f"against {evidence_text(e['benchmark'])}"
             for e in i["evidence"]
         )
         for i in insights

@@ -3,6 +3,7 @@ import SearchBar from './components/SearchBar.jsx'
 import StockOverview from './components/StockOverview.jsx'
 import PriceChart from './components/PriceChart.jsx'
 import AnalysisPanel from './components/AnalysisPanel.jsx'
+import BenchmarkPanel from './components/BenchmarkPanel.jsx'
 import NewsFeed from './components/NewsFeed.jsx'
 import FilingsPanel from './components/FilingsPanel.jsx'
 import CompareTable from './components/CompareTable.jsx'
@@ -36,6 +37,9 @@ function ReportSections({ data, historyLoading, onPeriodChange }) {
     analysis: data.analysis && (
       <AnalysisPanel analysis={data.analysis} presentation={presentation} />
     ),
+    benchmarks: data.analysis?.benchmarks && (
+      <BenchmarkPanel benchmarks={data.analysis.benchmarks} />
+    ),
     news: data.news && <NewsFeed news={data.news} />,
     filings: data.filings && <FilingsPanel data={data.filings} ticker={data.overview.ticker} />,
   }
@@ -45,6 +49,7 @@ function ReportSections({ data, historyLoading, onPeriodChange }) {
       <>
         {sections.overview}
         {sections.price_history}
+        {sections.benchmarks}
         <div className="research-grid">
           {sections.analysis}
           {sections.news}
@@ -58,7 +63,12 @@ function ReportSections({ data, historyLoading, onPeriodChange }) {
     <>
       <div className="personalized-report-sections">
         {presentation.section_order.map((section) => (
-          sections[section] ? <div className={`report-section report-section-${section}`} key={section}>{sections[section]}</div> : null
+          sections[section] ? (
+            <div className={`report-section report-section-${section}`} key={section}>
+              {section === 'analysis' && sections.benchmarks}
+              {sections[section]}
+            </div>
+          ) : null
         ))}
       </div>
       {sections.filings}

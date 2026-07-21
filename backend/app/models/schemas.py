@@ -153,6 +153,7 @@ class Overview(BaseModel):
     name: str | None = None
     sector: str | None = None
     industry: str | None = None
+    exchange: str | None = None
     currency: str | None = None
     price: DataPoint | None = None
     change_percent: DataPoint | None = None
@@ -167,6 +168,8 @@ class Overview(BaseModel):
     debt_to_equity: DataPoint | None = None
     current_ratio: DataPoint | None = None
     free_cash_flow: DataPoint | None = None
+    total_revenue: DataPoint | None = None
+    free_cash_flow_margin: DataPoint | None = None
     beta: DataPoint | None = None
     dividend_yield: DataPoint | None = None
     fifty_two_week_low: DataPoint | None = None
@@ -209,6 +212,50 @@ class EvidenceItem(BaseModel):
     benchmark_params: dict[str, str] = Field(default_factory=dict)
 
 
+class BenchmarkReference(BaseModel):
+    scope: Literal["industry", "sector", "peers", "historical"]
+    name: str
+    median: DataPoint
+    lower_bound: DataPoint
+    upper_bound: DataPoint
+    range_kind: Literal["middle_50_percent", "observed_range"]
+    sample_size: int = Field(ge=1)
+    sample_tickers: list[str] = Field(default_factory=list)
+    period: str | None = None
+    rationale: Evidence
+    rationale_key: str
+    rationale_params: dict[str, str] = Field(default_factory=dict)
+
+
+class MetricBenchmark(BaseModel):
+    metric_key: str
+    label: str
+    company_value: DataPoint
+    references: list[BenchmarkReference]
+    primary_scope: Literal["industry", "sector", "peers", "historical"] | None = None
+    primary_rationale: Evidence | None = None
+
+
+class SelectedPeer(BaseModel):
+    ticker: str
+    name: str | None = None
+    sector: str | None = None
+    industry: str | None = None
+    market_cap: DataPoint | None = None
+    selection_reason: Evidence
+    selection_reason_key: str
+    selection_reason_params: dict[str, str] = Field(default_factory=dict)
+
+
+class BenchmarkContext(BaseModel):
+    industry: str | None = None
+    sector: str | None = None
+    selected_peers: list[SelectedPeer] = Field(default_factory=list)
+    metrics: list[MetricBenchmark] = Field(default_factory=list)
+    methodology: Evidence
+    limitations: list[Evidence] = Field(default_factory=list)
+
+
 class Insight(BaseModel):
     code: str
     kind: str  # "risk" | "opportunity"
@@ -222,6 +269,7 @@ class Insight(BaseModel):
 class AnalysisResponse(BaseModel):
     ticker: str
     insights: list[Insight]
+    benchmarks: BenchmarkContext
     ai_narrative: Evidence | None = None
     presentation: ReportPresentation = Field(default_factory=ReportPresentation)
     disclaimer: str

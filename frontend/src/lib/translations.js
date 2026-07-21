@@ -99,6 +99,30 @@ export const translations = {
     // Analysis panel
     analysisKicker: 'Transparent rules engine',
     analysisTitle: 'Risks & opportunities',
+    benchmarkKicker: 'Benchmark-aware analysis',
+    benchmarkTitle: 'Company context, not universal cutoffs',
+    benchmarkIntro: 'Each metric is shown against its industry, broader sector, selected peers, and the company’s own reported history. The highlighted primary benchmark is the most specific sample with enough observations.',
+    benchmarkScopeIndustry: 'Industry',
+    benchmarkScopeSector: 'Sector',
+    benchmarkScopePeers: 'Selected peers',
+    benchmarkScopeHistorical: 'Own history',
+    benchmarkSelectedPeers: 'Automatically selected peers — and why',
+    benchmarkMetric: 'Metric',
+    benchmarkCompany: 'Company',
+    benchmarkPrimary: 'Selected benchmark',
+    benchmarkUnavailable: 'Unavailable',
+    benchmarkObservedRange: 'Observed range',
+    benchmarkMiddleRange: 'Middle 50%',
+    benchmarkSample: '{sampleSize} observations',
+    benchmarkNoMetrics: 'No metrics had enough comparable observations to calculate a benchmark.',
+    benchmarkMethodology: 'Methodology and limitations',
+    benchmarkMethodologyText: 'FinSight selects same-industry companies first, then same-sector companies, and ranks candidates by market-cap proximity. Peer ranges show the middle 50% to reduce outlier effects; company history shows the observed annual range.',
+    benchmarkIndustryReason: '{sampleSize} observations share the {name} industry, making this the closest operating comparison.',
+    benchmarkSectorReason: '{sampleSize} observations in {name} provide a broader sector reference.',
+    benchmarkPeersReason: '{sampleSize} peers were selected by industry match first and market-cap proximity second.',
+    benchmarkHistoricalReason: '{sampleSize} annual observations from {period} compare the company with its own reported record.',
+    peerSameIndustryReason: 'Same {industry} industry; market capitalization is among the closest available.',
+    peerSectorFallbackReason: '{sector} sector fallback used when too few same-industry peers were available.',
     upside: 'upside',
     riskCount: 'risk',
     synthesis: 'FinSight synthesis',
@@ -243,6 +267,30 @@ export const translations = {
 
     analysisKicker: 'Motor de reglas transparente',
     analysisTitle: 'Riesgos y oportunidades',
+    benchmarkKicker: 'Análisis con referencias',
+    benchmarkTitle: 'Contexto empresarial, no umbrales universales',
+    benchmarkIntro: 'Cada métrica se compara con su industria, sector, pares seleccionados y el historial de la propia empresa. La referencia principal resaltada es la muestra más específica con suficientes observaciones.',
+    benchmarkScopeIndustry: 'Industria',
+    benchmarkScopeSector: 'Sector',
+    benchmarkScopePeers: 'Pares seleccionados',
+    benchmarkScopeHistorical: 'Historial propio',
+    benchmarkSelectedPeers: 'Pares seleccionados automáticamente y motivo',
+    benchmarkMetric: 'Métrica',
+    benchmarkCompany: 'Empresa',
+    benchmarkPrimary: 'Referencia elegida',
+    benchmarkUnavailable: 'No disponible',
+    benchmarkObservedRange: 'Rango observado',
+    benchmarkMiddleRange: '50 % central',
+    benchmarkSample: '{sampleSize} observaciones',
+    benchmarkNoMetrics: 'No hubo suficientes observaciones comparables para calcular referencias.',
+    benchmarkMethodology: 'Metodología y limitaciones',
+    benchmarkMethodologyText: 'FinSight elige primero empresas de la misma industria, después del mismo sector, y ordena por proximidad de capitalización. Los rangos de pares muestran el 50 % central; el historial muestra el rango anual observado.',
+    benchmarkIndustryReason: '{sampleSize} observaciones pertenecen a {name}, la comparación operativa más cercana.',
+    benchmarkSectorReason: '{sampleSize} observaciones de {name} ofrecen una referencia sectorial más amplia.',
+    benchmarkPeersReason: '{sampleSize} pares se eligieron primero por industria y después por capitalización similar.',
+    benchmarkHistoricalReason: '{sampleSize} observaciones anuales de {period} comparan la empresa con su propio historial.',
+    peerSameIndustryReason: 'Misma industria ({industry}) y una de las capitalizaciones disponibles más cercanas.',
+    peerSectorFallbackReason: 'Alternativa del sector {sector} al no haber suficientes pares de la misma industria.',
     upside: 'a favor',
     riskCount: 'riesgo',
     synthesis: 'Síntesis de FinSight',
@@ -384,6 +432,30 @@ export const translations = {
 
     analysisKicker: 'Moteur de règles transparent',
     analysisTitle: 'Risques et opportunités',
+    benchmarkKicker: 'Analyse relative aux références',
+    benchmarkTitle: 'Contexte de l’entreprise, sans seuils universels',
+    benchmarkIntro: 'Chaque métrique est comparée à son industrie, son secteur, des pairs sélectionnés et l’historique publié de l’entreprise. La référence principale est l’échantillon le plus spécifique avec assez d’observations.',
+    benchmarkScopeIndustry: 'Industrie',
+    benchmarkScopeSector: 'Secteur',
+    benchmarkScopePeers: 'Pairs sélectionnés',
+    benchmarkScopeHistorical: 'Historique propre',
+    benchmarkSelectedPeers: 'Pairs sélectionnés automatiquement et justification',
+    benchmarkMetric: 'Métrique',
+    benchmarkCompany: 'Entreprise',
+    benchmarkPrimary: 'Référence retenue',
+    benchmarkUnavailable: 'Indisponible',
+    benchmarkObservedRange: 'Plage observée',
+    benchmarkMiddleRange: '50 % central',
+    benchmarkSample: '{sampleSize} observations',
+    benchmarkNoMetrics: 'Aucune métrique ne disposait d’assez d’observations comparables.',
+    benchmarkMethodology: 'Méthode et limites',
+    benchmarkMethodologyText: 'FinSight sélectionne d’abord les entreprises de la même industrie, puis du même secteur, et les classe par proximité de capitalisation. Les plages de pairs montrent les 50 % centraux ; l’historique montre la plage annuelle observée.',
+    benchmarkIndustryReason: '{sampleSize} observations partagent l’industrie {name}, la comparaison opérationnelle la plus proche.',
+    benchmarkSectorReason: '{sampleSize} observations de {name} donnent une référence sectorielle plus large.',
+    benchmarkPeersReason: '{sampleSize} pairs sont choisis d’abord par industrie, puis par proximité de capitalisation.',
+    benchmarkHistoricalReason: '{sampleSize} observations annuelles de {period} comparent l’entreprise à son propre historique.',
+    peerSameIndustryReason: 'Même industrie ({industry}) et capitalisation parmi les plus proches disponibles.',
+    peerSectorFallbackReason: 'Pair de repli du secteur {sector}, faute d’assez de sociétés de la même industrie.',
     upside: 'atouts',
     riskCount: 'risque',
     synthesis: 'Synthèse FinSight',
@@ -524,6 +596,30 @@ export const translations = {
 
     analysisKicker: '透明规则引擎',
     analysisTitle: '风险与机会',
+    benchmarkKicker: '基准感知分析',
+    benchmarkTitle: '用公司背景取代统一阈值',
+    benchmarkIntro: '每项指标都会与所属行业、更广泛板块、系统选定的同业，以及公司自身已披露的历史数据进行比较。高亮的主要基准，是样本数量足够时最具体的一组参照。',
+    benchmarkScopeIndustry: '行业',
+    benchmarkScopeSector: '板块',
+    benchmarkScopePeers: '选定同业',
+    benchmarkScopeHistorical: '自身历史',
+    benchmarkSelectedPeers: '系统选定的同业及选择原因',
+    benchmarkMetric: '指标',
+    benchmarkCompany: '公司',
+    benchmarkPrimary: '选用基准',
+    benchmarkUnavailable: '暂无数据',
+    benchmarkObservedRange: '已观察区间',
+    benchmarkMiddleRange: '中间 50%',
+    benchmarkSample: '{sampleSize} 个观测值',
+    benchmarkNoMetrics: '目前没有任何指标具备足够的可比观测值来计算基准。',
+    benchmarkMethodology: '方法与局限',
+    benchmarkMethodologyText: 'FinSight 优先选择同行业公司，再选择同板块公司，并按市值接近程度排序。同业区间展示中间 50% 以降低极端值影响；公司历史展示年度已观察区间。',
+    benchmarkIndustryReason: '{sampleSize} 个观测值同属 {name} 行业，是最接近的经营模式参照。',
+    benchmarkSectorReason: '{name} 板块的 {sampleSize} 个观测值提供更广泛的参照。',
+    benchmarkPeersReason: '{sampleSize} 个同业先按行业匹配，再按市值接近程度选出。',
+    benchmarkHistoricalReason: '{period} 年间的 {sampleSize} 个年度观测值用于对比公司自身记录。',
+    peerSameIndustryReason: '同属 {industry} 行业，且市值在可用公司中最接近。',
+    peerSectorFallbackReason: '同行业样本不足时，使用 {sector} 板块内的后备同业。',
     upside: '项利好',
     riskCount: '项风险',
     synthesis: 'FinSight 综合解读',
@@ -590,6 +686,20 @@ export function getTranslation(language, key) {
 const SERVER_TEXT = {
   es: {
     // Insight titles
+    'Valuation premium to benchmark': 'Prima de valoración frente a la referencia',
+    'Valuation discount to benchmark': 'Descuento de valoración frente a la referencia',
+    'Leverage above benchmark': 'Apalancamiento por encima de la referencia',
+    'Liquidity below benchmark': 'Liquidez por debajo de la referencia',
+    'Cash generation above benchmark': 'Generación de caja por encima de la referencia',
+    'Cash generation below benchmark': 'Generación de caja por debajo de la referencia',
+    'Revenue growth above benchmark': 'Crecimiento de ingresos por encima de la referencia',
+    'Revenue growth below benchmark': 'Crecimiento de ingresos por debajo de la referencia',
+    'Profitability above benchmark': 'Rentabilidad por encima de la referencia',
+    'Profitability below benchmark': 'Rentabilidad por debajo de la referencia',
+    'Volatility above benchmark': 'Volatilidad por encima de la referencia',
+    'Dividend yield above benchmark': 'Rentabilidad por dividendo por encima de la referencia',
+    'Upper quartile of 52-week range': 'Cuartil superior del rango de 52 semanas',
+    'Lower quartile of 52-week range': 'Cuartil inferior del rango de 52 semanas',
     'Rich valuation': 'Valoración exigente',
     'Low earnings multiple': 'Múltiplo de beneficios bajo',
     'High leverage': 'Apalancamiento alto',
@@ -617,6 +727,15 @@ const SERVER_TEXT = {
     'Mean analyst target': 'Objetivo medio de analistas',
     'Trailing P/E': 'PER (últ. 12 m)',
     'Debt / Equity': 'Deuda / Capital',
+    'Free cash flow margin': 'Margen de flujo de caja libre',
+    'The industry cohort is temporarily unavailable.': 'La cohorte de la industria no está disponible temporalmente.',
+    'Yahoo Finance did not provide a recognized industry classification.': 'Yahoo Finance no proporcionó una clasificación de industria reconocida.',
+    'The sector cohort is temporarily unavailable.': 'La cohorte del sector no está disponible temporalmente.',
+    'Yahoo Finance did not provide a recognized sector classification.': 'Yahoo Finance no proporcionó una clasificación de sector reconocida.',
+    "The company's annual historical range is temporarily unavailable.": 'El rango histórico anual de la empresa no está disponible temporalmente.',
+    'No sufficiently comparable peer listings were available.': 'No había cotizaciones de pares suficientemente comparables.',
+    'Historical statements did not contain enough comparable annual observations.': 'Los estados históricos no contenían suficientes observaciones anuales comparables.',
+    'The benchmark cohort is a selected Yahoo Finance sample, not every company in the market; classifications and reported metrics may be incomplete.': 'La cohorte es una muestra seleccionada de Yahoo Finance, no todo el mercado; las clasificaciones y métricas pueden estar incompletas.',
     // Compare table labels
     'Market cap': 'Capitalización',
     'Forward P/E': 'PER adelantado',
@@ -627,6 +746,20 @@ const SERVER_TEXT = {
     Beta: 'Beta',
   },
   fr: {
+    'Valuation premium to benchmark': 'Prime de valorisation par rapport à la référence',
+    'Valuation discount to benchmark': 'Décote de valorisation par rapport à la référence',
+    'Leverage above benchmark': 'Endettement supérieur à la référence',
+    'Liquidity below benchmark': 'Liquidité inférieure à la référence',
+    'Cash generation above benchmark': 'Génération de trésorerie supérieure à la référence',
+    'Cash generation below benchmark': 'Génération de trésorerie inférieure à la référence',
+    'Revenue growth above benchmark': 'Croissance du CA supérieure à la référence',
+    'Revenue growth below benchmark': 'Croissance du CA inférieure à la référence',
+    'Profitability above benchmark': 'Rentabilité supérieure à la référence',
+    'Profitability below benchmark': 'Rentabilité inférieure à la référence',
+    'Volatility above benchmark': 'Volatilité supérieure à la référence',
+    'Dividend yield above benchmark': 'Rendement du dividende supérieur à la référence',
+    'Upper quartile of 52-week range': 'Quartile supérieur de la plage 52 semaines',
+    'Lower quartile of 52-week range': 'Quartile inférieur de la plage 52 semaines',
     'Rich valuation': 'Valorisation élevée',
     'Low earnings multiple': 'Multiple de bénéfices faible',
     'High leverage': 'Endettement élevé',
@@ -653,6 +786,15 @@ const SERVER_TEXT = {
     'Mean analyst target': 'Objectif moyen des analystes',
     'Trailing P/E': 'PER (12 m glissants)',
     'Debt / Equity': 'Dette / Capitaux propres',
+    'Free cash flow margin': 'Marge de flux de trésorerie disponible',
+    'The industry cohort is temporarily unavailable.': 'Le groupe sectoriel détaillé est temporairement indisponible.',
+    'Yahoo Finance did not provide a recognized industry classification.': 'Yahoo Finance n’a pas fourni de classification d’industrie reconnue.',
+    'The sector cohort is temporarily unavailable.': 'Le groupe du secteur est temporairement indisponible.',
+    'Yahoo Finance did not provide a recognized sector classification.': 'Yahoo Finance n’a pas fourni de classification de secteur reconnue.',
+    "The company's annual historical range is temporarily unavailable.": 'La plage historique annuelle de l’entreprise est temporairement indisponible.',
+    'No sufficiently comparable peer listings were available.': 'Aucune société cotée suffisamment comparable n’était disponible.',
+    'Historical statements did not contain enough comparable annual observations.': 'Les états historiques ne contenaient pas assez d’observations annuelles comparables.',
+    'The benchmark cohort is a selected Yahoo Finance sample, not every company in the market; classifications and reported metrics may be incomplete.': 'Le groupe de référence est un échantillon Yahoo Finance, pas l’ensemble du marché ; les classifications et métriques peuvent être incomplètes.',
     'Market cap': 'Capitalisation',
     'Forward P/E': 'PER prévisionnel',
     'Price / Sales': 'Cours / CA',
@@ -662,6 +804,20 @@ const SERVER_TEXT = {
     Beta: 'Bêta',
   },
   zh: {
+    'Valuation premium to benchmark': '估值高于基准',
+    'Valuation discount to benchmark': '估值低于基准',
+    'Leverage above benchmark': '杠杆高于基准',
+    'Liquidity below benchmark': '流动性低于基准',
+    'Cash generation above benchmark': '现金创造能力高于基准',
+    'Cash generation below benchmark': '现金创造能力低于基准',
+    'Revenue growth above benchmark': '营收增长高于基准',
+    'Revenue growth below benchmark': '营收增长低于基准',
+    'Profitability above benchmark': '盈利能力高于基准',
+    'Profitability below benchmark': '盈利能力低于基准',
+    'Volatility above benchmark': '波动性高于基准',
+    'Dividend yield above benchmark': '股息率高于基准',
+    'Upper quartile of 52-week range': '处于 52 周区间上四分位',
+    'Lower quartile of 52-week range': '处于 52 周区间下四分位',
     'Rich valuation': '估值偏高',
     'Low earnings multiple': '盈利倍数偏低',
     'High leverage': '杠杆偏高',
@@ -688,6 +844,15 @@ const SERVER_TEXT = {
     'Mean analyst target': '分析师平均目标价',
     'Trailing P/E': '市盈率（TTM）',
     'Debt / Equity': '负债/股东权益',
+    'Free cash flow margin': '自由现金流利润率',
+    'The industry cohort is temporarily unavailable.': '行业样本暂时不可用。',
+    'Yahoo Finance did not provide a recognized industry classification.': 'Yahoo Finance 未提供可识别的行业分类。',
+    'The sector cohort is temporarily unavailable.': '板块样本暂时不可用。',
+    'Yahoo Finance did not provide a recognized sector classification.': 'Yahoo Finance 未提供可识别的板块分类。',
+    "The company's annual historical range is temporarily unavailable.": '公司年度历史区间暂时不可用。',
+    'No sufficiently comparable peer listings were available.': '没有找到可比性足够的上市同业。',
+    'Historical statements did not contain enough comparable annual observations.': '历史财务报表中没有足够的可比年度观测值。',
+    'The benchmark cohort is a selected Yahoo Finance sample, not every company in the market; classifications and reported metrics may be incomplete.': '基准样本来自 Yahoo Finance 的筛选结果，并非市场全部公司；分类和已披露指标可能不完整。',
     'Market cap': '市值',
     'Forward P/E': '预期市盈率',
     'Price / Sales': '市销率',
@@ -701,6 +866,34 @@ const SERVER_TEXT = {
 // Insight explanations (fixed strings in backend/app/services/analysis.py).
 const SERVER_EXPLANATIONS = {
   es: {
+    'The valuation multiple is above the most comparable benchmark range. The premium requires stronger or more durable results to be justified.':
+      'El múltiplo de valoración supera el rango de referencia más comparable. La prima exige resultados más sólidos o duraderos para justificarse.',
+    'The valuation multiple is below the most comparable benchmark range. That may indicate value or reflect company-specific risks that peers do not share.':
+      'El múltiplo está por debajo del rango más comparable. Puede indicar valor o riesgos propios que los pares no comparten.',
+    "Debt is high relative to the comparison group or the company's own history, which can amplify downturns and refinancing risk.":
+      'La deuda es alta frente al grupo comparable o al historial propio, lo que puede amplificar caídas y riesgo de refinanciación.',
+    "Short-term liquidity sits below the selected comparison range. Review the company's working-capital model before treating the difference as distress.":
+      'La liquidez a corto plazo está por debajo del rango elegido. Revisa el modelo de capital circulante antes de interpretarlo como dificultad.',
+    'The company converts more revenue into free cash flow than its most relevant benchmark, providing greater reinvestment or capital-return flexibility.':
+      'La empresa convierte más ingresos en caja libre que su referencia principal, con mayor flexibilidad para reinvertir o devolver capital.',
+    'Free cash flow conversion trails the most relevant comparison range. Check whether investment needs are temporary or structurally higher.':
+      'La conversión en caja libre queda por debajo del rango relevante. Comprueba si las necesidades de inversión son temporales o estructurales.',
+    'Sales growth is above the selected industry, peer, sector, or historical range, which may indicate share gains or stronger end-market demand.':
+      'El crecimiento de ventas supera el rango elegido, lo que puede indicar ganancias de cuota o una demanda final más fuerte.',
+    'Sales growth trails the most relevant comparison range. Determine whether the gap is cyclical, company-specific, or caused by a different business mix.':
+      'El crecimiento de ventas queda por debajo del rango relevante. Determina si la brecha es cíclica, específica o debida a otra mezcla de negocio.',
+    'Net margin is above the selected comparison range, which may reflect pricing power, scale, or a more profitable business mix.':
+      'El margen neto supera el rango elegido, lo que puede reflejar poder de precios, escala o una mezcla más rentable.',
+    'Net margin is below the most relevant comparison range. Review whether the gap comes from temporary investment, cyclicality, or weaker economics.':
+      'El margen neto queda por debajo del rango relevante. Revisa si se debe a inversión temporal, ciclo o una economía más débil.',
+    'The stock has moved more than its comparison group. Beta is backward-looking and should be interpreted alongside business and balance-sheet risk.':
+      'La acción se ha movido más que su grupo. La beta mira al pasado y debe leerse junto con el riesgo del negocio y del balance.',
+    'The dividend yield is above the selected comparison range. Verify that earnings and cash flow support the payout before treating the yield as durable.':
+      'La rentabilidad por dividendo supera el rango elegido. Verifica que beneficios y caja sostengan el pago.',
+    'The price is in the upper quarter of its own one-year range. This is a historical price comparison, not evidence that the shares must reverse.':
+      'El precio está en el cuarto superior de su rango anual. Es una comparación histórica, no prueba de que deba revertir.',
+    'The price is in the lower quarter of its own one-year range. This may reflect deteriorating evidence or a possible overreaction.':
+      'El precio está en el cuarto inferior de su rango anual. Puede reflejar deterioro de la evidencia o una posible sobrerreacción.',
     'The market is paying a high multiple of current earnings. If growth slows, high-multiple stocks tend to fall harder.':
       'El mercado paga un múltiplo alto sobre los beneficios actuales. Si el crecimiento se frena, las acciones con múltiplos altos tienden a caer con más fuerza.',
     'Shares trade cheaply relative to current earnings. That can signal value — or that the market expects earnings to decline; check why.':
@@ -735,6 +928,34 @@ const SERVER_EXPLANATIONS = {
       'El consenso de objetivos de analistas está muy por debajo del precio actual. Los objetivos de analistas se equivocan con frecuencia — trátalos como un dato más, no como un veredicto.',
   },
   fr: {
+    'The valuation multiple is above the most comparable benchmark range. The premium requires stronger or more durable results to be justified.':
+      'Le multiple dépasse la plage de référence la plus comparable. La prime exige des résultats plus forts ou plus durables pour être justifiée.',
+    'The valuation multiple is below the most comparable benchmark range. That may indicate value or reflect company-specific risks that peers do not share.':
+      'Le multiple est sous la plage comparable. Cela peut signaler de la valeur ou des risques propres à l’entreprise.',
+    "Debt is high relative to the comparison group or the company's own history, which can amplify downturns and refinancing risk.":
+      'La dette est élevée face au groupe ou à l’historique propre, ce qui peut amplifier les replis et le risque de refinancement.',
+    "Short-term liquidity sits below the selected comparison range. Review the company's working-capital model before treating the difference as distress.":
+      'La liquidité court terme est sous la plage retenue. Examinez le fonds de roulement avant d’y voir une difficulté.',
+    'The company converts more revenue into free cash flow than its most relevant benchmark, providing greater reinvestment or capital-return flexibility.':
+      'L’entreprise convertit davantage de revenus en trésorerie libre que sa référence, offrant plus de flexibilité.',
+    'Free cash flow conversion trails the most relevant comparison range. Check whether investment needs are temporary or structurally higher.':
+      'La conversion en trésorerie libre est sous la plage pertinente. Vérifiez si les besoins d’investissement sont temporaires ou structurels.',
+    'Sales growth is above the selected industry, peer, sector, or historical range, which may indicate share gains or stronger end-market demand.':
+      'La croissance des ventes dépasse la plage retenue, ce qui peut indiquer des gains de parts ou une demande finale plus forte.',
+    'Sales growth trails the most relevant comparison range. Determine whether the gap is cyclical, company-specific, or caused by a different business mix.':
+      'La croissance des ventes est sous la plage pertinente. Déterminez si l’écart est cyclique, propre à l’entreprise ou lié au mix.',
+    'Net margin is above the selected comparison range, which may reflect pricing power, scale, or a more profitable business mix.':
+      'La marge nette dépasse la plage retenue, ce qui peut refléter le pouvoir de prix, l’échelle ou un mix plus rentable.',
+    'Net margin is below the most relevant comparison range. Review whether the gap comes from temporary investment, cyclicality, or weaker economics.':
+      'La marge nette est sous la plage pertinente. Vérifiez si l’écart vient d’investissements, du cycle ou d’une économie plus faible.',
+    'The stock has moved more than its comparison group. Beta is backward-looking and should be interpreted alongside business and balance-sheet risk.':
+      'L’action a davantage fluctué que son groupe. Le bêta est rétrospectif et doit être lu avec les risques opérationnels et bilanciels.',
+    'The dividend yield is above the selected comparison range. Verify that earnings and cash flow support the payout before treating the yield as durable.':
+      'Le rendement du dividende dépasse la plage retenue. Vérifiez que bénéfices et trésorerie soutiennent le versement.',
+    'The price is in the upper quarter of its own one-year range. This is a historical price comparison, not evidence that the shares must reverse.':
+      'Le cours est dans le quart supérieur de sa plage annuelle. C’est une comparaison historique, pas une preuve de retournement.',
+    'The price is in the lower quarter of its own one-year range. This may reflect deteriorating evidence or a possible overreaction.':
+      'Le cours est dans le quart inférieur de sa plage annuelle. Cela peut refléter une dégradation ou une réaction excessive.',
     'The market is paying a high multiple of current earnings. If growth slows, high-multiple stocks tend to fall harder.':
       'Le marché paie un multiple élevé des bénéfices actuels. Si la croissance ralentit, les valeurs à multiples élevés tendent à chuter plus fort.',
     'Shares trade cheaply relative to current earnings. That can signal value — or that the market expects earnings to decline; check why.':
@@ -769,6 +990,34 @@ const SERVER_EXPLANATIONS = {
       'Le consensus des objectifs d’analystes est bien en dessous du cours actuel. Ces objectifs sont souvent erronés — considérez-les comme un élément parmi d’autres, pas un verdict.',
   },
   zh: {
+    'The valuation multiple is above the most comparable benchmark range. The premium requires stronger or more durable results to be justified.':
+      '估值倍数高于最可比的基准区间。要证明这部分溢价合理，公司需要更强或更持久的经营结果。',
+    'The valuation multiple is below the most comparable benchmark range. That may indicate value or reflect company-specific risks that peers do not share.':
+      '估值倍数低于最可比的基准区间。这可能代表价值，也可能反映同业没有的公司特有风险。',
+    "Debt is high relative to the comparison group or the company's own history, which can amplify downturns and refinancing risk.":
+      '相较于可比公司或自身历史，债务水平偏高，可能放大下行影响和再融资风险。',
+    "Short-term liquidity sits below the selected comparison range. Review the company's working-capital model before treating the difference as distress.":
+      '短期流动性低于选定基准区间。在将差异视为困境前，应先检查公司的营运资金模式。',
+    'The company converts more revenue into free cash flow than its most relevant benchmark, providing greater reinvestment or capital-return flexibility.':
+      '公司将收入转化为自由现金流的能力高于主要基准，因此拥有更大的再投资或回馈股东空间。',
+    'Free cash flow conversion trails the most relevant comparison range. Check whether investment needs are temporary or structurally higher.':
+      '自由现金流转化率低于主要基准区间。需要判断投资需求是暂时性的，还是结构性更高。',
+    'Sales growth is above the selected industry, peer, sector, or historical range, which may indicate share gains or stronger end-market demand.':
+      '营收增长高于选定的行业、同业、板块或历史区间，可能表明市场份额提升或终端需求更强。',
+    'Sales growth trails the most relevant comparison range. Determine whether the gap is cyclical, company-specific, or caused by a different business mix.':
+      '营收增长低于主要基准区间。需要判断差距来自周期、公司特有因素，还是业务组合不同。',
+    'Net margin is above the selected comparison range, which may reflect pricing power, scale, or a more profitable business mix.':
+      '净利率高于选定基准区间，可能反映定价权、规模优势或更高利润的业务组合。',
+    'Net margin is below the most relevant comparison range. Review whether the gap comes from temporary investment, cyclicality, or weaker economics.':
+      '净利率低于主要基准区间。需要检查差距是否来自短期投入、周期波动或较弱的商业经济性。',
+    'The stock has moved more than its comparison group. Beta is backward-looking and should be interpreted alongside business and balance-sheet risk.':
+      '该股票的历史波动高于可比组。贝塔系数具有后视性，应与业务风险和资产负债表风险一起理解。',
+    'The dividend yield is above the selected comparison range. Verify that earnings and cash flow support the payout before treating the yield as durable.':
+      '股息率高于选定基准区间。在将其视为可持续收益前，应核实盈利和现金流是否能支撑派息。',
+    'The price is in the upper quarter of its own one-year range. This is a historical price comparison, not evidence that the shares must reverse.':
+      '股价处于自身一年区间的上四分位。这只是历史价格比较，并不证明股价必然反转。',
+    'The price is in the lower quarter of its own one-year range. This may reflect deteriorating evidence or a possible overreaction.':
+      '股价处于自身一年区间的下四分位。这可能反映证据恶化，也可能是过度反应。',
     'The market is paying a high multiple of current earnings. If growth slows, high-multiple stocks tend to fall harder.':
       '市场正在为当前盈利支付很高的倍数。一旦增长放缓，高倍数股票往往跌得更狠。',
     'Shares trade cheaply relative to current earnings. That can signal value — or that the market expects earnings to decline; check why.':
@@ -811,6 +1060,10 @@ export function translateServerText(language, text) {
 
 const BENCHMARK_TEXT = {
   es: {
+    relative_industry_benchmark: 'Industria {name}: mediana {median}; 50 % central {lower}–{upper} ({sampleSize} observaciones)',
+    relative_sector_benchmark: 'Sector {name}: mediana {median}; 50 % central {lower}–{upper} ({sampleSize} observaciones)',
+    relative_peers_benchmark: 'Pares seleccionados: mediana {median}; 50 % central {lower}–{upper} ({sampleSize} observaciones)',
+    relative_historical_benchmark: 'Historial propio: mediana {median}; rango observado {lower}–{upper} ({sampleSize} observaciones)',
     market_pe_average: 'La media histórica del mercado amplio ronda 15–20',
     debt_elevated: 'Más de ~150% suele considerarse elevado',
     current_ratio_low: 'Por debajo de 1,0, los pasivos próximos superan los activos líquidos',
@@ -827,6 +1080,10 @@ const BENCHMARK_TEXT = {
     vs_current_price: 'frente al precio actual {price} (brecha de {gap})',
   },
   fr: {
+    relative_industry_benchmark: 'Industrie {name} : médiane {median} ; 50 % central {lower}–{upper} ({sampleSize} observations)',
+    relative_sector_benchmark: 'Secteur {name} : médiane {median} ; 50 % central {lower}–{upper} ({sampleSize} observations)',
+    relative_peers_benchmark: 'Pairs sélectionnés : médiane {median} ; 50 % central {lower}–{upper} ({sampleSize} observations)',
+    relative_historical_benchmark: 'Historique propre : médiane {median} ; plage observée {lower}–{upper} ({sampleSize} observations)',
     market_pe_average: 'La moyenne historique du marché large est d’environ 15–20',
     debt_elevated: 'Au-dessus de ~150 %, le niveau est généralement jugé élevé',
     current_ratio_low: 'Sous 1,0, les dettes à court terme dépassent les actifs liquides',
@@ -843,6 +1100,10 @@ const BENCHMARK_TEXT = {
     vs_current_price: 'contre un cours actuel de {price} (écart de {gap})',
   },
   zh: {
+    relative_industry_benchmark: '{name} 行业：中位数 {median}；中间 50% 为 {lower}–{upper}（{sampleSize} 个观测值）',
+    relative_sector_benchmark: '{name} 板块：中位数 {median}；中间 50% 为 {lower}–{upper}（{sampleSize} 个观测值）',
+    relative_peers_benchmark: '选定同业：中位数 {median}；中间 50% 为 {lower}–{upper}（{sampleSize} 个观测值）',
+    relative_historical_benchmark: '自身历史：中位数 {median}；已观察区间 {lower}–{upper}（{sampleSize} 个观测值）',
     market_pe_average: '大盘长期平均水平约为 15–20',
     debt_elevated: '超过约 150% 通常被视为偏高',
     current_ratio_low: '低于 1.0 表示短期负债超过流动资产',

@@ -37,11 +37,52 @@ def overview(ticker):
     return {
         "ticker": ticker,
         "name": f"{ticker} Corp",
+        "sector": "Technology",
+        "industry": "Software - Infrastructure",
+        "exchange": "NMS",
         "currency": "USD",
         "price": point(100.0, "USD"),
         "trailing_pe": point(45.0),
         "market_cap": point(1_000_000, "USD"),
         "summary": claim("Company profile.", provider="Yahoo Finance"),
+    }
+
+
+def benchmark_context(ticker):
+    reference = {
+        "scope": "industry",
+        "name": "Software - Infrastructure",
+        "median": point(20.0),
+        "lower_bound": point(15.0),
+        "upper_bound": point(25.0),
+        "range_kind": "middle_50_percent",
+        "sample_size": 4,
+        "sample_tickers": ["AAA", "BBB", "CCC", "DDD"],
+        "period": None,
+        "rationale": claim("Industry is the closest operating comparison."),
+        "rationale_key": "benchmarkIndustryReason",
+        "rationale_params": {
+            "name": "Software - Infrastructure",
+            "sampleSize": "4",
+            "period": "",
+        },
+    }
+    return {
+        "industry": "Software - Infrastructure",
+        "sector": "Technology",
+        "selected_peers": [],
+        "metrics": [
+            {
+                "metric_key": "trailing_pe",
+                "label": "Trailing P/E",
+                "company_value": point(45.0),
+                "references": [reference],
+                "primary_scope": "industry",
+                "primary_rationale": reference["rationale"],
+            }
+        ],
+        "methodology": claim("Transparent peer methodology."),
+        "limitations": [claim("Selected sample limitation.")],
     }
 
 
@@ -84,6 +125,12 @@ def test_openapi_exposes_standardized_data_point_and_evidence_contracts():
     assert models["AnalysisResponse"]["properties"]["presentation"][
         "$ref"
     ].endswith("/ReportPresentation")
+    assert models["AnalysisResponse"]["properties"]["benchmarks"][
+        "$ref"
+    ].endswith("/BenchmarkContext")
+    assert models["MetricBenchmark"]["properties"]["references"]["items"][
+        "$ref"
+    ].endswith("/BenchmarkReference")
     assert models["FilingListResponse"]["properties"]["filings"]["items"][
         "$ref"
     ].endswith("/FilingSummary")
@@ -122,6 +169,10 @@ def test_overview_analysis_comparison_and_news_responses_include_provenance(monk
             "AI analysis", provider="Anthropic"
         ),
     )
+    monkeypatch.setattr(
+        "app.main.benchmarks.build_benchmark_context",
+        lambda ticker, metrics: benchmark_context(ticker),
+    )
     client = TestClient(app)
 
     overview_response = client.get("/api/stocks/TEST")
@@ -140,6 +191,9 @@ def test_overview_analysis_comparison_and_news_responses_include_provenance(monk
     assert_provenance(analysis["insights"][0]["explanation"])
     assert_provenance(analysis["insights"][0]["evidence"][0]["value"])
     assert_provenance(analysis["insights"][0]["evidence"][0]["benchmark"])
+    assert_provenance(analysis["benchmarks"]["methodology"])
+    assert analysis["benchmarks"]["metrics"][0]["primary_scope"] == "industry"
+    assert_provenance(analysis["benchmarks"]["metrics"][0]["references"][0]["median"])
     assert analysis["presentation"]["personalized"] is False
 
     compare_response = client.get("/api/compare?tickers=AAA,BBB")
