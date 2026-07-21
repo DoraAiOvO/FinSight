@@ -30,6 +30,8 @@ from .models.schemas import (
     ThesisResponse,
     ThesisStatus,
     ThesisUpdate,
+    ValuationAssumptions,
+    ValuationResponse,
     WatchlistCreate,
     WatchlistItemCreate,
     WatchlistResponse,
@@ -43,6 +45,7 @@ from .services import (
     research_workspace,
     sec_filings,
     thesis_ledger,
+    valuations,
 )
 from .services.analysis import DISCLAIMER, build_comparison, build_insights
 from .services.customer_profiles import (
@@ -658,6 +661,46 @@ def stock_analysis(
         "presentation": presentation,
         "disclaimer": DISCLAIMER,
     }
+
+
+def _deterministic_valuation(
+    ticker: str,
+    assumptions: ValuationAssumptions | None = None,
+):
+    try:
+        ticker = normalize_ticker(ticker)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    try:
+        inputs = market_data.get_valuation_inputs(ticker)
+        overview = market_data.get_overview(ticker)
+        benchmark_context = benchmarks.build_benchmark_context(ticker, overview)
+        return valuations.build_valuation(
+            ticker,
+            inputs,
+            benchmark_context,
+            assumptions=assumptions,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error))
+    except valuations.ValuationDataUnavailableError as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    except valuations.ValuationError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=502, detail=f"Data provider error: {error}")
+
+
+@app.get("/api/valuation/{ticker}", response_model=ValuationResponse)
+def default_valuation(ticker: str):
+    """Calculate valuation with transparent code-defined default assumptions."""
+    return _deterministic_valuation(ticker)
+
+
+@app.post("/api/valuation/{ticker}", response_model=ValuationResponse)
+def calculate_valuation(ticker: str, assumptions: ValuationAssumptions):
+    """Recalculate every valuation output from explicit user assumptions."""
+    return _deterministic_valuation(ticker, assumptions)
 
 
 @app.get("/api/compare", response_model=CompareResponse)

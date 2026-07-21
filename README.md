@@ -48,6 +48,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 📐 **Relative benchmarks** | Compares metrics with industry, sector, automatically selected peers, and the company’s own annual history—and explains which benchmark is primary and why |
 | 🧠 **Research memory** | Persists grouped watchlists and research snapshots, then shows what changed in metrics, news, filings, signals, and thesis assumptions |
 | 📒 **Thesis Ledger** | Records a research thesis, measurable metric or event assumptions, evidence on both sides, status, and an append-only change history |
+| 🧮 **Valuation & scenarios** | Calculates DCF, reverse DCF, selected-peer multiples, three scenario cases, and a sensitivity matrix entirely in deterministic code |
 
 ## Quick start
 
@@ -161,6 +162,7 @@ priorities—is passed to the optional AI narrative layer.
 │   │       ├── customer_profiles.py  onboarding persistence
 │   │       ├── research_workspace.py watchlists, snapshots, and deterministic diffs
 │   │       ├── thesis_ledger.py  thesis and assumption CRUD with audit history
+│   │       ├── valuations.py    deterministic DCF, reverse DCF, peers, and sensitivity
 │   │       ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
 │   │       └── ai.py           optional Anthropic layer
 │   ├── alembic/        versioned database migrations
@@ -178,6 +180,8 @@ priorities—is passed to the optional AI narrative layer.
 | `GET /api/analysis/{ticker}` | Benchmark-aware risks, opportunities, peer selection, and historical ranges |
 | `GET /api/analysis/{ticker}?customer_id={uuid}` | Same evidence with a customer-specific presentation plan |
 | `GET /api/compare?tickers=AAPL,MSFT` | Side-by-side comparison (2–5 tickers) |
+| `GET /api/valuation/{ticker}` | Deterministic valuation using disclosed code-defined defaults |
+| `POST /api/valuation/{ticker}` | Recalculate all valuation models from explicit user assumptions |
 | `GET /api/filings/{ticker}` | Recent 10-K, 10-Q, and 8-K filings from SEC EDGAR |
 | `GET /api/filings/{ticker}/{accession}` | Important extracted sections from one filing |
 | `POST /api/filings/{ticker}/{accession}/questions` | Filing-grounded answer plus original-section citations |
@@ -202,7 +206,7 @@ API financial values use a shared `DataPoint` object, and sourced or generated
 claims use a shared `Evidence` object. Both include `provider`, `source`,
 `as_of_date`, `fetched_at`, `freshness_status`, `confidence`, and an optional
 `source_url`. This contract applies consistently across overview, price history,
-analysis, comparison, and news responses; the frontend unwraps the payloads
+analysis, comparison, valuation, and news responses; the frontend unwraps the payloads
 without changing the report's presentation.
 
 SEC results add official filing, reporting-period, acceptance, fetch, and cache
@@ -235,6 +239,23 @@ analyst targets are labeled as changed rather than automatically better or worse
 The optional LLM is not used to calculate or classify any difference. The
 current Thesis Ledger assumptions are injected into each saved snapshot, so a
 later status or condition update appears in the next deterministic change report.
+
+### Deterministic valuation and scenarios
+
+The valuation lab starts from sourced revenue, free cash flow, cash, debt,
+shares outstanding, current price, and—when available—trailing EPS. Backend code
+projects revenue and free cash flow, discounts the explicit period, calculates a
+Gordon-growth terminal value, bridges enterprise value to equity value, and
+divides by code-projected diluted shares. Users can change projection years,
+revenue growth, free-cash-flow margin, discount rate, terminal growth, and annual
+share dilution.
+
+The same engine also calculates conservative, base, and optimistic cases; a
+discount-rate/terminal-growth sensitivity matrix; a reverse DCF solved by
+bisection; and P/E or Price/Sales estimates from the automatically selected-peer
+median. Every assumption and result carries provenance. The valuation routes do
+not invoke the optional LLM, and valuation snapshots can be saved with the rest
+of a research session.
 
 ### Thesis Ledger
 
@@ -302,6 +323,7 @@ limitations and never trigger a fallback to the old universal thresholds.
 - [ ] Exportable research briefs (PDF)
 - [x] Add watchlists, saved research sessions, and deterministic change tracking
 - [x] Add the Thesis Ledger with measurable assumptions, two-sided evidence, and change history
+- [x] Add deterministic DCF, reverse DCF, peer multiples, scenarios, and sensitivity analysis
 
 ## Contributing
 

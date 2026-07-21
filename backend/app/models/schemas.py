@@ -91,6 +91,17 @@ class AssumptionStatus(str, Enum):
     INVALIDATED = "invalidated"
 
 
+class ValuationScenario(str, Enum):
+    CONSERVATIVE = "conservative"
+    BASE = "base"
+    OPTIMISTIC = "optimistic"
+
+
+class PeerMultipleMethod(str, Enum):
+    TRAILING_PE = "trailing_pe"
+    PRICE_TO_SALES = "price_to_sales"
+
+
 class ReportSection(str, Enum):
     OVERVIEW = "overview"
     ANALYSIS = "analysis"
@@ -313,6 +324,123 @@ class CompareRow(BaseModel):
 class CompareResponse(BaseModel):
     tickers: list[str]
     rows: list[CompareRow]
+
+
+class ValuationAssumptions(BaseModel):
+    projection_years: int = Field(default=5, ge=3, le=10)
+    revenue_growth: float = Field(ge=-0.5, le=1.0)
+    free_cash_flow_margin: float = Field(ge=-0.5, le=0.8)
+    discount_rate: float = Field(ge=0.02, le=0.5)
+    terminal_growth: float = Field(ge=-0.05, le=0.1)
+    annual_share_dilution: float = Field(default=0, ge=-0.1, le=0.25)
+
+    @model_validator(mode="after")
+    def discount_rate_exceeds_terminal_growth(self):
+        if self.discount_rate <= self.terminal_growth:
+            raise ValueError("discount_rate must exceed terminal_growth")
+        return self
+
+
+class ValuationAssumptionSet(BaseModel):
+    projection_years: int
+    revenue_growth: DataPoint
+    free_cash_flow_margin: DataPoint
+    discount_rate: DataPoint
+    terminal_growth: DataPoint
+    annual_share_dilution: DataPoint
+
+
+class ValuationInputSet(BaseModel):
+    total_revenue: DataPoint
+    free_cash_flow: DataPoint
+    total_cash: DataPoint
+    total_debt: DataPoint
+    shares_outstanding: DataPoint
+    current_price: DataPoint
+    trailing_eps: DataPoint | None = None
+
+
+class DcfProjectionYear(BaseModel):
+    year: int
+    projected_revenue: DataPoint
+    projected_free_cash_flow: DataPoint
+    diluted_shares: DataPoint
+    discount_factor: DataPoint
+    present_value: DataPoint
+
+
+class DcfResult(BaseModel):
+    assumptions: ValuationAssumptionSet
+    projections: list[DcfProjectionYear]
+    present_value_explicit_cash_flows: DataPoint
+    terminal_value: DataPoint
+    present_value_terminal_value: DataPoint
+    enterprise_value: DataPoint
+    equity_value: DataPoint
+    intrinsic_value_per_share: DataPoint
+    current_price: DataPoint
+    upside_downside: DataPoint
+
+
+class ReverseDcfResult(BaseModel):
+    target_price: DataPoint
+    implied_revenue_growth: DataPoint | None = None
+    search_lower_bound: DataPoint
+    search_upper_bound: DataPoint
+    converged: bool
+    explanation: Evidence
+
+
+class PeerMultipleEstimate(BaseModel):
+    method: PeerMultipleMethod
+    peer_median_multiple: DataPoint
+    company_basis: DataPoint
+    implied_value_per_share: DataPoint
+    sample_size: int = Field(ge=2)
+    peer_tickers: list[str] = Field(default_factory=list)
+    explanation: Evidence
+
+
+class SensitivityCell(BaseModel):
+    terminal_growth: DataPoint
+    intrinsic_value_per_share: DataPoint | None = None
+
+
+class SensitivityRow(BaseModel):
+    discount_rate: DataPoint
+    cells: list[SensitivityCell]
+
+
+class SensitivityAnalysis(BaseModel):
+    terminal_growth_rates: list[DataPoint]
+    rows: list[SensitivityRow]
+
+
+class ScenarioValuation(BaseModel):
+    scenario: ValuationScenario
+    dcf: DcfResult
+
+
+class MarginOfSafetyRange(BaseModel):
+    low: DataPoint
+    base: DataPoint
+    high: DataPoint
+    current_price: DataPoint
+
+
+class ValuationResponse(BaseModel):
+    ticker: str
+    currency: str
+    inputs: ValuationInputSet
+    base_case: DcfResult
+    reverse_dcf: ReverseDcfResult
+    peer_multiples: list[PeerMultipleEstimate] = Field(default_factory=list)
+    scenarios: list[ScenarioValuation]
+    margin_of_safety_range: MarginOfSafetyRange
+    sensitivity: SensitivityAnalysis
+    methodology: Evidence
+    limitations: list[Evidence] = Field(default_factory=list)
+    disclaimer: str
 
 
 class CacheMetadata(BaseModel):
@@ -613,6 +741,7 @@ class ResearchSnapshot(BaseModel):
     analysis: AnalysisResponse | None = None
     news: NewsResponse | None = None
     filings: FilingListResponse | None = None
+    valuation: ValuationResponse | None = None
     thesis_assumptions: list[ThesisAssumptionSnapshot] = Field(default_factory=list)
 
 
