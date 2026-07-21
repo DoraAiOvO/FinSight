@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 
 import {
   applyAuditResult,
+  auditCheckedText,
   auditCheckRows,
   auditStatusKey,
   buildAuditDraft,
@@ -65,4 +66,15 @@ test('audit helpers expose all six checks in a stable order', () => {
   })
   assert.equal(auditStatusKey('passed'), 'auditStatusPassed')
   assert.equal(auditStatusKey('blocked'), 'auditStatusBlocked')
+})
+
+
+test('audit checked copy interpolates evidence and data point totals', () => {
+  assert.equal(
+    auditCheckedText(
+      'Checked {evidence} evidence items and {points} data points',
+      { evidence_checked: 7, data_points_checked: 23 },
+    ),
+    'Checked 7 evidence items and 23 data points',
+  )
 })

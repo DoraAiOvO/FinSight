@@ -1,5 +1,5 @@
 import { useTranslation } from '../hooks/useTranslation.js'
-import { auditCheckRows, auditStatusKey } from '../lib/evidenceAudit.js'
+import { auditCheckedText, auditCheckRows, auditStatusKey } from '../lib/evidenceAudit.js'
 
 
 const CHECK_LABELS = {
@@ -58,11 +58,7 @@ export default function EvidenceAuditPanel({ audit }) {
       </div>
 
       <div className="audit-footnote">
-        <span>
-          {t('auditChecked')}
-            .replace('{evidence}', audit.evidence_checked)
-            .replace('{points}', audit.data_points_checked)
-        </span>
+        <span>{auditCheckedText(t('auditChecked'), audit)}</span>
         {audit.blocked_statements > 0 && (
           <strong>
             {t('auditBlockedCount').replace('{count}', audit.blocked_statements)}

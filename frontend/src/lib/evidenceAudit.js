@@ -55,3 +55,9 @@ export function auditStatusKey(status) {
     blocked: 'auditStatusBlocked',
   }[status] || 'auditStatusWarning'
 }
+
+export function auditCheckedText(template, audit) {
+  return template
+    .replace('{evidence}', audit.evidence_checked)
+    .replace('{points}', audit.data_points_checked)
+}
