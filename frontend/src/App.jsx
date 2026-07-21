@@ -11,6 +11,7 @@ import CustomerOnboarding from './components/CustomerOnboarding.jsx'
 import LanguageSwitcher from './components/LanguageSwitcher.jsx'
 import PersonalizationBanner from './components/PersonalizationBanner.jsx'
 import ProfileButton from './components/ProfileButton.jsx'
+import ResearchWorkspace from './components/ResearchWorkspace.jsx'
 import { useCustomerProfile } from './context/CustomerProfileContext.jsx'
 import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
@@ -320,6 +321,12 @@ export default function App() {
           <PersonalizationBanner
             presentation={data.analysis?.presentation}
             onEdit={openOnboarding}
+          />
+          <ResearchWorkspace
+            customerId={customerId}
+            data={data}
+            onAnalyze={analyze}
+            onRequireProfile={openOnboarding}
           />
           <ReportSections
             data={data}

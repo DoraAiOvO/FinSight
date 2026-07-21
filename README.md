@@ -46,6 +46,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 🧭 **Customer research profile** | Organizes the same evidence around experience, horizon, priorities, risk comfort, report depth, language, and industries of interest |
 | 🏛️ **SEC filings** | Lists recent 10-K, 10-Q, and 8-K filings, extracts decision-useful sections and earnings exhibits, and answers questions with citations to the original filing |
 | 📐 **Relative benchmarks** | Compares metrics with industry, sector, automatically selected peers, and the company’s own annual history—and explains which benchmark is primary and why |
+| 🧠 **Research memory** | Persists grouped watchlists and research snapshots, then shows what changed in metrics, news, filings, signals, and thesis assumptions |
 
 ## Quick start
 
@@ -157,6 +158,7 @@ priorities—is passed to the optional AI narrative layer.
 │   │       ├── analysis.py     transparent risk/opportunity rules
 │   │       ├── presentation.py profile-driven organization and highlights
 │   │       ├── customer_profiles.py  onboarding persistence
+│   │       ├── research_workspace.py watchlists, snapshots, and deterministic diffs
 │   │       ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
 │   │       └── ai.py           optional Anthropic layer
 │   ├── alembic/        versioned database migrations
@@ -180,6 +182,12 @@ priorities—is passed to the optional AI narrative layer.
 | `POST /api/customer-profiles` | Create a browser-scoped customer profile |
 | `GET /api/customer-profiles/{customer_id}` | Restore a customer profile |
 | `PUT /api/customer-profiles/{customer_id}` | Replace customer research preferences |
+| `GET/POST /api/customers/{customer_id}/watchlists` | List or create persistent watchlist groups |
+| `POST /api/customers/{customer_id}/watchlists/{watchlist_id}/items` | Add a normalized ticker to a watchlist |
+| `DELETE /api/customers/{customer_id}/watchlists/{watchlist_id}/items/{ticker}` | Remove a ticker from a watchlist |
+| `GET/POST /api/customers/{customer_id}/research-sessions` | List or save validated research snapshots |
+| `GET/DELETE /api/customers/{customer_id}/research-sessions/{session_id}` | Restore or delete a saved research session |
+| `POST /api/customers/{customer_id}/what-changed/{ticker}` | Compare current evidence with the latest or selected saved session |
 | `GET /api/health` | Status + whether the AI layer is enabled |
 
 ### Data provenance contract
@@ -199,6 +207,28 @@ For earnings-related 8-K filings, FinSight also reads matching EX-99 earnings
 release exhibits from the same EDGAR filing package.
 Without an Anthropic key, the endpoint returns an extractive answer with the
 same citations instead of disabling filing questions.
+
+### Research memory and change tracking
+
+Customers with a browser-scoped profile can create multiple watchlist groups and
+save the currently visible research brief as a persistent, schema-validated
+snapshot. FinSight automatically selects the latest saved session for the same
+ticker as the comparison baseline; callers may also select a specific baseline
+session through the API.
+
+The “What changed since last research?” report is deterministic. It compares:
+
+- financial metrics, with a 1% noise tolerance and directional labels only where
+  “improved” or “worsened” has a defensible financial meaning;
+- newly observed news and SEC filings;
+- new, resolved, strengthened, or weakened risk and opportunity signals; and
+- thesis-assumption statuses already stored in the research workspace.
+
+Price, valuation multiples, market capitalization, beta, dividend yield, and
+analyst targets are labeled as changed rather than automatically better or worse.
+The optional LLM is not used to calculate or classify any difference. Thesis
+editing remains a separate roadmap phase; this report already reads persisted
+assumptions so it can integrate with that phase without changing its API shape.
 
 ### Benchmark methodology
 
@@ -249,7 +279,7 @@ limitations and never trigger a fallback to the old universal thresholds.
 - [x] Replace universal metric cutoffs with industry, sector, peer, and historical benchmarks
 - [ ] Add earnings-call transcript sources
 - [ ] Exportable research briefs (PDF)
-- [ ] Watchlists and saved research sessions
+- [x] Add watchlists, saved research sessions, and deterministic change tracking
 
 ## Contributing
 

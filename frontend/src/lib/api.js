@@ -6,6 +6,7 @@ async function request(path, options) {
     error.status = res.status
     throw error
   }
+  if (res.status === 204) return null
   return res.json()
 }
 
@@ -46,6 +47,54 @@ export const api = {
     get: (customerId) => get(`/api/customer-profiles/${encodeURIComponent(customerId)}`),
     update: (customerId, profile) => (
       write(`/api/customer-profiles/${encodeURIComponent(customerId)}`, 'PUT', profile)
+    ),
+  },
+  watchlists: {
+    list: (customerId) => get(`/api/customers/${encodeURIComponent(customerId)}/watchlists`),
+    create: (customerId, watchlist) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/watchlists`,
+      'POST',
+      watchlist,
+    ),
+    remove: (customerId, watchlistId) => request(
+      `/api/customers/${encodeURIComponent(customerId)}/watchlists/${encodeURIComponent(watchlistId)}`,
+      { method: 'DELETE' },
+    ),
+    addItem: (customerId, watchlistId, item) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/watchlists/${encodeURIComponent(watchlistId)}/items`,
+      'POST',
+      item,
+    ),
+    removeItem: (customerId, watchlistId, ticker) => request(
+      `/api/customers/${encodeURIComponent(customerId)}/watchlists/${encodeURIComponent(watchlistId)}/items/${encodeURIComponent(ticker)}`,
+      { method: 'DELETE' },
+    ),
+  },
+  researchSessions: {
+    list: (customerId, ticker = null, limit = 20) => {
+      const params = new URLSearchParams({ limit: String(limit) })
+      if (ticker) params.set('ticker', ticker)
+      return get(`/api/customers/${encodeURIComponent(customerId)}/research-sessions?${params}`)
+    },
+    create: (customerId, research) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/research-sessions`,
+      'POST',
+      research,
+    ),
+    get: (customerId, researchSessionId) => get(
+      `/api/customers/${encodeURIComponent(customerId)}/research-sessions/${encodeURIComponent(researchSessionId)}`,
+    ),
+    remove: (customerId, researchSessionId) => request(
+      `/api/customers/${encodeURIComponent(customerId)}/research-sessions/${encodeURIComponent(researchSessionId)}`,
+      { method: 'DELETE' },
+    ),
+    whatChanged: (customerId, ticker, snapshot, baselineSessionId = null) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/what-changed/${encodeURIComponent(ticker)}`,
+      'POST',
+      {
+        snapshot,
+        ...(baselineSessionId ? { baseline_session_id: baselineSessionId } : {}),
+      },
     ),
   },
 }
