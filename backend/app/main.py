@@ -21,7 +21,7 @@ from .models.schemas import (
     NewsResponse,
     Overview,
 )
-from .services import ai, market_data, sec_filings
+from .services import ai, benchmarks, market_data, sec_filings
 from .services.analysis import DISCLAIMER, build_comparison, build_insights
 from .services.customer_profiles import (
     create_customer_profile,
@@ -232,10 +232,16 @@ def stock_analysis(
         except SQLAlchemyError:
             # A profile lookup must never break the existing anonymous report.
             profile = None
-    insights, presentation = organize_report(metrics, build_insights(metrics), profile)
+    benchmark_context = benchmarks.build_benchmark_context(ticker, metrics)
+    insights, presentation = organize_report(
+        metrics,
+        build_insights(metrics, benchmark_context),
+        profile,
+    )
     return {
         "ticker": ticker.upper(),
         "insights": insights,
+        "benchmarks": benchmark_context,
         "ai_narrative": ai.narrate_analysis(
             ticker.upper(),
             metrics,

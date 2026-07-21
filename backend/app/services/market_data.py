@@ -89,14 +89,23 @@ def extract_metrics(info: dict, ticker: str) -> dict:
     """Normalize the yfinance info dict into FinSight's metric schema."""
     price = info.get("currentPrice") or info.get("regularMarketPrice")
     prev = info.get("previousClose") or info.get("regularMarketPreviousClose")
+    free_cash_flow = info.get("freeCashflow")
+    total_revenue = info.get("totalRevenue")
     change = None
     if price is not None and prev:
         change = round((price - prev) / prev * 100, 2)
+    free_cash_flow_margin = None
+    if free_cash_flow is not None and total_revenue:
+        try:
+            free_cash_flow_margin = float(free_cash_flow) / float(total_revenue)
+        except (TypeError, ValueError, ZeroDivisionError):
+            pass
     return {
         "ticker": ticker.upper(),
         "name": info.get("shortName") or info.get("longName"),
         "sector": info.get("sector"),
         "industry": info.get("industry"),
+        "exchange": info.get("exchange"),
         "currency": info.get("currency"),
         "price": price,
         "change_percent": change,
@@ -110,7 +119,9 @@ def extract_metrics(info: dict, ticker: str) -> dict:
         "earnings_growth": info.get("earningsGrowth"),
         "debt_to_equity": info.get("debtToEquity"),
         "current_ratio": info.get("currentRatio"),
-        "free_cash_flow": info.get("freeCashflow"),
+        "free_cash_flow": free_cash_flow,
+        "total_revenue": total_revenue,
+        "free_cash_flow_margin": free_cash_flow_margin,
         "beta": info.get("beta"),
         "dividend_yield": normalize_dividend_yield(info, price),
         "fifty_two_week_low": info.get("fiftyTwoWeekLow"),
@@ -148,6 +159,8 @@ def get_overview(ticker: str) -> dict:
         "debt_to_equity": "debtToEquity",
         "current_ratio": "currentRatio",
         "free_cash_flow": "freeCashflow",
+        "total_revenue": "totalRevenue",
+        "free_cash_flow_margin": "derived from freeCashflow and totalRevenue",
         "beta": "beta",
         "dividend_yield": "derived from dividendRate and current price",
         "fifty_two_week_low": "fiftyTwoWeekLow",
@@ -158,6 +171,7 @@ def get_overview(ticker: str) -> dict:
         "price",
         "market_cap",
         "free_cash_flow",
+        "total_revenue",
         "fifty_two_week_low",
         "fifty_two_week_high",
         "analyst_target_mean",
@@ -168,8 +182,9 @@ def get_overview(ticker: str) -> dict:
         "revenue_growth",
         "earnings_growth",
         "dividend_yield",
+        "free_cash_flow_margin",
     }
-    derived_fields = {"change_percent", "dividend_yield"}
+    derived_fields = {"change_percent", "dividend_yield", "free_cash_flow_margin"}
 
     for key, source_field in source_fields.items():
         value = metrics.get(key)
@@ -269,6 +284,143 @@ def get_history(ticker: str, period: str = "6mo") -> list[dict]:
     points = normalize_history_points(hist.iterrows(), ticker=ticker, fetched_at=fetched_at)
     _store(key, {"points": points})
     return points
+
+
+def get_benchmark_candidates(
+    scope: str,
+    name: str,
+    *,
+    region: str | None = None,
+    limit: int = 100,
+) -> list[dict]:
+    """Return cached Yahoo screener candidates for an industry or sector."""
+    if scope not in {"industry", "sector"}:
+        raise ValueError("Benchmark scope must be industry or sector")
+    key = f"benchmark-screen:{scope}:{name}:{region or 'global'}:{limit}"
+    cached = _cached(key)
+    if cached is not None:
+        return cached["quotes"]
+
+    clauses = [yf.EquityQuery("eq", [scope, name])]
+    if region:
+        clauses.append(yf.EquityQuery("eq", ["region", region]))
+    query = clauses[0] if len(clauses) == 1 else yf.EquityQuery("and", clauses)
+    response = yf.screen(
+        query,
+        size=max(1, min(limit, 250)),
+        sortField="intradaymarketcap",
+        sortAsc=False,
+    )
+    quotes = response.get("quotes") or []
+    _store(key, {"quotes": quotes})
+    return quotes
+
+
+def _finite_statement_value(statement, row: str, column):
+    try:
+        value = float(statement.at[row, column])
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) else None
+
+
+def get_historical_financial_metrics(ticker: str) -> list[dict]:
+    """Derive comparable annual metrics from Yahoo financial statements."""
+    key = f"benchmark-history:{ticker.upper()}"
+    cached = _cached(key)
+    if cached is not None:
+        return cached["observations"]
+
+    fetched_at = datetime.now(timezone.utc)
+    company = yf.Ticker(ticker)
+    income = company.get_income_stmt(freq="yearly")
+    balance = company.get_balance_sheet(freq="yearly")
+    cash_flow = company.get_cash_flow(freq="yearly")
+    columns = sorted(
+        set(getattr(income, "columns", []))
+        | set(getattr(balance, "columns", []))
+        | set(getattr(cash_flow, "columns", [])),
+        reverse=True,
+    )
+    revenues = {
+        column: _finite_statement_value(income, "TotalRevenue", column)
+        for column in columns
+    }
+    observations = []
+    source_url = f"https://finance.yahoo.com/quote/{ticker.upper()}/financials"
+
+    for index, column in enumerate(columns):
+        try:
+            as_of_date = column.date()
+        except AttributeError:
+            try:
+                as_of_date = datetime.fromisoformat(str(column)).date()
+            except ValueError:
+                continue
+
+        revenue = revenues.get(column)
+        previous_revenue = revenues.get(columns[index + 1]) if index + 1 < len(columns) else None
+        net_income = _finite_statement_value(income, "NetIncome", column)
+        operating_income = _finite_statement_value(income, "OperatingIncome", column)
+        debt = _finite_statement_value(balance, "TotalDebt", column)
+        equity = _finite_statement_value(balance, "StockholdersEquity", column)
+        current_assets = _finite_statement_value(balance, "CurrentAssets", column)
+        current_liabilities = _finite_statement_value(balance, "CurrentLiabilities", column)
+        free_cash_flow = _finite_statement_value(cash_flow, "FreeCashFlow", column)
+
+        raw_metrics = {
+            "revenue_growth": (
+                revenue / previous_revenue - 1
+                if revenue is not None and previous_revenue not in {None, 0}
+                else None
+            ),
+            "profit_margin": (
+                net_income / revenue if net_income is not None and revenue not in {None, 0} else None
+            ),
+            "operating_margin": (
+                operating_income / revenue
+                if operating_income is not None and revenue not in {None, 0}
+                else None
+            ),
+            "debt_to_equity": (
+                debt / equity * 100 if debt is not None and equity not in {None, 0} else None
+            ),
+            "current_ratio": (
+                current_assets / current_liabilities
+                if current_assets is not None and current_liabilities not in {None, 0}
+                else None
+            ),
+            "free_cash_flow_margin": (
+                free_cash_flow / revenue
+                if free_cash_flow is not None and revenue not in {None, 0}
+                else None
+            ),
+        }
+        metrics = {}
+        for metric_key, value in raw_metrics.items():
+            if value is None or not math.isfinite(value):
+                continue
+            unit = "percent" if metric_key == "debt_to_equity" else (
+                "ratio" if metric_key != "current_ratio" else None
+            )
+            metrics[metric_key] = data_point(
+                value,
+                unit=unit,
+                **provenance(
+                    provider="Yahoo Finance",
+                    source=f"annual financial statements: derived {metric_key}",
+                    as_of_date=as_of_date,
+                    fetched_at=fetched_at,
+                    freshness_status=FreshnessStatus.HISTORICAL.value,
+                    confidence=0.85,
+                    source_url=source_url,
+                ),
+            )
+        if metrics:
+            observations.append({"period_end": as_of_date, "metrics": metrics})
+
+    _store(key, {"observations": observations})
+    return observations
 
 
 def get_news(ticker: str, limit: int = 10) -> list[dict]:

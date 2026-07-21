@@ -4,11 +4,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.services.market_data import (  # noqa: E402
     extract_metrics,
+    get_historical_financial_metrics,
     get_overview,
     normalize_dividend_yield,
     normalize_history_points,
@@ -44,6 +46,76 @@ def test_dividend_yield_prefers_annual_dividend_over_provider_units():
 def test_dividend_yield_normalizes_percentage_points_fallback():
     assert normalize_dividend_yield({"dividendYield": 0.34}, None) == pytest.approx(0.0034)
     assert normalize_dividend_yield({"dividendYield": 0.015}, None) == 0.015
+
+
+def test_free_cash_flow_margin_is_derived_from_revenue():
+    metrics = extract_metrics(
+        {"symbol": "TEST", "freeCashflow": 20.0, "totalRevenue": 100.0},
+        "TEST",
+    )
+    assert metrics["free_cash_flow_margin"] == pytest.approx(0.20)
+
+
+def test_annual_statements_create_company_historical_ranges(monkeypatch):
+    columns = [pd.Timestamp("2024-12-31"), pd.Timestamp("2023-12-31")]
+    income = pd.DataFrame(
+        {
+            columns[0]: {
+                "TotalRevenue": 120.0,
+                "NetIncome": 30.0,
+                "OperatingIncome": 40.0,
+            },
+            columns[1]: {
+                "TotalRevenue": 100.0,
+                "NetIncome": 20.0,
+                "OperatingIncome": 25.0,
+            },
+        }
+    )
+    balance = pd.DataFrame(
+        {
+            columns[0]: {
+                "TotalDebt": 50.0,
+                "StockholdersEquity": 50.0,
+                "CurrentAssets": 80.0,
+                "CurrentLiabilities": 40.0,
+            },
+            columns[1]: {
+                "TotalDebt": 45.0,
+                "StockholdersEquity": 50.0,
+                "CurrentAssets": 70.0,
+                "CurrentLiabilities": 40.0,
+            },
+        }
+    )
+    cash_flow = pd.DataFrame(
+        {
+            columns[0]: {"FreeCashFlow": 20.0},
+            columns[1]: {"FreeCashFlow": 15.0},
+        }
+    )
+
+    class FakeTicker:
+        def get_income_stmt(self, freq="yearly"):
+            return income
+
+        def get_balance_sheet(self, freq="yearly"):
+            return balance
+
+        def get_cash_flow(self, freq="yearly"):
+            return cash_flow
+
+    monkeypatch.setattr("app.services.market_data.yf.Ticker", lambda ticker: FakeTicker())
+    observations = get_historical_financial_metrics("HISTTEST")
+    latest = observations[0]
+
+    assert latest["period_end"].isoformat() == "2024-12-31"
+    assert latest["metrics"]["revenue_growth"]["value"] == pytest.approx(0.20)
+    assert latest["metrics"]["profit_margin"]["value"] == pytest.approx(0.25)
+    assert latest["metrics"]["debt_to_equity"]["value"] == pytest.approx(100.0)
+    assert latest["metrics"]["current_ratio"]["value"] == pytest.approx(2.0)
+    assert latest["metrics"]["free_cash_flow_margin"]["value"] == pytest.approx(1 / 6)
+    assert latest["metrics"]["profit_margin"]["freshness_status"] == "historical"
 
 
 def test_overview_wraps_financial_values_and_summary_with_provenance(monkeypatch):

@@ -1,6 +1,7 @@
 """Customer onboarding persistence and presentation-boundary tests."""
 
 import sys
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -25,6 +26,73 @@ PROFILE = {
     "preferred_language": "zh",
     "industries_of_interest": ["Technology", "Semiconductors"],
 }
+
+
+def _point(value):
+    return {
+        "value": value,
+        "unit": None,
+        "display_value": None,
+        "provider": "Yahoo Finance",
+        "source": "test fixture",
+        "as_of_date": date(2026, 7, 19),
+        "fetched_at": datetime(2026, 7, 20, 12, 0, tzinfo=timezone.utc),
+        "freshness_status": "fresh",
+        "confidence": 0.9,
+        "source_url": "https://example.com",
+    }
+
+
+def _claim(text):
+    return {
+        "claim": text,
+        **{
+            key: value
+            for key, value in _point(None).items()
+            if key not in {"value", "unit", "display_value"}
+        },
+    }
+
+
+def _benchmark_context(metrics):
+    definitions = {
+        "trailing_pe": ("Trailing P/E", 15.0, 20.0, 25.0),
+        "debt_to_equity": ("Debt / Equity", 50.0, 80.0, 120.0),
+    }
+    benchmark_metrics = []
+    for metric_key, (label, lower, middle, upper) in definitions.items():
+        reference = {
+            "scope": "industry",
+            "name": "Semiconductors",
+            "median": _point(middle),
+            "lower_bound": _point(lower),
+            "upper_bound": _point(upper),
+            "range_kind": "middle_50_percent",
+            "sample_size": 4,
+            "sample_tickers": ["AAA", "BBB", "CCC", "DDD"],
+            "period": None,
+            "rationale": _claim("Industry comparison."),
+            "rationale_key": "benchmarkIndustryReason",
+            "rationale_params": {"name": "Semiconductors", "sampleSize": "4"},
+        }
+        benchmark_metrics.append(
+            {
+                "metric_key": metric_key,
+                "label": label,
+                "company_value": _point(metrics[metric_key]),
+                "references": [reference],
+                "primary_scope": "industry",
+                "primary_rationale": reference["rationale"],
+            }
+        )
+    return {
+        "industry": "Semiconductors",
+        "sector": "Technology",
+        "selected_peers": [],
+        "metrics": benchmark_metrics,
+        "methodology": _claim("Benchmark methodology."),
+        "limitations": [],
+    }
 
 
 def test_customer_profile_create_read_and_update(monkeypatch):
@@ -137,6 +205,10 @@ def test_profile_only_changes_presentation_not_report_evidence(monkeypatch):
 
     app.dependency_overrides[get_db] = override_db
     monkeypatch.setattr("app.main.market_data.get_overview", lambda ticker: metrics)
+    monkeypatch.setattr(
+        "app.main.benchmarks.build_benchmark_context",
+        lambda ticker, company_metrics: _benchmark_context(company_metrics),
+    )
     monkeypatch.setattr("app.main.ai.narrate_analysis", record_narrative)
     client = TestClient(app)
     try:
