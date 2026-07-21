@@ -70,6 +70,48 @@ export const api = {
       { method: 'DELETE' },
     ),
   },
+  theses: {
+    list: (customerId, ticker = null, status = null) => {
+      const params = new URLSearchParams()
+      if (ticker) params.set('ticker', ticker)
+      if (status) params.set('status', status)
+      const query = params.size ? `?${params}` : ''
+      return get(`/api/customers/${encodeURIComponent(customerId)}/theses${query}`)
+    },
+    create: (customerId, thesis) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/theses`,
+      'POST',
+      thesis,
+    ),
+    get: (customerId, thesisId) => get(
+      `/api/customers/${encodeURIComponent(customerId)}/theses/${encodeURIComponent(thesisId)}`,
+    ),
+    update: (customerId, thesisId, thesis) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/theses/${encodeURIComponent(thesisId)}`,
+      'PUT',
+      thesis,
+    ),
+    remove: (customerId, thesisId) => request(
+      `/api/customers/${encodeURIComponent(customerId)}/theses/${encodeURIComponent(thesisId)}`,
+      { method: 'DELETE' },
+    ),
+    assumptions: {
+      create: (customerId, thesisId, assumption) => write(
+        `/api/customers/${encodeURIComponent(customerId)}/theses/${encodeURIComponent(thesisId)}/assumptions`,
+        'POST',
+        assumption,
+      ),
+      update: (customerId, thesisId, assumptionId, assumption) => write(
+        `/api/customers/${encodeURIComponent(customerId)}/theses/${encodeURIComponent(thesisId)}/assumptions/${encodeURIComponent(assumptionId)}`,
+        'PUT',
+        assumption,
+      ),
+      remove: (customerId, thesisId, assumptionId) => request(
+        `/api/customers/${encodeURIComponent(customerId)}/theses/${encodeURIComponent(thesisId)}/assumptions/${encodeURIComponent(assumptionId)}`,
+        { method: 'DELETE' },
+      ),
+    },
+  },
   researchSessions: {
     list: (customerId, ticker = null, limit = 20) => {
       const params = new URLSearchParams({ limit: String(limit) })

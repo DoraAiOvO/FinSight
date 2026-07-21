@@ -23,13 +23,27 @@ from .models.schemas import (
     ResearchSessionCreate,
     ResearchSessionResponse,
     ResearchSessionSummary,
+    ThesisAssumptionCreate,
+    ThesisAssumptionResponse,
+    ThesisAssumptionUpdate,
+    ThesisCreate,
+    ThesisResponse,
+    ThesisStatus,
+    ThesisUpdate,
     WatchlistCreate,
     WatchlistItemCreate,
     WatchlistResponse,
     WhatChangedRequest,
     WhatChangedResponse,
 )
-from .services import ai, benchmarks, market_data, research_workspace, sec_filings
+from .services import (
+    ai,
+    benchmarks,
+    market_data,
+    research_workspace,
+    sec_filings,
+    thesis_ledger,
+)
 from .services.analysis import DISCLAIMER, build_comparison, build_insights
 from .services.customer_profiles import (
     create_customer_profile,
@@ -72,6 +86,14 @@ def _raise_workspace_error(error: research_workspace.WorkspaceError):
     if isinstance(error, research_workspace.WorkspaceValidationError):
         raise HTTPException(status_code=400, detail=str(error))
     raise HTTPException(status_code=500, detail="Research workspace error")
+
+
+def _raise_thesis_error(error: thesis_ledger.ThesisLedgerError):
+    if isinstance(error, thesis_ledger.ThesisLedgerNotFoundError):
+        raise HTTPException(status_code=404, detail=str(error))
+    if isinstance(error, thesis_ledger.ThesisLedgerValidationError):
+        raise HTTPException(status_code=400, detail=str(error))
+    raise HTTPException(status_code=500, detail="Thesis ledger error")
 
 
 @app.get("/api/health")
@@ -130,6 +152,170 @@ def replace_profile(
         db.rollback()
         raise HTTPException(status_code=503, detail="Customer profiles are unavailable")
     return serialize_profile(profile)
+
+
+@app.get(
+    "/api/customers/{customer_id}/theses",
+    response_model=list[ThesisResponse],
+)
+def read_theses(
+    customer_id: UUID,
+    ticker: str | None = Query(None),
+    status: ThesisStatus | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    try:
+        return thesis_ledger.list_theses(
+            db, customer_id, ticker=ticker, status=status
+        )
+    except thesis_ledger.ThesisLedgerError as error:
+        _raise_thesis_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="Thesis ledger is unavailable")
+
+
+@app.post(
+    "/api/customers/{customer_id}/theses",
+    response_model=ThesisResponse,
+    status_code=201,
+)
+def create_research_thesis(
+    customer_id: UUID,
+    request: ThesisCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return thesis_ledger.create_thesis(db, customer_id, request)
+    except thesis_ledger.ThesisLedgerError as error:
+        db.rollback()
+        _raise_thesis_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Thesis ledger is unavailable")
+
+
+@app.get(
+    "/api/customers/{customer_id}/theses/{thesis_id}",
+    response_model=ThesisResponse,
+)
+def read_research_thesis(
+    customer_id: UUID,
+    thesis_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        return thesis_ledger.get_thesis(db, customer_id, thesis_id)
+    except thesis_ledger.ThesisLedgerError as error:
+        _raise_thesis_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="Thesis ledger is unavailable")
+
+
+@app.put(
+    "/api/customers/{customer_id}/theses/{thesis_id}",
+    response_model=ThesisResponse,
+)
+def replace_research_thesis(
+    customer_id: UUID,
+    thesis_id: UUID,
+    request: ThesisUpdate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return thesis_ledger.update_thesis(db, customer_id, thesis_id, request)
+    except thesis_ledger.ThesisLedgerError as error:
+        db.rollback()
+        _raise_thesis_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Thesis ledger is unavailable")
+
+
+@app.delete(
+    "/api/customers/{customer_id}/theses/{thesis_id}",
+    status_code=204,
+)
+def remove_research_thesis(
+    customer_id: UUID,
+    thesis_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        thesis_ledger.delete_thesis(db, customer_id, thesis_id)
+    except thesis_ledger.ThesisLedgerError as error:
+        db.rollback()
+        _raise_thesis_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Thesis ledger is unavailable")
+
+
+@app.post(
+    "/api/customers/{customer_id}/theses/{thesis_id}/assumptions",
+    response_model=ThesisAssumptionResponse,
+    status_code=201,
+)
+def create_thesis_assumption(
+    customer_id: UUID,
+    thesis_id: UUID,
+    request: ThesisAssumptionCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return thesis_ledger.create_assumption(
+            db, customer_id, thesis_id, request
+        )
+    except thesis_ledger.ThesisLedgerError as error:
+        db.rollback()
+        _raise_thesis_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Thesis ledger is unavailable")
+
+
+@app.put(
+    "/api/customers/{customer_id}/theses/{thesis_id}/assumptions/{assumption_id}",
+    response_model=ThesisAssumptionResponse,
+)
+def replace_thesis_assumption(
+    customer_id: UUID,
+    thesis_id: UUID,
+    assumption_id: UUID,
+    request: ThesisAssumptionUpdate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return thesis_ledger.update_assumption(
+            db, customer_id, thesis_id, assumption_id, request
+        )
+    except thesis_ledger.ThesisLedgerError as error:
+        db.rollback()
+        _raise_thesis_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Thesis ledger is unavailable")
+
+
+@app.delete(
+    "/api/customers/{customer_id}/theses/{thesis_id}/assumptions/{assumption_id}",
+    status_code=204,
+)
+def remove_thesis_assumption(
+    customer_id: UUID,
+    thesis_id: UUID,
+    assumption_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        thesis_ledger.delete_assumption(
+            db, customer_id, thesis_id, assumption_id
+        )
+    except thesis_ledger.ThesisLedgerError as error:
+        db.rollback()
+        _raise_thesis_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Thesis ledger is unavailable")
 
 
 @app.get(

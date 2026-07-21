@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useTranslation } from '../hooks/useTranslation.js'
 import { api } from '../lib/api.js'
+import ThesisLedger from './ThesisLedger.jsx'
 import {
   buildResearchSnapshot,
   CHANGE_SECTIONS,
@@ -74,6 +75,7 @@ export default function ResearchWorkspace({ customerId, data, onAnalyze, onRequi
   const [notice, setNotice] = useState(null)
   const [creatingWatchlist, setCreatingWatchlist] = useState(false)
   const [newWatchlistName, setNewWatchlistName] = useState('')
+  const [ledgerRevision, setLedgerRevision] = useState(0)
   const ticker = data?.overview?.ticker
   const snapshot = useMemo(() => (
     data?.overview ? buildResearchSnapshot(data) : null
@@ -105,7 +107,7 @@ export default function ResearchWorkspace({ customerId, data, onAnalyze, onRequi
       if (active) setLoading(false)
     })
     return () => { active = false }
-  }, [customerId, ticker, snapshot])
+  }, [customerId, ticker, snapshot, ledgerRevision])
 
   const defaultWatchlist = watchlists.find((watchlist) => watchlist.is_default) || watchlists[0]
   const isDefaultTracked = defaultWatchlist?.items.some((item) => item.ticker === ticker)
@@ -315,6 +317,12 @@ export default function ResearchWorkspace({ customerId, data, onAnalyze, onRequi
           </ol>
         </section>
       </div>
+
+      <ThesisLedger
+        customerId={customerId}
+        ticker={ticker}
+        onChanged={() => setLedgerRevision((revision) => revision + 1)}
+      />
 
       <section className="changes-report">
         <div className="changes-heading">

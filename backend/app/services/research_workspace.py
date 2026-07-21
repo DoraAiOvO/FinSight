@@ -286,8 +286,11 @@ def _current_assumptions(
             assumption_id=assumption.id,
             description=assumption.description,
             current_status=assumption.current_status,
+            condition_type=assumption.condition_type,
             metric_key=assumption.metric_key,
+            operator=assumption.operator,
             target_value=assumption.target_value,
+            event_condition=assumption.event_condition,
         )
         for assumption in assumptions
     ]
@@ -559,7 +562,9 @@ def _assumption_changes(
         elif new_item is None:
             direction = "removed"
         elif old_item.current_status == new_item.current_status:
-            direction = "unchanged"
+            old_values = old_item.model_dump(exclude={"assumption_id"})
+            new_values = new_item.model_dump(exclude={"assumption_id"})
+            direction = "unchanged" if old_values == new_values else "changed"
         else:
             old_rank = ASSUMPTION_STATUS_RANK.get(old_item.current_status)
             new_rank = ASSUMPTION_STATUS_RANK.get(new_item.current_status)
