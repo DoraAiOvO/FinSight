@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import LanguageSwitcher from './LanguageSwitcher.jsx'
 import { useCustomerProfile } from '../context/CustomerProfileContext.jsx'
-import { LANGUAGE_OPTIONS } from '../context/LanguageContext.jsx'
+import { LANGUAGE_OPTIONS, useLanguage } from '../context/LanguageContext.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import {
   EXPERIENCE_OPTIONS,
@@ -13,6 +14,7 @@ import {
   profilePayload,
   toggleSelection,
 } from '../lib/customerProfile.js'
+import { readStoredLanguage } from '../lib/language.js'
 
 const EXPERIENCE_KEYS = {
   beginner: 'profileExperienceBeginner',
@@ -106,8 +108,37 @@ function MultiChoiceGroup({ legend, hint, options, values, labelKeys, maximum, o
   )
 }
 
+function LanguageChoices({ legend, value, onChange }) {
+  const { t } = useTranslation()
+  return (
+    <fieldset className="profile-fieldset">
+      <legend>{t(legend)}</legend>
+      <div className="profile-choice-grid language-grid">
+        {LANGUAGE_OPTIONS.map((option) => (
+          <label className={value === option.code ? 'profile-choice selected' : 'profile-choice'} key={option.code}>
+            <input
+              type="radio"
+              name="language"
+              value={option.code}
+              checked={value === option.code}
+              onChange={() => onChange(option.code)}
+            />
+            <span>{option.name}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
+function isFirstLanguageVisit(profile) {
+  if (profile || typeof window === 'undefined') return false
+  return !readStoredLanguage(window.localStorage)
+}
+
 export default function CustomerOnboarding() {
   const { t, language } = useTranslation()
+  const { setLanguage } = useLanguage()
   const {
     profile,
     onboardingOpen,
@@ -116,15 +147,28 @@ export default function CustomerOnboarding() {
   } = useCustomerProfile()
   const [step, setStep] = useState(0)
   const [values, setValues] = useState(() => defaultProfile(language))
+  const [languageWelcome, setLanguageWelcome] = useState(() => isFirstLanguageVisit(profile))
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const dialogRef = useRef(null)
+  const previouslyFocused = useRef(null)
+  const wasOpen = useRef(false)
 
   useEffect(() => {
-    if (!onboardingOpen) return
-    setValues(profile ? profilePayload(profile) : defaultProfile(language))
+    if (!onboardingOpen) {
+      wasOpen.current = false
+      return
+    }
+    if (wasOpen.current) return
+    wasOpen.current = true
+    const initialValues = profile ? profilePayload(profile) : defaultProfile(language)
+    const showLanguageWelcome = isFirstLanguageVisit(profile)
+    setValues(initialValues)
+    setLanguage(initialValues.preferred_language)
+    setLanguageWelcome(showLanguageWelcome)
     setStep(0)
     setError(null)
-  }, [onboardingOpen, profile, language])
+  }, [onboardingOpen, profile, language, setLanguage])
 
   useEffect(() => {
     if (!onboardingOpen) return undefined
@@ -133,9 +177,22 @@ export default function CustomerOnboarding() {
     return () => { document.body.style.overflow = previousOverflow }
   }, [onboardingOpen])
 
+  useEffect(() => {
+    if (!onboardingOpen) return undefined
+    previouslyFocused.current = document.activeElement
+    dialogRef.current?.focus()
+    return () => {
+      if (previouslyFocused.current instanceof HTMLElement) previouslyFocused.current.focus()
+    }
+  }, [onboardingOpen])
+
   if (!onboardingOpen) return null
 
   const setValue = (key, value) => setValues((current) => ({ ...current, [key]: value }))
+  const setPreferredLanguage = (nextLanguage) => {
+    setValue('preferred_language', nextLanguage)
+    setLanguage(nextLanguage)
+  }
   const currentStep = t('profileStep')
     .replace('{current}', String(step + 1))
     .replace('{total}', '3')
@@ -147,6 +204,29 @@ export default function CustomerOnboarding() {
     }
     setError(null)
     setStep((current) => Math.min(2, current + 1))
+  }
+
+  function handleDialogKeyDown(event) {
+    if (event.key === 'Escape' && !saving) {
+      event.preventDefault()
+      closeOnboarding()
+      return
+    }
+    if (event.key !== 'Tab') return
+
+    const focusable = [...dialogRef.current.querySelectorAll(
+      'button:not([disabled]), select:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+    )].filter((element) => !element.closest('[hidden]'))
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+    }
   }
 
   async function submit(event) {
@@ -168,27 +248,67 @@ export default function CustomerOnboarding() {
 
   return (
     <div className="profile-overlay" role="presentation">
-      <section className="profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+      <section
+        className="profile-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-title"
+        aria-describedby="profile-intro"
+        lang={language}
+        onKeyDown={handleDialogKeyDown}
+        ref={dialogRef}
+        tabIndex="-1"
+      >
         <div className="profile-dialog-head">
           <div>
             <p className="eyebrow">{t('profileSetupKicker')}</p>
-            <h2 id="profile-title">{t(profile ? 'profileEditTitle' : 'profileSetupTitle')}</h2>
+            <h2 id="profile-title">
+              {t(languageWelcome ? 'profileLanguageWelcomeTitle' : profile ? 'profileEditTitle' : 'profileSetupTitle')}
+            </h2>
           </div>
-          {profile && (
-            <button className="profile-close" type="button" onClick={closeOnboarding} aria-label={t('profileClose')}>×</button>
-          )}
+          <div className="profile-dialog-tools">
+            <LanguageSwitcher
+              compact
+              id="onboarding-language"
+              value={values.preferred_language}
+              onChange={setPreferredLanguage}
+            />
+            {profile && (
+              <button className="profile-close" type="button" onClick={closeOnboarding} aria-label={t('profileClose')}>×</button>
+            )}
+          </div>
         </div>
-        <p className="profile-intro">{t('profileIntro')}</p>
+        <p className="profile-intro" id="profile-intro">
+          {t(languageWelcome ? 'profileLanguageWelcomeText' : 'profileIntro')}
+        </p>
 
-        <div className="profile-progress" aria-label={currentStep}>
-          {[0, 1, 2].map((index) => <span className={index <= step ? 'active' : ''} key={index} />)}
-        </div>
-        <div className="profile-step-heading">
-          <span>{currentStep}</span>
-          <strong>{t(STEP_TITLES[step])}</strong>
-        </div>
+        {languageWelcome ? (
+          <div className="profile-language-welcome">
+            <LanguageChoices
+              legend="profileLanguageSelection"
+              value={values.preferred_language}
+              onChange={setPreferredLanguage}
+            />
+            <div className="profile-actions">
+              <button type="button" className="profile-secondary" onClick={closeOnboarding}>
+                {t('profileSkip')}
+              </button>
+              <button type="button" className="profile-primary" onClick={() => setLanguageWelcome(false)}>
+                {t('profileLanguageContinue')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="profile-progress" aria-label={currentStep}>
+              {[0, 1, 2].map((index) => <span className={index <= step ? 'active' : ''} key={index} />)}
+            </div>
+            <div className="profile-step-heading">
+              <span>{currentStep}</span>
+              <strong>{t(STEP_TITLES[step])}</strong>
+            </div>
 
-        <form onSubmit={submit}>
+            <form onSubmit={submit}>
           {step === 0 && (
             <div className="profile-step">
               <ChoiceGroup
@@ -243,23 +363,11 @@ export default function CustomerOnboarding() {
                 labelKeys={DEPTH_KEYS}
                 onChange={(value) => setValue('preferred_report_depth', value)}
               />
-              <fieldset className="profile-fieldset">
-                <legend>{t('profileLanguageQuestion')}</legend>
-                <div className="profile-choice-grid language-grid">
-                  {LANGUAGE_OPTIONS.map((option) => (
-                    <label className={values.preferred_language === option.code ? 'profile-choice selected' : 'profile-choice'} key={option.code}>
-                      <input
-                        type="radio"
-                        name="language"
-                        value={option.code}
-                        checked={values.preferred_language === option.code}
-                        onChange={() => setValue('preferred_language', option.code)}
-                      />
-                      <span>{option.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <LanguageChoices
+                legend="profileLanguageQuestion"
+                value={values.preferred_language}
+                onChange={setPreferredLanguage}
+              />
               <MultiChoiceGroup
                 legend="profileIndustriesQuestion"
                 hint="profileIndustriesHint"
@@ -299,7 +407,9 @@ export default function CustomerOnboarding() {
               </button>
             )}
           </div>
-        </form>
+            </form>
+          </>
+        )}
       </section>
     </div>
   )

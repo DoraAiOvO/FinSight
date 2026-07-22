@@ -1,15 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import {
+  LANGUAGES,
+  LANGUAGE_OPTIONS,
+  readStoredLanguage,
+  resolveLanguage,
+  storeLanguage,
+} from '../lib/language.js'
 
-export const LANGUAGES = ['en', 'es', 'fr', 'zh']
-
-export const LANGUAGE_OPTIONS = [
-  { code: 'en', name: 'English', locale: 'en-US' },
-  { code: 'es', name: 'Español', locale: 'es-ES' },
-  { code: 'fr', name: 'Français', locale: 'fr-FR' },
-  { code: 'zh', name: '中文', locale: 'zh-CN' },
-]
-
-const STORAGE_KEY = 'language'
+export { LANGUAGES, LANGUAGE_OPTIONS } from '../lib/language.js'
 const PAGE_TITLES = {
   en: 'FinSight — evidence-first stock analysis',
   es: 'FinSight — análisis bursátil basado en evidencia',
@@ -21,18 +19,10 @@ const LanguageContext = createContext(null)
 
 function initialLanguage() {
   if (typeof window === 'undefined') return 'en'
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY)
-    if (saved && LANGUAGES.includes(saved)) return saved
-  } catch {
-    // Storage may be disabled; browser detection still provides a default.
-  }
-  const candidates = window.navigator.languages || [window.navigator.language]
-  const detected = candidates
-    .map((candidate) => candidate?.split('-')[0])
-    .find((candidate) => LANGUAGES.includes(candidate))
-  if (detected) return detected
-  return 'en'
+  return resolveLanguage({
+    storedLanguage: readStoredLanguage(window.localStorage),
+    browserLanguages: window.navigator.languages || [window.navigator.language],
+  })
 }
 
 export function LanguageProvider({ children }) {
@@ -46,11 +36,7 @@ export function LanguageProvider({ children }) {
   const setLanguage = useCallback((lang) => {
     if (!LANGUAGES.includes(lang)) return
     setLanguageState(lang)
-    try {
-      window.localStorage.setItem(STORAGE_KEY, lang)
-    } catch {
-      // Keep the session selection even when persistence is unavailable.
-    }
+    storeLanguage(window.localStorage, lang)
   }, [])
 
   const locale = LANGUAGE_OPTIONS.find((option) => option.code === language)?.locale || 'en-US'
