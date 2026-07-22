@@ -214,9 +214,12 @@ priorities—is passed to the optional AI narrative layer.
 
 ### FinSight Assistant safety and cost controls
 
-The floating Assistant detects each message's language independently from the
-site language and preserves natural code-switching. Site help and common
-financial concepts are served from a cached multilingual knowledge base;
+The floating Assistant uses the selected site language as its initial/default
+language, then detects explicit language changes and natural code-switching in
+each message. The website remains localized in English, Spanish, French, and
+Simplified Chinese; the Assistant additionally accepts Japanese, Korean,
+German, Portuguese, Italian, and Arabic. Site help and common financial
+concepts are served from a cached multilingual knowledge base;
 company lookups use the company-search service; and report questions can quote
 only structured evidence supplied by the open report or an owned saved-report
 ID. Every company-specific answer includes evidence metadata.

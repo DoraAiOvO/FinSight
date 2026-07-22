@@ -11,13 +11,19 @@ _SYSTEM = (
     "you rely on, and note uncertainty. Be concise and plain-spoken."
 )
 
-SUPPORTED_LANGUAGES = ("en", "es", "fr", "zh")
+SUPPORTED_LANGUAGES = ("en", "es", "fr", "zh", "ja", "ko", "de", "pt", "it", "ar")
 
 _LANGUAGE_NAMES = {
     "en": "English",
     "es": "Spanish",
     "fr": "French",
     "zh": "Chinese (Simplified)",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "de": "German",
+    "pt": "Portuguese",
+    "it": "Italian",
+    "ar": "Arabic",
 }
 
 
@@ -26,9 +32,11 @@ def _language_instruction(lang: str) -> str:
     if lang == "en" or lang not in _LANGUAGE_NAMES:
         return ""
     return (
-        f"\n\nWrite your entire response in {_LANGUAGE_NAMES[lang]}. Keep ticker "
-        "symbols and standard financial terms (P/E, FCF, beta) in their usual "
-        "form when natural."
+        f"\n\nWrite your entire response in {_LANGUAGE_NAMES[lang]}. Translate generic "
+        "interface and finance vocabulary into that language. Keep actual stock "
+        "symbols (such as MSFT) and standard financial abbreviations (P/E, FCF) "
+        "unchanged when natural; do not use the English word 'ticker' when the "
+        "language has a normal native term for stock symbol."
     )
 
 
@@ -276,7 +284,8 @@ def answer_assistant_question(
         + mix_instruction
         + " "
         + depth_instruction
-        + " Keep standard ticker symbols and financial terms in English when natural."
+        + " Keep actual stock symbols and standard financial abbreviations unchanged "
+        "when natural, but translate generic terms such as 'ticker' into the response language."
     )
     messages = [
         {"role": item["role"], "content": item["content"]}

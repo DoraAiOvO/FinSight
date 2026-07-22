@@ -48,6 +48,12 @@ class Settings:
         "FINSIGHT_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
     ).split(",")
     CACHE_TTL_SECONDS: int = int(os.getenv("FINSIGHT_CACHE_TTL", "300"))
+    COMPANY_SEARCH_CACHE_TTL_SECONDS: int = int(
+        os.getenv("FINSIGHT_COMPANY_SEARCH_CACHE_TTL", "900")
+    )
+    COMPANY_SEARCH_TIMEOUT_SECONDS: float = float(
+        os.getenv("FINSIGHT_COMPANY_SEARCH_TIMEOUT", "3")
+    )
     SEC_CACHE_TTL_SECONDS: int = int(os.getenv("FINSIGHT_SEC_CACHE_TTL", "21600"))
     SEC_DOCUMENT_CACHE_TTL_SECONDS: int = int(
         os.getenv("FINSIGHT_SEC_DOCUMENT_CACHE_TTL", "86400")

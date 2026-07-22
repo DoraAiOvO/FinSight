@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { LanguageProvider } from '../context/LanguageContext.jsx'
+import { LanguageProvider, useLanguage } from '../context/LanguageContext.jsx'
 import { api } from '../lib/api.js'
 import AssistantWidget from './AssistantWidget.jsx'
 
@@ -18,6 +18,16 @@ function renderWidget(props = {}) {
     <LanguageProvider>
       <AssistantWidget {...props} />
     </LanguageProvider>,
+  )
+}
+
+function SwitchingWidget() {
+  const { setLanguage } = useLanguage()
+  return (
+    <>
+      <button type="button" onClick={() => setLanguage('zh')}>Switch to Chinese</button>
+      <AssistantWidget />
+    </>
   )
 }
 
@@ -41,11 +51,29 @@ describe('AssistantWidget', () => {
     expect(screen.getByRole('dialog', { name: 'FinSight 助手' })).toBeTruthy()
     expect(screen.getByText(/P\/E 是什么/)).toBeTruthy()
     expect(screen.getByText(/你好！我可以解释金融概念/)).toBeTruthy()
+    expect(screen.getByRole('dialog').textContent).toContain('股票代码')
+    expect(screen.getByRole('dialog').textContent.toLowerCase()).not.toContain('ticker')
     expect(document.activeElement).toBe(screen.getByRole('textbox'))
 
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
     await waitFor(() => expect(document.activeElement).toBe(trigger))
+  })
+
+  it('updates an untouched greeting when the website language changes', async () => {
+    const user = userEvent.setup()
+    render(
+      <LanguageProvider>
+        <SwitchingWidget />
+      </LanguageProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Open FinSight Assistant' }))
+    expect(screen.getByText(/^Hi—/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Switch to Chinese' }))
+
+    expect(await screen.findByText(/^你好！/)).toBeTruthy()
+    expect(screen.getByRole('dialog').textContent.toLowerCase()).not.toContain('ticker')
   })
 
   it('keeps session history, sends current report evidence, and renders citations', async () => {

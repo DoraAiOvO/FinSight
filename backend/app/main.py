@@ -16,6 +16,7 @@ from .models.schemas import (
     AssistantChatRequest,
     AssistantChatResponse,
     CompareResponse,
+    CompanySearchResultResponse,
     CustomerProfilePreferences,
     CustomerProfileResponse,
     FilingDetailResponse,
@@ -49,6 +50,7 @@ from .services import (
     ai,
     assistant,
     benchmarks,
+    company_search,
     evidence_auditor,
     market_data,
     research_workspace,
@@ -119,6 +121,18 @@ def _raise_thesis_error(error: thesis_ledger.ThesisLedgerError):
 @app.get("/api/health")
 def health():
     return {"status": "ok", "ai_enabled": bool(settings.ANTHROPIC_API_KEY)}
+
+
+@app.get(
+    "/api/search/companies",
+    response_model=list[CompanySearchResultResponse],
+)
+def search_public_companies(
+    q: str = Query(..., min_length=1, max_length=120),
+    limit: int = Query(8, ge=1, le=20),
+):
+    """Search live symbols with a cached, maintained-index fallback."""
+    return company_search.search_companies(q, limit=limit)
 
 
 @app.post("/api/assistant/chat", response_model=AssistantChatResponse)

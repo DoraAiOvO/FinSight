@@ -36,6 +36,14 @@ export default function AssistantWidget({ customerId = null, currentReport = nul
   }, [])
 
   useEffect(() => {
+    setMessages((current) => (
+      current.length === 1 && current[0].kind === 'greeting'
+        ? [{ ...current[0], content: copy.greeting }]
+        : current
+    ))
+  }, [language, copy.greeting])
+
+  useEffect(() => {
     if (!open) return undefined
     inputRef.current?.focus()
     function onKeyDown(event) {
@@ -54,7 +62,10 @@ export default function AssistantWidget({ customerId = null, currentReport = nul
 
   function openPanel() {
     if (!messages.length) {
-      setMessages([{ id: messageId(), role: 'assistant', content: copy.greeting, citations: [] }])
+      setMessages([{
+        id: messageId(), role: 'assistant', kind: 'greeting',
+        content: copy.greeting, citations: [],
+      }])
     }
     setOpen(true)
   }

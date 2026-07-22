@@ -10,7 +10,7 @@ async function request(path, options) {
   return res.json()
 }
 
-const get = (path) => request(path)
+const get = (path, options) => request(path, options)
 const write = (path, method, body) => request(path, {
   method,
   headers: { 'Content-Type': 'application/json' },
@@ -18,6 +18,10 @@ const write = (path, method, body) => request(path, {
 })
 
 export const api = {
+  searchCompanies: (query, limit = 8, signal) => {
+    const params = new URLSearchParams({ q: query, limit: String(limit) })
+    return get(`/api/search/companies?${params}`, { signal })
+  },
   assistant: {
     chat: (payload) => write('/api/assistant/chat', 'POST', payload),
   },

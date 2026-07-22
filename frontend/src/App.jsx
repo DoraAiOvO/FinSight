@@ -170,8 +170,8 @@ export default function App() {
   const lastAnalyzeTicker = useRef(null)
   const previousPreferenceKey = useRef(`${language}:${profile?.updated_at || ''}`)
   const assistantReport = useMemo(
-    () => buildAssistantReportContext(data, compare),
-    [data, compare],
+    () => buildAssistantReportContext(data, compare, language),
+    [data, compare, language],
   )
 
   useEffect(() => {

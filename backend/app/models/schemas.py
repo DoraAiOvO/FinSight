@@ -144,6 +144,29 @@ class ReportSection(str, Enum):
     NEWS = "news"
 
 
+class CompanySearchResultResponse(BaseModel):
+    """One normalized symbol-search result with transparent match metadata."""
+
+    ticker: str
+    company_name: str
+    exchange: str
+    country: str | None = None
+    sector: str | None = None
+    asset_type: str
+    match_score: float = Field(ge=0, le=1)
+    match_type: Literal[
+        "exact_ticker",
+        "exact_name",
+        "prefix",
+        "partial_token",
+        "alias",
+        "localized_alias",
+        "fuzzy",
+    ]
+    data_source: str
+    matched_text: str
+
+
 class CustomerProfilePreferences(BaseModel):
     experience_level: ExperienceLevel
     research_horizon: ResearchHorizon
