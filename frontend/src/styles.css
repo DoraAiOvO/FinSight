@@ -622,6 +622,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .report-heading { display: flex; justify-content: space-between; gap: 40px; align-items: end; margin-bottom: 30px; }
 .report-heading h1 { max-width: 720px; font-size: clamp(2.1rem, 4.5vw, 3.7rem); }
+.analysis-view-toggle { display: flex; width: fit-content; margin: -10px 0 22px; padding: 3px; border: 1px solid var(--border); border-radius: 9px; background: rgba(8,18,16,.72); }
+.analysis-view-toggle button { min-height: 32px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: .65rem; font-weight: 700; }
+.analysis-view-toggle button.active { background: var(--surface-raised); color: var(--accent); box-shadow: 0 3px 12px rgba(0,0,0,.2); }
 .report-time { display: flex; flex-direction: column; flex: 0 0 auto; margin: 0 0 5px; color: var(--muted-bright); font-size: 0.73rem; text-align: right; }
 .report-time span { color: var(--muted); }
 
@@ -831,6 +834,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .ai-label { color: var(--blue); font-size: 0.62rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
 .explanation-depth-label { float: right; color: var(--muted); font-size: .56rem; }
 .ai-note p { margin: 7px 0 0; color: var(--muted-bright); font-size: .76rem; line-height: 1.65; white-space: pre-wrap; }
+.interpretation-summary { margin: 18px 0; padding: 13px 15px; border: 1px solid rgba(143,227,189,.18); border-radius: 9px; background: rgba(143,227,189,.035); }
+.interpretation-summary > div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.interpretation-summary > div span { padding: 4px 7px; border-radius: 5px; background: rgba(255,255,255,.025); color: var(--muted-bright); font-size: .58rem; }
 
 .insight-filters { display: flex; gap: 4px; margin: 20px 0 12px; padding-bottom: 11px; border-bottom: 1px solid var(--border); }
 .insight-filters button { padding: 5px 9px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); cursor: pointer; font-size: 0.65rem; transition: color 0.16s ease, background 0.16s ease; }

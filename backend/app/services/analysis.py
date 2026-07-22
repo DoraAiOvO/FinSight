@@ -5,12 +5,170 @@ Every insight cites the concrete numbers that triggered it, so users can see
 fully unit-testable; the optional AI layer only narrates on top of this.
 """
 
-from .provenance import data_point, data_value, evidence, inherited_provenance
+from datetime import date
+
+from .provenance import (
+    FRESHNESS_RANK,
+    data_point,
+    data_value,
+    evidence,
+    inherited_provenance,
+)
 
 DISCLAIMER = (
     "FinSight explains evidence; it does not give investment advice. "
     "Data may be delayed or incomplete. Always do your own research."
 )
+
+
+FACT_LABELS = {
+    "price": "Share price",
+    "market_cap": "Market cap",
+    "trailing_pe": "Trailing P/E",
+    "forward_pe": "Forward P/E",
+    "price_to_sales": "Price / Sales",
+    "profit_margin": "Net profit margin",
+    "operating_margin": "Operating margin",
+    "revenue_growth": "Revenue growth (YoY)",
+    "earnings_growth": "Earnings growth (YoY)",
+    "debt_to_equity": "Debt / Equity",
+    "current_ratio": "Current ratio",
+    "free_cash_flow": "Free cash flow",
+    "total_revenue": "Total revenue",
+    "free_cash_flow_margin": "Free cash flow margin",
+    "beta": "Beta (5y)",
+    "dividend_yield": "Dividend yield",
+    "fifty_two_week_low": "52-week low",
+    "fifty_two_week_high": "52-week high",
+    "analyst_target_mean": "Analyst target mean",
+}
+
+IMPORTANT_FACT_KEYS = tuple(FACT_LABELS)
+PROVENANCE_KEYS = {
+    "provider",
+    "source",
+    "as_of_date",
+    "fetched_at",
+    "freshness_status",
+    "confidence",
+}
+
+
+def _as_date(value) -> date | None:
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value[:10])
+        except ValueError:
+            return None
+    return None
+
+
+def _provenance_nodes(value):
+    if isinstance(value, dict):
+        if PROVENANCE_KEYS <= value.keys():
+            yield value
+        for child in value.values():
+            yield from _provenance_nodes(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _provenance_nodes(child)
+
+
+def _sources_and_freshness(payload: dict) -> tuple[list[dict], dict]:
+    unique: dict[tuple, dict] = {}
+    for node in _provenance_nodes(payload):
+        source = {key: node.get(key) for key in PROVENANCE_KEYS | {"source_url"}}
+        key = (
+            source["provider"],
+            source["source"],
+            str(source["as_of_date"]),
+            str(source["fetched_at"]),
+            source.get("source_url"),
+        )
+        unique[key] = source
+    sources = sorted(
+        unique.values(),
+        key=lambda item: (
+            str(item.get("provider")),
+            str(item.get("source")),
+            str(item.get("as_of_date")),
+        ),
+    )
+    statuses = [str(item.get("freshness_status") or "unknown") for item in sources]
+    dates = [
+        parsed
+        for parsed in (_as_date(item.get("as_of_date")) for item in sources)
+        if parsed is not None
+    ]
+    return sources, {
+        "status": max(
+            statuses,
+            key=lambda status: FRESHNESS_RANK.get(status, 2),
+            default="unknown",
+        ),
+        "oldest_as_of_date": min(dates, default=None),
+        "newest_as_of_date": max(dates, default=None),
+        "stale_source_count": statuses.count("stale"),
+        "unknown_source_count": statuses.count("unknown"),
+    }
+
+
+def build_neutral_evidence(
+    metrics: dict,
+    benchmark_context: dict,
+    insights: list[dict],
+    narrative: dict | None = None,
+) -> dict:
+    """Assemble the immutable, policy-free half of an analysis response."""
+    benchmark_facts = {
+        item.get("metric_key"): item
+        for item in benchmark_context.get("metrics", [])
+        if item.get("metric_key") and isinstance(item.get("company_value"), dict)
+    }
+    facts = []
+    for metric_key in IMPORTANT_FACT_KEYS:
+        metric = metrics.get(metric_key)
+        benchmark_metric = benchmark_facts.get(metric_key)
+        point = metric if isinstance(metric, dict) else None
+        if point is None and benchmark_metric is not None:
+            point = benchmark_metric["company_value"]
+        if point is None or data_value(point) is None:
+            continue
+        facts.append(
+            {
+                "metric_key": metric_key,
+                "label": (
+                    benchmark_metric.get("label")
+                    if benchmark_metric is not None
+                    else FACT_LABELS[metric_key]
+                ),
+                "value": point,
+            }
+        )
+
+    fact_keys = {fact["metric_key"] for fact in facts}
+    neutral = {
+        "facts": facts,
+        "benchmarks": benchmark_context,
+        "risks": [item for item in insights if item.get("kind") == "risk"],
+        "opportunities": [
+            item for item in insights if item.get("kind") == "opportunity"
+        ],
+        "uncertainties": list(benchmark_context.get("limitations") or []),
+        "conflicts": [],
+        "missing_data": [
+            metric_key
+            for metric_key in IMPORTANT_FACT_KEYS
+            if metric_key not in fact_keys
+        ],
+        "narrative": narrative,
+    }
+    sources, freshness = _sources_and_freshness(neutral)
+    neutral["sources"] = sources
+    neutral["freshness"] = freshness
+    return neutral
 
 
 def _pct(v: float | None) -> str:

@@ -282,6 +282,21 @@ def get_policy(
     return serialize_policy(_load_policy(session, customer_id, policy_id))
 
 
+def get_default_published_policy(
+    session: Session, customer_id: UUID
+) -> InvestmentPolicyResponse | None:
+    """Return the owner's active default policy when it has a published version."""
+    policy = session.scalar(
+        _policy_query(customer_id).where(
+            InvestmentPolicy.status == "active",
+            InvestmentPolicy.is_default.is_(True),
+        )
+    )
+    if policy is None or _published_version_number(policy) is None:
+        return None
+    return serialize_policy(policy)
+
+
 def update_policy(
     session: Session,
     customer_id: UUID,

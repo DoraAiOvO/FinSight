@@ -39,16 +39,16 @@
     },
     {
       "id": "growth-driver",
-      "paths": ["overview.revenue_growth", "analysis.insights.1"] ,
+      "paths": ["overview.revenue_growth", "analysis.neutral_evidence.opportunities.0"] ,
       "mode": "all"
     },
     {
       "id": "material-risk",
-      "paths": ["analysis.insights.0"]
+      "paths": ["analysis.neutral_evidence.risks.0"]
     },
     {
       "id": "two-sided-analysis",
-      "paths": ["analysis.insights.0", "analysis.insights.1"],
+      "paths": ["analysis.neutral_evidence.risks.0", "analysis.neutral_evidence.opportunities.0"],
       "mode": "all"
     },
     {
@@ -61,16 +61,16 @@
       "id": "leverage-provider-conflict",
       "fact_paths": [
         "overview.debt_to_equity",
-        "analysis.insights.0.evidence.0.value"
+        "analysis.neutral_evidence.risks.0.evidence.0.value"
       ],
       "required_issue_code": "conflicting_sources",
-      "acknowledgement_paths": ["analysis.insights.0.explanation"],
+      "acknowledgement_paths": ["analysis.neutral_evidence.risks.0.explanation"],
       "acknowledgement_terms": ["disagree", "review"]
     }
   ],
   "readability_paths": [
-    "analysis.ai_narrative.statements.0.text",
-    "analysis.ai_narrative.statements.1.text",
+    "analysis.neutral_evidence.narrative.statements.0.text",
+    "analysis.neutral_evidence.narrative.statements.1.text",
     "news.ai_summary.statements.0.text"
   ],
   "base_report": {
@@ -262,17 +262,17 @@
         "claim": "Revenue grew 24% year over year. Two leverage sources disagree, so the difference requires review.",
         "generated": true,
         "citations": [
-          "analysis.insights.1.explanation",
-          "analysis.insights.0.explanation"
+          "analysis.neutral_evidence.opportunities.0.explanation",
+          "analysis.neutral_evidence.risks.0.explanation"
         ],
         "statements": [
           {
             "text": "Revenue grew 24% year over year.",
-            "citations": ["analysis.insights.1.explanation"]
+            "citations": ["analysis.neutral_evidence.opportunities.0.explanation"]
           },
           {
             "text": "Two leverage sources disagree, so the difference requires review.",
-            "citations": ["analysis.insights.0.explanation"]
+            "citations": ["analysis.neutral_evidence.risks.0.explanation"]
           }
         ],
         "provider": "Anthropic",
@@ -370,10 +370,7 @@
           }
         }
       },
-      "report_path_overrides": {
-        "analysis.insights.0.highlighted": false,
-        "analysis.insights.1.highlighted": true
-      },
+      "report_path_overrides": {},
       "expected_presentation": {
         "personalized": true,
         "section_order": ["overview", "analysis", "price_history", "news"],
@@ -397,11 +394,11 @@
             "statements": [
               {
                 "text": "Los ingresos crecieron un 24% interanual.",
-                "citations": ["analysis.insights.1.explanation"]
+                "citations": ["analysis.neutral_evidence.opportunities.0.explanation"]
               },
               {
                 "text": "Dos fuentes de apalancamiento discrepan, por lo que la diferencia requiere revisión.",
-                "citations": ["analysis.insights.0.explanation"]
+                "citations": ["analysis.neutral_evidence.risks.0.explanation"]
               }
             ]
           }
@@ -441,11 +438,11 @@
             "statements": [
               {
                 "text": "Le chiffre d’affaires a progressé de 24% sur un an.",
-                "citations": ["analysis.insights.1.explanation"]
+                "citations": ["analysis.neutral_evidence.opportunities.0.explanation"]
               },
               {
                 "text": "Deux sources sur l’endettement divergent, la différence doit donc être vérifiée.",
-                "citations": ["analysis.insights.0.explanation"]
+                "citations": ["analysis.neutral_evidence.risks.0.explanation"]
               }
             ]
           }
@@ -485,11 +482,11 @@
             "statements": [
               {
                 "text": "收入同比增长24%。",
-                "citations": ["analysis.insights.1.explanation"]
+                "citations": ["analysis.neutral_evidence.opportunities.0.explanation"]
               },
               {
                 "text": "两个杠杆数据来源不一致，因此需要复核差异。",
-                "citations": ["analysis.insights.0.explanation"]
+                "citations": ["analysis.neutral_evidence.risks.0.explanation"]
               }
             ]
           }

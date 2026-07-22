@@ -15,6 +15,7 @@ from app.db.base import Base  # noqa: E402
 from app.db.models import User  # noqa: E402
 from app.db.session import get_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app.services.analysis import build_insights  # noqa: E402
 
 
 PROFILE = {
@@ -218,30 +219,45 @@ def test_profile_only_changes_presentation_not_report_evidence(monkeypatch):
             f"/api/analysis/TEST?customer_id={created['customer_id']}&lang=zh"
         ).json()
 
-        anonymous_codes = {item["code"] for item in anonymous["insights"]}
-        personalized_codes = {item["code"] for item in personalized["insights"]}
+        anonymous_evidence = anonymous["neutral_evidence"]
+        personalized_evidence = personalized["neutral_evidence"]
+        anonymous_insights = [
+            *anonymous_evidence["risks"],
+            *anonymous_evidence["opportunities"],
+        ]
+        personalized_insights = [
+            *personalized_evidence["risks"],
+            *personalized_evidence["opportunities"],
+        ]
+        anonymous_codes = {item["code"] for item in anonymous_insights}
+        personalized_codes = {item["code"] for item in personalized_insights}
         assert personalized_codes == anonymous_codes
-        assert personalized["presentation"]["personalized"] is True
-        assert personalized["presentation"]["explanation_depth"] == "simple"
-        assert personalized["presentation"]["section_order"] == [
+        interpretation = personalized["personalized_interpretation"]
+        presentation = interpretation["presentation"]
+        assert presentation["personalized"] is True
+        assert presentation["explanation_depth"] == "simple"
+        assert presentation["section_order"] == [
             "overview",
             "analysis",
             "price_history",
             "news",
         ]
-        assert personalized["presentation"]["industry_match"] is True
-        assert "high_leverage" in personalized["presentation"]["highlighted_insight_codes"]
+        assert presentation["industry_match"] is True
+        assert "high_leverage" in interpretation["report_emphasis"]
         assert any(
             item["code"] == "rich_valuation" and item["kind"] == "risk"
-            for item in personalized["insights"]
+            for item in personalized_insights
         )
 
         # The model-facing call receives only language, explanation depth, and
         # the unchanged evidence set—not risk comfort or suitability data.
         assert narrative_calls[-1] == {
             "lang": "zh",
-            "explanation_depth": "simple",
-            "codes": [item["code"] for item in personalized["insights"]],
+            "explanation_depth": "standard",
+            "codes": [
+                item["code"]
+                for item in build_insights(metrics, _benchmark_context(metrics))
+            ],
         }
 
         professional_profile = {
@@ -257,7 +273,16 @@ def test_profile_only_changes_presentation_not_report_evidence(monkeypatch):
         professional = client.get(
             f"/api/analysis/TEST?customer_id={created['customer_id']}"
         ).json()
-        assert professional["presentation"]["explanation_depth"] == "professional"
-        assert {item["code"] for item in professional["insights"]} == anonymous_codes
+        assert professional["personalized_interpretation"]["presentation"][
+            "explanation_depth"
+        ] == "professional"
+        professional_neutral = professional["neutral_evidence"]
+        assert {
+            item["code"]
+            for item in [
+                *professional_neutral["risks"],
+                *professional_neutral["opportunities"],
+            ]
+        } == anonymous_codes
     finally:
         app.dependency_overrides.clear()

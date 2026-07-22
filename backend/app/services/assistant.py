@@ -389,10 +389,20 @@ def report_context_from_snapshot(snapshot: ResearchSnapshot, report_id=None) -> 
             )
         )
     if snapshot.analysis:
-        for index, insight in enumerate(snapshot.analysis.insights[:8]):
+        neutral = snapshot.analysis.neutral_evidence
+        insights = [
+            *(('risks', item) for item in neutral.risks),
+            *(('opportunities', item) for item in neutral.opportunities),
+        ][:8]
+        kind_indexes = {"risks": 0, "opportunities": 0}
+        for collection, insight in insights:
+            index = kind_indexes[collection]
+            kind_indexes[collection] += 1
             evidence.append(
                 AssistantReportEvidence(
-                    evidence_id=f"analysis.insights.{index}",
+                    evidence_id=(
+                        f"analysis.neutral_evidence.{collection}.{index}"
+                    ),
                     label=insight.title.claim,
                     value=insight.explanation.claim,
                     source=f"{insight.explanation.provider} · {insight.explanation.source}",

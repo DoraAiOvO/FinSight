@@ -164,22 +164,28 @@ def narrate_analysis(
     if not insights:
         return None
     source_lines = []
-    for insight_index, insight in enumerate(insights):
+    kind_indexes = {"risk": 0, "opportunity": 0}
+    for insight in insights:
+        kind = insight.get("kind", "risk")
+        collection = "opportunities" if kind == "opportunity" else "risks"
+        insight_index = kind_indexes[kind]
+        kind_indexes[kind] += 1
+        source_root = f"analysis.neutral_evidence.{collection}.{insight_index}"
         source_lines.extend(
             [
-                f"- Source ID analysis.insights.{insight_index}.title: "
+                f"- Source ID {source_root}.title: "
                 f"{evidence_text(insight['title'])}",
-                f"- Source ID analysis.insights.{insight_index}.explanation: "
+                f"- Source ID {source_root}.explanation: "
                 f"{evidence_text(insight['explanation'])}",
             ]
         )
         for evidence_index, item in enumerate(insight["evidence"]):
             source_lines.extend(
                 [
-                    f"- Source ID analysis.insights.{insight_index}.evidence."
+                    f"- Source ID {source_root}.evidence."
                     f"{evidence_index}.value: {item['metric']}="
                     f"{item['value'].get('display_value') or item['value']['value']}",
-                    f"- Source ID analysis.insights.{insight_index}.evidence."
+                    f"- Source ID {source_root}.evidence."
                     f"{evidence_index}.benchmark: {evidence_text(item['benchmark'])}",
                 ]
             )

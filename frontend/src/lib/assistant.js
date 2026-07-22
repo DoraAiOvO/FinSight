@@ -113,11 +113,16 @@ export function buildAssistantReportContext(data, comparison, language = 'en') {
       'beta', 'dividend_yield',
     ]
     metricKeys.forEach((key) => addPoint(evidence, key, labels[key], overview[key], language))
-    ;(data.analysis?.insights || []).slice(0, 8).forEach((insight, index) => {
+    const neutral = data.analysis?.neutral_evidence
+    const analysisEvidence = [
+      ...(neutral?.risks || []).map((insight, index) => ({ insight, collection: 'risks', index })),
+      ...(neutral?.opportunities || []).map((insight, index) => ({ insight, collection: 'opportunities', index })),
+    ]
+    analysisEvidence.slice(0, 8).forEach(({ insight, collection, index }) => {
       const explanation = insight.explanation
       if (!explanation?.claim) return
       evidence.push({
-        evidence_id: `analysis.insights.${index}`,
+        evidence_id: `analysis.neutral_evidence.${collection}.${index}`,
         label: translateServerText(language, insight.title?.claim) || insight.code,
         value: translateServerText(language, explanation.claim),
         source: sourceFor(explanation, language),

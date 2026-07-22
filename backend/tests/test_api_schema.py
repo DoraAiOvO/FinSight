@@ -117,17 +117,41 @@ def test_openapi_exposes_standardized_data_point_and_evidence_contracts():
     assert "claim" in models["Evidence"]["required"]
     assert models["Overview"]["properties"]["price"]["anyOf"][0]["$ref"].endswith("/DataPoint")
     assert models["PricePoint"]["properties"]["close"]["$ref"].endswith("/DataPoint")
-    narrative_ref = models["AnalysisResponse"]["properties"]["ai_narrative"]["anyOf"][0]
+    neutral_ref = models["AnalysisResponse"]["properties"]["neutral_evidence"]
+    assert neutral_ref["$ref"].endswith("/NeutralEvidenceResult")
+    narrative_ref = models["NeutralEvidenceResult"]["properties"]["narrative"]["anyOf"][0]
     assert narrative_ref["$ref"].endswith("/Evidence")
     assert models["CustomerProfilePreferences"]["properties"]["risk_comfort"][
         "$ref"
     ].endswith("/RiskComfort")
-    assert models["AnalysisResponse"]["properties"]["presentation"][
+    assert models["PersonalizedInterpretation"]["properties"]["presentation"][
         "$ref"
     ].endswith("/ReportPresentation")
-    assert models["AnalysisResponse"]["properties"]["benchmarks"][
+    assert models["NeutralEvidenceResult"]["properties"]["benchmarks"][
         "$ref"
     ].endswith("/BenchmarkContext")
+    neutral_fields = {
+        "facts",
+        "benchmarks",
+        "risks",
+        "opportunities",
+        "uncertainties",
+        "sources",
+        "freshness",
+        "conflicts",
+        "missing_data",
+    }
+    assert neutral_fields <= set(models["NeutralEvidenceResult"]["properties"])
+    assert neutral_fields <= set(models["NeutralEvidenceResult"]["required"])
+    assert {
+        "policy_fit",
+        "matched_preferences",
+        "failed_preferences",
+        "hard_constraint_results",
+        "ranking_explanation",
+        "report_emphasis",
+        "alert_relevance",
+    } <= set(models["PersonalizedInterpretation"]["properties"])
     assert models["MetricBenchmark"]["properties"]["references"]["items"][
         "$ref"
     ].endswith("/BenchmarkReference")
@@ -225,15 +249,17 @@ def test_overview_analysis_comparison_and_news_responses_include_provenance(monk
     analysis_response = client.get("/api/analysis/TEST")
     assert analysis_response.status_code == 200
     analysis = analysis_response.json()
-    assert_provenance(analysis["ai_narrative"])
-    assert_provenance(analysis["insights"][0]["title"])
-    assert_provenance(analysis["insights"][0]["explanation"])
-    assert_provenance(analysis["insights"][0]["evidence"][0]["value"])
-    assert_provenance(analysis["insights"][0]["evidence"][0]["benchmark"])
-    assert_provenance(analysis["benchmarks"]["methodology"])
-    assert analysis["benchmarks"]["metrics"][0]["primary_scope"] == "industry"
-    assert_provenance(analysis["benchmarks"]["metrics"][0]["references"][0]["median"])
-    assert analysis["presentation"]["personalized"] is False
+    neutral = analysis["neutral_evidence"]
+    first_insight = [*neutral["risks"], *neutral["opportunities"]][0]
+    assert_provenance(neutral["narrative"])
+    assert_provenance(first_insight["title"])
+    assert_provenance(first_insight["explanation"])
+    assert_provenance(first_insight["evidence"][0]["value"])
+    assert_provenance(first_insight["evidence"][0]["benchmark"])
+    assert_provenance(neutral["benchmarks"]["methodology"])
+    assert neutral["benchmarks"]["metrics"][0]["primary_scope"] == "industry"
+    assert_provenance(neutral["benchmarks"]["metrics"][0]["references"][0]["median"])
+    assert analysis["personalized_interpretation"]["presentation"]["personalized"] is False
 
     compare_response = client.get("/api/compare?tickers=AAA,BBB")
     assert compare_response.status_code == 200

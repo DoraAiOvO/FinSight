@@ -65,7 +65,12 @@ from .services import (
     thesis_ledger,
     valuations,
 )
-from .services.analysis import DISCLAIMER, build_comparison, build_insights
+from .services.analysis import (
+    DISCLAIMER,
+    build_comparison,
+    build_insights,
+    build_neutral_evidence,
+)
 from .services.assistant_controls import rate_limiter as assistant_rate_limiter
 from .services.customer_profiles import (
     create_customer_profile,
@@ -73,7 +78,10 @@ from .services.customer_profiles import (
     serialize_profile,
     update_customer_profile,
 )
-from .services.presentation import organize_report
+from .services.presentation import (
+    build_personalized_interpretation,
+    organize_report,
+)
 from .services.tickers import normalize_comparison, normalize_ticker
 
 @asynccontextmanager
@@ -917,23 +925,43 @@ def stock_analysis(
             # A profile lookup must never break the existing anonymous report.
             profile = None
     benchmark_context = benchmarks.build_benchmark_context(ticker, metrics)
-    insights, presentation = organize_report(
+    neutral_insights = build_insights(metrics, benchmark_context)
+    organized_insights, presentation = organize_report(
+        metrics, neutral_insights, profile
+    )
+    policy = None
+    if customer_id is not None:
+        try:
+            policy = investment_policies.get_default_published_policy(
+                db, customer_id
+            )
+        except SQLAlchemyError:
+            # Policy interpretation is optional and must not affect evidence.
+            policy = None
+    narrative = ai.narrate_analysis(
+        ticker.upper(),
         metrics,
-        build_insights(metrics, benchmark_context),
-        profile,
+        neutral_insights,
+        lang=lang,
+        # Narrative content belongs to neutral evidence. User preferences may
+        # change expansion/display only, never the generated factual synthesis.
+        explanation_depth="standard",
     )
     return {
         "ticker": ticker.upper(),
-        "insights": insights,
-        "benchmarks": benchmark_context,
-        "ai_narrative": ai.narrate_analysis(
-            ticker.upper(),
+        "neutral_evidence": build_neutral_evidence(
             metrics,
-            insights,
-            lang=lang,
-            explanation_depth=presentation.explanation_depth.value,
+            benchmark_context,
+            neutral_insights,
+            narrative,
         ),
-        "presentation": presentation,
+        "personalized_interpretation": build_personalized_interpretation(
+            metrics,
+            neutral_insights,
+            organized_insights,
+            presentation,
+            policy,
+        ),
         "disclaimer": DISCLAIMER,
     }
 

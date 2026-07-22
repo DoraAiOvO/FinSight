@@ -494,16 +494,135 @@ class Insight(BaseModel):
     severity: str  # "low" | "medium" | "high"
     explanation: Evidence
     evidence: list[EvidenceItem]
-    highlighted: bool = False
+
+
+class NeutralFact(BaseModel):
+    """One policy-independent company fact used by the analysis."""
+
+    metric_key: str
+    label: str
+    value: DataPoint
+
+
+class NeutralFreshness(BaseModel):
+    """Conservative recency summary across every neutral source."""
+
+    status: FreshnessStatus = FreshnessStatus.UNKNOWN
+    oldest_as_of_date: date | None = None
+    newest_as_of_date: date | None = None
+    stale_source_count: int = Field(default=0, ge=0)
+    unknown_source_count: int = Field(default=0, ge=0)
+
+
+class NeutralEvidenceResult(BaseModel):
+    """Research evidence that is identical regardless of the requesting user.
+
+    Preferences and investment policies are deliberately absent from this
+    model. They may interpret these fields, but may never mutate or filter them.
+    """
+
+    facts: list[NeutralFact]
+    benchmarks: BenchmarkContext
+    risks: list[Insight]
+    opportunities: list[Insight]
+    uncertainties: list[Evidence]
+    sources: list[Provenance]
+    freshness: NeutralFreshness
+    conflicts: list[Evidence]
+    missing_data: list[str]
+    narrative: Evidence | None = None
+
+
+class PolicyRuleResult(BaseModel):
+    """An interpretation of one policy rule, never a statement of fact."""
+
+    rule_type: str
+    observed: DataValue = None
+    preference: Any
+    matched: bool | None = None
+    importance: int = Field(default=3, ge=1, le=5)
+    rationale: str
+
+
+class RankingExplanation(BaseModel):
+    insight_code: str
+    rank: int = Field(ge=1)
+    reasons: list[str] = Field(default_factory=list)
+
+
+class PersonalizedInterpretation(BaseModel):
+    """User-specific lens over an immutable ``NeutralEvidenceResult``."""
+
+    policy_fit: float | None = Field(default=None, ge=0, le=1)
+    matched_preferences: list[PolicyRuleResult] = Field(default_factory=list)
+    failed_preferences: list[PolicyRuleResult] = Field(default_factory=list)
+    hard_constraint_results: list[PolicyRuleResult] = Field(default_factory=list)
+    ranking_explanation: list[RankingExplanation] = Field(default_factory=list)
+    report_emphasis: list[str] = Field(default_factory=list)
+    alert_relevance: list[str] = Field(default_factory=list)
+    presentation: ReportPresentation = Field(default_factory=ReportPresentation)
 
 
 class AnalysisResponse(BaseModel):
     ticker: str
-    insights: list[Insight]
-    benchmarks: BenchmarkContext
-    ai_narrative: Evidence | None = None
-    presentation: ReportPresentation = Field(default_factory=ReportPresentation)
+    neutral_evidence: NeutralEvidenceResult
+    personalized_interpretation: PersonalizedInterpretation = Field(
+        default_factory=PersonalizedInterpretation
+    )
     disclaimer: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_analysis_shape(cls, value):
+        """Keep saved pre-split reports readable without emitting the old shape."""
+        if not isinstance(value, dict) or "neutral_evidence" in value:
+            return value
+        if "insights" not in value or "benchmarks" not in value:
+            return value
+        insights = value.get("insights") or []
+        benchmarks = value.get("benchmarks") or {}
+        presentation = value.get("presentation") or {}
+        return {
+            "ticker": value.get("ticker"),
+            "neutral_evidence": {
+                "facts": [],
+                "benchmarks": benchmarks,
+                "risks": [item for item in insights if item.get("kind") == "risk"],
+                "opportunities": [
+                    item for item in insights if item.get("kind") == "opportunity"
+                ],
+                "uncertainties": benchmarks.get("limitations") or [],
+                "sources": [],
+                "freshness": {"status": "unknown"},
+                "conflicts": [],
+                "missing_data": [],
+                "narrative": value.get("ai_narrative"),
+            },
+            "personalized_interpretation": {
+                "report_emphasis": presentation.get(
+                    "highlighted_insight_codes", []
+                ),
+                "presentation": presentation,
+            },
+            "disclaimer": value.get("disclaimer", ""),
+        }
+
+    @property
+    def insights(self) -> list[Insight]:
+        """Compatibility accessor for internal saved-report consumers."""
+        return self.neutral_evidence.risks + self.neutral_evidence.opportunities
+
+    @property
+    def benchmarks(self) -> BenchmarkContext:
+        return self.neutral_evidence.benchmarks
+
+    @property
+    def ai_narrative(self) -> Evidence | None:
+        return self.neutral_evidence.narrative
+
+    @property
+    def presentation(self) -> ReportPresentation:
+        return self.personalized_interpretation.presentation
 
 
 class CompareRow(BaseModel):

@@ -312,8 +312,14 @@ def _is_supporting_node(node: Any) -> bool:
 
 
 def _citation_allowed(conclusion_path: str, citation_path: str) -> bool:
-    if conclusion_path == "analysis.ai_narrative":
-        return citation_path.startswith("analysis.insights.")
+    if conclusion_path == "analysis.neutral_evidence.narrative":
+        return citation_path.startswith(
+            (
+                "analysis.neutral_evidence.risks.",
+                "analysis.neutral_evidence.opportunities.",
+                "analysis.neutral_evidence.facts.",
+            )
+        )
     if conclusion_path == "news.ai_summary":
         return citation_path.startswith("news.items.")
     section = _section(conclusion_path)
@@ -337,22 +343,30 @@ def _canonical_facts(root: dict) -> dict[str, list[tuple[str, dict]]]:
         if _is_provenance(value) and "value" in value:
             facts[key].append((f"valuation.inputs.{key}", value))
 
-    analysis = root.get("analysis") or {}
-    for insight_index, insight in enumerate(analysis.get("insights") or []):
-        for evidence_index, item in enumerate(insight.get("evidence") or []):
-            key = item.get("metric_key")
-            value = item.get("value")
-            if key and _is_provenance(value) and "value" in value:
-                facts[str(key)].append(
-                    (f"analysis.insights.{insight_index}.evidence.{evidence_index}.value", value)
-                )
-    benchmark_metrics = (analysis.get("benchmarks") or {}).get("metrics") or []
+    neutral = ((root.get("analysis") or {}).get("neutral_evidence") or {})
+    for collection in ("risks", "opportunities"):
+        for insight_index, insight in enumerate(neutral.get(collection) or []):
+            for evidence_index, item in enumerate(insight.get("evidence") or []):
+                key = item.get("metric_key")
+                value = item.get("value")
+                if key and _is_provenance(value) and "value" in value:
+                    facts[str(key)].append(
+                        (
+                            f"analysis.neutral_evidence.{collection}.{insight_index}."
+                            f"evidence.{evidence_index}.value",
+                            value,
+                        )
+                    )
+    benchmark_metrics = (neutral.get("benchmarks") or {}).get("metrics") or []
     for metric_index, metric in enumerate(benchmark_metrics):
         key = metric.get("metric_key")
         value = metric.get("company_value")
         if key and _is_provenance(value) and "value" in value:
             facts[str(key)].append(
-                (f"analysis.benchmarks.metrics.{metric_index}.company_value", value)
+                (
+                    f"analysis.neutral_evidence.benchmarks.metrics.{metric_index}.company_value",
+                    value,
+                )
             )
     return facts
 

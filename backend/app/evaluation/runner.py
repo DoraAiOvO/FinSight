@@ -499,12 +499,12 @@ def _presentation_contract(
     case: EvaluationCase, root: dict[str, Any]
 ) -> tuple[bool, dict[str, Any], Any]:
     expected = case.expected_presentation
-    observed_plan = _resolve(root, "analysis.presentation")
-    highlighted_codes = [
-        insight.get("code")
-        for insight in (_resolve(root, "analysis.insights") or [])
-        if insight.get("highlighted")
-    ]
+    observed_plan = _resolve(
+        root, "analysis.personalized_interpretation.presentation"
+    )
+    highlighted_codes = _resolve(
+        root, "analysis.personalized_interpretation.report_emphasis"
+    ) or []
     observed = {
         "presentation": observed_plan,
         "highlighted_insight_flags": highlighted_codes,

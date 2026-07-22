@@ -1,4 +1,4 @@
-"""Deterministic report presentation derived from customer preferences.
+"""Deterministic interpretation derived from profiles and investment policies.
 
 This module never changes, removes, or invents evidence. It only sorts existing
 insights and describes how the frontend should organize and expand the report.
@@ -8,10 +8,13 @@ from collections import defaultdict
 
 from ..models.schemas import (
     ExplanationDepth,
+    PersonalizedInterpretation,
+    PolicyRuleResult,
     ReportDepth,
     ReportPresentation,
     ReportSection,
 )
+from .provenance import data_value
 
 
 PRIORITY_CODES = {
@@ -187,3 +190,181 @@ def organize_report(metrics: dict, insights: list[dict], profile=None):
         industry_match=_industry_match(metrics, profile),
     )
     return organized, presentation
+
+
+POLICY_METRIC_KEYS = {
+    "minimum_revenue_growth": "revenue_growth",
+    "maximum_revenue_growth": "revenue_growth",
+    "minimum_profit_margin": "profit_margin",
+    "maximum_profit_margin": "profit_margin",
+    "minimum_free_cash_flow_margin": "free_cash_flow_margin",
+    "maximum_debt_to_equity": "debt_to_equity",
+    "minimum_current_ratio": "current_ratio",
+    "maximum_forward_pe": "forward_pe",
+    "maximum_trailing_pe": "trailing_pe",
+    "maximum_price_to_sales": "price_to_sales",
+    "valuation_threshold": "trailing_pe",
+    "preferred_sector": "sector",
+    "country": "country",
+    "excluded_asset_type": "asset_type",
+}
+
+
+def _policy_version(policy):
+    if policy is None:
+        return None
+    versions = [
+        version
+        for version in policy.versions
+        if _value(version, "status") == "published"
+    ]
+    return max(versions, key=lambda version: version.version_number, default=None)
+
+
+def _observed_policy_value(metrics: dict, rule) -> object:
+    rule_type = _value(rule, "rule_type", "")
+    metric_key = POLICY_METRIC_KEYS.get(rule_type, rule_type)
+    return data_value(metrics.get(metric_key))
+
+
+def _matches_policy_rule(observed, rule) -> bool | None:
+    if observed is None:
+        return None
+    expected = _value(rule, "value")
+    operator = str(_value(rule, "operator", "equals")).casefold()
+    try:
+        if operator in {"equals", "equal", "=="}:
+            matched = (
+                observed in expected
+                if isinstance(expected, list)
+                else observed == expected
+            )
+        elif operator in {"not_equals", "not_equal", "!="}:
+            matched = (
+                observed not in expected
+                if isinstance(expected, list)
+                else observed != expected
+            )
+        elif operator in {"greater_than", ">"}:
+            matched = observed > expected
+        elif operator in {"greater_than_or_equal", ">="}:
+            matched = observed >= expected
+        elif operator in {"less_than", "<"}:
+            matched = observed < expected
+        elif operator in {"less_than_or_equal", "<="}:
+            matched = observed <= expected
+        elif operator == "in":
+            matched = observed in expected
+        elif operator == "not_in":
+            matched = observed not in expected
+        elif operator == "contains":
+            matched = expected in observed
+        else:
+            return None
+    except (TypeError, ValueError):
+        return None
+    if str(_value(rule, "rule_type", "")).startswith("excluded_"):
+        matched = not matched
+    return matched
+
+
+def _rule_result(rule, observed, matched) -> PolicyRuleResult:
+    return PolicyRuleResult(
+        rule_type=_value(rule, "rule_type"),
+        observed=observed,
+        preference=_value(rule, "value"),
+        matched=matched,
+        importance=int(_value(rule, "importance", 3)),
+        rationale=_value(rule, "rationale", "Policy preference"),
+    )
+
+
+def build_personalized_interpretation(
+    metrics: dict,
+    neutral_insights: list[dict],
+    organized_insights: list[dict],
+    presentation: ReportPresentation,
+    policy=None,
+) -> PersonalizedInterpretation:
+    """Interpret immutable evidence through profile and policy preferences."""
+    version = _policy_version(policy)
+    matched_preferences = []
+    failed_preferences = []
+    hard_constraint_results = []
+    alert_relevance = []
+    policy_emphasis = []
+    weighted_matches = 0
+    evaluated_weight = 0
+
+    if version is not None:
+        for collection in (
+            "principles",
+            "market_scopes",
+            "sector_preferences",
+            "theme_preferences",
+            "metric_rules",
+            "constraints",
+            "valuation_rules",
+            "portfolio_rules",
+            "alert_rules",
+        ):
+            for rule in getattr(version, collection):
+                if not _value(rule, "enabled", True):
+                    continue
+                observed = _observed_policy_value(metrics, rule)
+                matched = _matches_policy_rule(observed, rule)
+                result = _rule_result(rule, observed, matched)
+                strength = _value(rule, "hard_or_soft", "soft")
+                effect = _value(rule, "application_effect", "preference_fit_scoring")
+                if strength == "hard":
+                    hard_constraint_results.append(result)
+                elif matched is True:
+                    matched_preferences.append(result)
+                elif matched is False:
+                    failed_preferences.append(result)
+                if matched is not None:
+                    weight = int(_value(rule, "importance", 3))
+                    evaluated_weight += weight
+                    if matched:
+                        weighted_matches += weight
+                if effect == "report_emphasis" and matched is not False:
+                    policy_emphasis.append(_value(rule, "rule_type"))
+                if effect == "alerts" and matched is True:
+                    alert_relevance.append(_value(rule, "rule_type"))
+
+    if version is not None and not presentation.personalized:
+        presentation = presentation.model_copy(update={"personalized": True})
+
+    neutral_index = {item["code"]: index for index, item in enumerate(neutral_insights)}
+    ranking = []
+    for rank, insight in enumerate(organized_insights, start=1):
+        reasons = []
+        if insight.get("highlighted"):
+            reasons.append("Matched research profile priorities or horizon.")
+        if neutral_index.get(insight["code"]) != rank - 1:
+            reasons.append("Moved forward by the personalized research lens.")
+        if not reasons:
+            reasons.append("Preserved the neutral evidence order.")
+        ranking.append(
+            {"insight_code": insight["code"], "rank": rank, "reasons": reasons}
+        )
+
+    report_emphasis = list(
+        dict.fromkeys(
+            [*presentation.highlighted_insight_codes, *policy_emphasis]
+        )
+    )
+    return PersonalizedInterpretation(
+        policy_fit=(
+            round(weighted_matches / evaluated_weight, 4)
+            if evaluated_weight
+            else None
+        ),
+        matched_preferences=matched_preferences,
+        failed_preferences=failed_preferences,
+        hard_constraint_results=hard_constraint_results,
+        ranking_explanation=ranking,
+        report_emphasis=report_emphasis,
+        alert_relevance=list(dict.fromkeys(alert_relevance)),
+        presentation=presentation,
+    )

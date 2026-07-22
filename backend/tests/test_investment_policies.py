@@ -1,6 +1,7 @@
 """Advanced investment-policy schema, versioning, and ownership API tests."""
 
 import sys
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -287,5 +288,93 @@ def test_rule_effects_cannot_request_evidence_or_benchmark_mutation():
         assert client.get(
             f"/api/customers/{customer_id}/investment-policies"
         ).json() == []
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_different_user_policies_preserve_identical_neutral_evidence(monkeypatch):
+    client = _client()
+    as_of = date(2026, 7, 21)
+    fetched_at = datetime(2026, 7, 22, 12, 0, tzinfo=timezone.utc)
+
+    def point(value):
+        return {
+            "value": value,
+            "unit": None,
+            "display_value": str(value),
+            "provider": "Test provider",
+            "source": "shared company fixture",
+            "as_of_date": as_of,
+            "fetched_at": fetched_at,
+            "freshness_status": "fresh",
+            "confidence": 0.9,
+            "source_url": "https://example.com/company",
+        }
+
+    source = {
+        key: value
+        for key, value in point(None).items()
+        if key not in {"value", "unit", "display_value"}
+    }
+    metrics = {
+        "ticker": "TEST",
+        "name": "Test Corp",
+        "sector": "Technology",
+        "industry": "Software",
+        "country": "US",
+        "asset_type": "equity",
+        "price": point(100.0),
+        "revenue_growth": point(0.2),
+        "forward_pe": point(30.0),
+        "fifty_two_week_low": point(80.0),
+        "fifty_two_week_high": point(120.0),
+    }
+    benchmark_context = {
+        "industry": "Software",
+        "sector": "Technology",
+        "selected_peers": [],
+        "metrics": [],
+        "methodology": {"claim": "Shared benchmark method.", **source},
+        "limitations": [{"claim": "Peer sample unavailable.", **source}],
+    }
+    monkeypatch.setattr("app.main.market_data.get_overview", lambda ticker: metrics)
+    monkeypatch.setattr(
+        "app.main.benchmarks.build_benchmark_context",
+        lambda ticker, company_metrics: benchmark_context,
+    )
+    monkeypatch.setattr("app.main.ai.narrate_analysis", lambda *args, **kwargs: None)
+
+    try:
+        first_customer = _create_customer(client)
+        second_customer = _create_customer(client)
+        first_policy = _policy_payload()
+        second_policy = _policy_payload()
+        second_policy["name"] = "High growth only"
+        second_policy["initial_version"]["metric_rules"][0]["value"] = 0.5
+
+        assert client.post(
+            f"/api/customers/{first_customer}/investment-policies",
+            json=first_policy,
+        ).status_code == 201
+        assert client.post(
+            f"/api/customers/{second_customer}/investment-policies",
+            json=second_policy,
+        ).status_code == 201
+
+        first = client.get(
+            f"/api/analysis/TEST?customer_id={first_customer}"
+        ).json()
+        second = client.get(
+            f"/api/analysis/TEST?customer_id={second_customer}"
+        ).json()
+
+        assert first["neutral_evidence"] == second["neutral_evidence"]
+        assert (
+            first["personalized_interpretation"]
+            != second["personalized_interpretation"]
+        )
+        assert first["personalized_interpretation"]["policy_fit"] > second[
+            "personalized_interpretation"
+        ]["policy_fit"]
     finally:
         app.dependency_overrides.clear()

@@ -69,14 +69,56 @@ function InsightCard({ insight, defaultOpen = false, explanationDepth = 'standar
   )
 }
 
-export default function AnalysisPanel({ analysis, presentation = analysis.presentation }) {
+function InterpretationSummary({ interpretation }) {
+  const { t } = useTranslation()
+  const matched = interpretation.matched_preferences || []
+  const failed = interpretation.failed_preferences || []
+  const hardConstraints = interpretation.hard_constraint_results || []
+  const hasPolicyResults = interpretation.policy_fit != null
+    || hardConstraints.length > 0
+  if (!hasPolicyResults) return null
+  return (
+    <div className="interpretation-summary">
+      <span className="ai-label">{t('personalizedInterpretation')}</span>
+      <div>
+        {interpretation.policy_fit != null && (
+          <span>{t('policyFit')}: {Math.round(interpretation.policy_fit * 100)}%</span>
+        )}
+        <span>{matched.length} {t('matchedPreferences')}</span>
+        <span>{failed.length} {t('failedPreferences')}</span>
+        <span>{hardConstraints.length} {t('hardConstraints')}</span>
+      </div>
+    </div>
+  )
+}
+
+export default function AnalysisPanel({ analysis, personalized = true }) {
   const { t } = useTranslation()
   const [filter, setFilter] = useState('all')
-  const risks = analysis.insights.filter((insight) => insight.kind === 'risk')
-  const opportunities = analysis.insights.filter((insight) => insight.kind === 'opportunity')
+  const neutral = analysis.neutral_evidence
+  const interpretation = analysis.personalized_interpretation
+  const presentation = personalized ? interpretation?.presentation : null
+  const risks = neutral.risks
+  const opportunities = neutral.opportunities
+  const severityRank = { high: 0, medium: 1, low: 2 }
+  const neutralOrder = [...risks, ...opportunities].sort((left, right) => (
+    (severityRank[left.severity] ?? 3) - (severityRank[right.severity] ?? 3)
+      || left.kind.localeCompare(right.kind)
+  ))
+  const personalizedRanks = new Map(
+    (interpretation?.ranking_explanation || []).map((item) => [item.insight_code, item.rank]),
+  )
+  const emphasized = new Set(personalized ? (interpretation?.report_emphasis || []) : [])
+  const insights = (personalized ? [...neutralOrder].sort((left, right) => (
+    (personalizedRanks.get(left.code) ?? Number.MAX_SAFE_INTEGER)
+      - (personalizedRanks.get(right.code) ?? Number.MAX_SAFE_INTEGER)
+  )) : neutralOrder).map((insight) => ({
+    ...insight,
+    highlighted: emphasized.has(insight.code),
+  }))
   const visible = filter === 'all'
-    ? analysis.insights
-    : analysis.insights.filter((insight) => insight.kind === filter)
+    ? insights
+    : insights.filter((insight) => insight.kind === filter)
   const explanationDepth = presentation?.explanation_depth || 'standard'
   const reportDepth = presentation?.report_depth || 'standard'
   const firstHighlightedIndex = visible.findIndex((insight) => insight.highlighted)
@@ -102,10 +144,14 @@ export default function AnalysisPanel({ analysis, presentation = analysis.presen
         </div>
       </div>
 
-      {analysis.ai_narrative && (
+      {personalized && interpretation && (
+        <InterpretationSummary interpretation={interpretation} />
+      )}
+
+      {neutral.narrative && (
         <div className="ai-note">
           <span className="ai-label">{t('synthesis')}</span>
-          {presentation?.personalized && (
+          {personalized && presentation?.personalized && (
             <span className="explanation-depth-label">
               {t({
                 simple: 'explanationSimple',
@@ -114,11 +160,11 @@ export default function AnalysisPanel({ analysis, presentation = analysis.presen
               }[explanationDepth])}
             </span>
           )}
-          <p>{evidenceText(analysis.ai_narrative)}</p>
+          <p>{evidenceText(neutral.narrative)}</p>
         </div>
       )}
 
-      {analysis.insights.length > 0 && (
+      {insights.length > 0 && (
         <div className="insight-filters" aria-label={t('filterAria')}>
           {[
             ['all', t('filterAll')],
@@ -138,7 +184,7 @@ export default function AnalysisPanel({ analysis, presentation = analysis.presen
         </div>
       )}
 
-      {analysis.insights.length === 0 && (
+      {insights.length === 0 && (
         <p className="empty-copy">{t('noFlags')}</p>
       )}
       <div className="insight-list">

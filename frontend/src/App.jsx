@@ -27,8 +27,35 @@ import {
 
 const STARTER_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'COST']
 
-function ReportSections({ data, historyLoading, onPeriodChange, onValuationChange }) {
-  const presentation = data.analysis?.presentation
+export function AnalysisViewToggle({ value, onChange }) {
+  const { t } = useTranslation()
+  return (
+    <div className="analysis-view-toggle" aria-label={t('analysisViewAria')}>
+      <button
+        type="button"
+        className={value === 'personalized' ? 'active' : ''}
+        aria-pressed={value === 'personalized'}
+        onClick={() => onChange('personalized')}
+      >
+        {t('personalizedView')}
+      </button>
+      <button
+        type="button"
+        className={value === 'neutral' ? 'active' : ''}
+        aria-pressed={value === 'neutral'}
+        onClick={() => onChange('neutral')}
+      >
+        {t('neutralEvidenceView')}
+      </button>
+    </div>
+  )
+}
+
+function ReportSections({ data, historyLoading, onPeriodChange, onValuationChange, researchView }) {
+  const interpretation = data.analysis?.personalized_interpretation
+  const personalized = researchView === 'personalized'
+  const presentation = personalized ? interpretation?.presentation : null
+  const neutral = data.analysis?.neutral_evidence
   const sections = {
     overview: (
       <StockOverview
@@ -45,10 +72,10 @@ function ReportSections({ data, historyLoading, onPeriodChange, onValuationChang
       />
     ),
     analysis: data.analysis && (
-      <AnalysisPanel analysis={data.analysis} presentation={presentation} />
+      <AnalysisPanel analysis={data.analysis} personalized={personalized} />
     ),
-    benchmarks: data.analysis?.benchmarks && (
-      <BenchmarkPanel benchmarks={data.analysis.benchmarks} />
+    benchmarks: neutral?.benchmarks && (
+      <BenchmarkPanel benchmarks={neutral.benchmarks} />
     ),
     valuation: data.valuation && (
       <ValuationPanel
@@ -166,6 +193,7 @@ export default function App() {
   const [data, setData] = useState(null)
   const [compare, setCompare] = useState(null)
   const [compareAudit, setCompareAudit] = useState(null)
+  const [researchView, setResearchView] = useState('personalized')
   const requestId = useRef(0)
   const lastAnalyzeTicker = useRef(null)
   const previousPreferenceKey = useRef(`${language}:${profile?.updated_at || ''}`)
@@ -198,6 +226,7 @@ export default function App() {
     setData(null)
     setCompare(null)
     setCompareAudit(null)
+    setResearchView('personalized')
     lastAnalyzeTicker.current = null
   }
 
@@ -215,6 +244,7 @@ export default function App() {
     setNotices([])
     setCompare(null)
     setCompareAudit(null)
+    setResearchView('personalized')
 
     try {
       const overview = await api.overview(ticker)
@@ -380,8 +410,15 @@ export default function App() {
               <span>{t('dataDelayed')}</span>
             </p>
           </div>
+          {data.analysis && (
+            <AnalysisViewToggle value={researchView} onChange={setResearchView} />
+          )}
           <PersonalizationBanner
-            presentation={data.analysis?.presentation}
+            presentation={
+              researchView === 'personalized'
+                ? data.analysis?.personalized_interpretation?.presentation
+                : null
+            }
             onEdit={openOnboarding}
           />
           <EvidenceAuditPanel audit={data.audit} />
@@ -396,6 +433,7 @@ export default function App() {
             historyLoading={historyLoading}
             onPeriodChange={changePeriod}
             onValuationChange={updateValuation}
+            researchView={researchView}
           />
         </main>
       )}

@@ -48,7 +48,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 📐 **Relative benchmarks** | Compares metrics with industry, sector, automatically selected peers, and the company’s own annual history—and explains which benchmark is primary and why |
 | 🧠 **Research memory** | Persists grouped watchlists and research snapshots, then shows what changed in metrics, news, filings, signals, and thesis assumptions |
 | 📒 **Thesis Ledger** | Records a research thesis, measurable metric or event assumptions, evidence on both sides, status, and an append-only change history |
-| 🧭 **Investment policies** | Stores multiple versioned policies per customer across principles, scope, sectors, themes, metrics, constraints, valuation, portfolio, and alerts—without changing objective evidence or benchmarks |
+| 🧭 **Investment policies** | Stores multiple versioned policies per customer and returns policy fit, preference matches, constraint checks, ranking rationale, emphasis, and alert relevance in a separate personalized layer—without changing objective evidence or benchmarks |
 | 🧮 **Valuation & scenarios** | Calculates DCF, reverse DCF, selected-peer multiples, three scenario cases, and a sensitivity matrix entirely in deterministic code |
 | 🛡️ **Evidence Auditor** | Checks every assembled report for unsupported claims, stale evidence, missing citations, source conflicts, incorrect units, and inconsistent numbers before generated conclusions are displayed or saved |
 | ✅ **Product evaluation** | Runs a fixed offline report suite across citation, numeric, freshness, contradiction, coverage, readability, personalization, and multilingual quality gates |
@@ -143,7 +143,11 @@ flow. A completed profile is stored in the database and its anonymous customer
 UUID is kept in that browser's local storage. Authentication and cross-device
 identity are intentionally outside this phase.
 
-The profile may only affect:
+Every analysis response is divided into `neutral_evidence` and
+`personalized_interpretation`. The neutral layer always contains facts,
+benchmarks, risks, opportunities, uncertainties, sources, freshness, conflicts,
+and missing-data disclosures. The profile or default published investment policy
+may only affect the personalized layer, including:
 
 - report section order;
 - which existing metrics and insights are visually highlighted; and
@@ -151,8 +155,9 @@ The profile may only affect:
 
 It never removes evidence, changes deterministic risk or opportunity signals,
 or produces personalized buy, sell, or suitability instructions. Only the
-derived explanation-depth setting—not the customer's risk comfort or
-priorities—is passed to the optional AI narrative layer.
+neutral, standard explanation depth is passed to the optional AI narrative
+layer, so preferences cannot alter the factual synthesis. The frontend can
+switch explicitly between **Personalized View** and **Neutral Evidence View**.
 
 ## Architecture
 
@@ -191,8 +196,8 @@ priorities—is passed to the optional AI narrative layer.
 | `GET /api/stocks/{ticker}` | Normalized fundamentals overview |
 | `GET /api/stocks/{ticker}/history?period=6mo` | Daily closes (1mo–5y) |
 | `GET /api/news/{ticker}` | Recent headlines + optional AI theme summary |
-| `GET /api/analysis/{ticker}` | Benchmark-aware risks, opportunities, peer selection, and historical ranges |
-| `GET /api/analysis/{ticker}?customer_id={uuid}` | Same evidence with a customer-specific presentation plan |
+| `GET /api/analysis/{ticker}` | Policy-independent facts, benchmarks, risks, opportunities, uncertainty, provenance, freshness, conflicts, and missing data |
+| `GET /api/analysis/{ticker}?customer_id={uuid}` | Identical neutral evidence plus a separate profile/default-policy interpretation |
 | `GET /api/compare?tickers=AAPL,MSFT` | Side-by-side comparison (2–5 tickers) |
 | `GET /api/valuation/{ticker}` | Deterministic valuation using disclosed code-defined defaults |
 | `POST /api/valuation/{ticker}` | Recalculate all valuation models from explicit user assumptions |

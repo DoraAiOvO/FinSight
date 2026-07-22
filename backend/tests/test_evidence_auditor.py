@@ -129,7 +129,8 @@ def test_ai_citation_envelope_is_parsed_into_independent_statements():
     raw = (
         '{"statements":['
         '{"text":"Growth was 15%.","citations":["overview.revenue_growth"]},'
-        '{"text":"Margins improved.","citations":["analysis.insights.0.explanation"]}'
+        '{"text":"Margins improved.","citations":['
+        '"analysis.neutral_evidence.risks.0.explanation"]}'
         "]}"
     )
 
@@ -139,7 +140,7 @@ def test_ai_citation_envelope_is_parsed_into_independent_statements():
     assert len(statements) == 2
     assert citations == [
         "overview.revenue_growth",
-        "analysis.insights.0.explanation",
+        "analysis.neutral_evidence.risks.0.explanation",
     ]
 
 
