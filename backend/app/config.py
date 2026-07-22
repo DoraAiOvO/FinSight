@@ -32,6 +32,18 @@ def auto_migrate_database_from_environment(database_url: str) -> bool:
 class Settings:
     ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY")
     AI_MODEL: str = os.getenv("FINSIGHT_AI_MODEL", "claude-sonnet-5")
+    ASSISTANT_MODEL: str = os.getenv(
+        "FINSIGHT_ASSISTANT_MODEL", "claude-haiku-4-5"
+    )
+    ASSISTANT_USER_QUOTA: int = int(
+        os.getenv("FINSIGHT_ASSISTANT_USER_QUOTA", "40")
+    )
+    ASSISTANT_IP_QUOTA: int = int(
+        os.getenv("FINSIGHT_ASSISTANT_IP_QUOTA", "80")
+    )
+    ASSISTANT_QUOTA_WINDOW_SECONDS: int = int(
+        os.getenv("FINSIGHT_ASSISTANT_QUOTA_WINDOW_SECONDS", "600")
+    )
     CORS_ORIGINS: list[str] = os.getenv(
         "FINSIGHT_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
     ).split(",")

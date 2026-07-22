@@ -2,7 +2,7 @@
 from contextlib import asynccontextmanager
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
@@ -13,6 +13,8 @@ from .db.migrations import upgrade_database
 from .db.session import get_db
 from .models.schemas import (
     AnalysisResponse,
+    AssistantChatRequest,
+    AssistantChatResponse,
     CompareResponse,
     CustomerProfilePreferences,
     CustomerProfileResponse,
@@ -45,6 +47,7 @@ from .models.schemas import (
 )
 from .services import (
     ai,
+    assistant,
     benchmarks,
     evidence_auditor,
     market_data,
@@ -54,6 +57,7 @@ from .services import (
     valuations,
 )
 from .services.analysis import DISCLAIMER, build_comparison, build_insights
+from .services.assistant_controls import rate_limiter as assistant_rate_limiter
 from .services.customer_profiles import (
     create_customer_profile,
     get_customer_profile,
@@ -115,6 +119,56 @@ def _raise_thesis_error(error: thesis_ledger.ThesisLedgerError):
 @app.get("/api/health")
 def health():
     return {"status": "ok", "ai_enabled": bool(settings.ANTHROPIC_API_KEY)}
+
+
+@app.post("/api/assistant/chat", response_model=AssistantChatResponse)
+def assistant_chat(
+    chat_request: AssistantChatRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    """Route locally first, then use the low-cost education model only if needed."""
+    ip_address = request.client.host if request.client else "unknown"
+    quota = assistant_rate_limiter.check(
+        ip_address,
+        str(chat_request.customer_id) if chat_request.customer_id else None,
+    )
+    if not quota.allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Assistant request limit reached. Please try again shortly.",
+            headers={"Retry-After": str(quota.retry_after)},
+        )
+    response.headers["X-RateLimit-Remaining"] = str(
+        min(quota.user_remaining, quota.ip_remaining)
+    )
+
+    profile = None
+    if chat_request.customer_id is not None:
+        try:
+            profile = get_customer_profile(db, chat_request.customer_id)
+        except SQLAlchemyError:
+            # Anonymous/default explanations remain available if profile storage is down.
+            profile = None
+
+    report_context = chat_request.current_report
+    if chat_request.report_id is not None:
+        try:
+            report_context = assistant.load_saved_report_context(
+                db, chat_request.customer_id, chat_request.report_id
+            )
+        except research_workspace.WorkspaceError as error:
+            _raise_workspace_error(error)
+        except SQLAlchemyError:
+            raise HTTPException(status_code=503, detail="Saved report is unavailable")
+
+    return assistant.answer_chat(
+        chat_request,
+        profile=profile,
+        report_context=report_context,
+        ip_address=ip_address,
+    )
 
 
 @app.post(

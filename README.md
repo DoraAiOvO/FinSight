@@ -184,6 +184,7 @@ priorities—is passed to the optional AI narrative layer.
 
 | Endpoint | Description |
 |---|---|
+| `POST /api/assistant/chat` | Multilingual, intent-routed assistant with local glossary/help answers, grounded report Q&A, safe ticker lookup, and advice boundaries |
 | `GET /api/stocks/{ticker}` | Normalized fundamentals overview |
 | `GET /api/stocks/{ticker}/history?period=6mo` | Daily closes (1mo–5y) |
 | `GET /api/news/{ticker}` | Recent headlines + optional AI theme summary |
@@ -210,6 +211,23 @@ priorities—is passed to the optional AI narrative layer.
 | `GET/DELETE /api/customers/{customer_id}/research-sessions/{session_id}` | Restore or delete a saved research session |
 | `POST /api/customers/{customer_id}/what-changed/{ticker}` | Compare current evidence with the latest or selected saved session |
 | `GET /api/health` | Status + whether the AI layer is enabled |
+
+### FinSight Assistant safety and cost controls
+
+The floating Assistant detects each message's language independently from the
+site language and preserves natural code-switching. Site help and common
+financial concepts are served from a cached multilingual knowledge base;
+company lookups use the company-search service; and report questions can quote
+only structured evidence supplied by the open report or an owned saved-report
+ID. Every company-specific answer includes evidence metadata.
+
+Recommendation, target-price, guaranteed-return, and prediction requests are
+redirected to evidence-based comparison. The API applies message limits,
+moderation, per-user and per-IP quotas, bounded context with a text-free topic
+summary for older turns, and a final numeric guard on optional model output.
+Usage logs contain user/intent/token counters and a one-way IP hash, not message
+text. `FINSIGHT_ASSISTANT_MODEL` selects the lower-cost fallback model; without
+an Anthropic key, deterministic features remain fully available.
 
 ### Data provenance contract
 

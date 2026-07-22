@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import SearchBar from './components/SearchBar.jsx'
 import StockOverview from './components/StockOverview.jsx'
 import PriceChart from './components/PriceChart.jsx'
@@ -14,9 +14,11 @@ import ProfileButton from './components/ProfileButton.jsx'
 import ResearchWorkspace from './components/ResearchWorkspace.jsx'
 import ValuationPanel from './components/ValuationPanel.jsx'
 import EvidenceAuditPanel from './components/EvidenceAuditPanel.jsx'
+import AssistantWidget from './components/AssistantWidget.jsx'
 import { useCustomerProfile } from './context/CustomerProfileContext.jsx'
 import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
+import { buildAssistantReportContext } from './lib/assistant.js'
 import {
   applyAuditResult,
   buildAuditDraft,
@@ -167,6 +169,10 @@ export default function App() {
   const requestId = useRef(0)
   const lastAnalyzeTicker = useRef(null)
   const previousPreferenceKey = useRef(`${language}:${profile?.updated_at || ''}`)
+  const assistantReport = useMemo(
+    () => buildAssistantReportContext(data, compare),
+    [data, compare],
+  )
 
   useEffect(() => {
     const preferenceKey = `${language}:${profile?.updated_at || ''}`
@@ -414,6 +420,7 @@ export default function App() {
         <p>{t('footerDisclaimer')}</p>
       </footer>
       <CustomerOnboarding />
+      <AssistantWidget customerId={customerId} currentReport={assistantReport} />
     </div>
   )
 }

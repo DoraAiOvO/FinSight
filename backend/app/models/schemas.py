@@ -84,6 +84,21 @@ class ExplanationDepth(str, Enum):
     PROFESSIONAL = "professional"
 
 
+class AssistantIntent(str, Enum):
+    SITE_HELP = "SITE_HELP"
+    FINANCIAL_CONCEPT = "FINANCIAL_CONCEPT"
+    COMPANY_LOOKUP = "COMPANY_LOOKUP"
+    CURRENT_REPORT_QUESTION = "CURRENT_REPORT_QUESTION"
+    COMPARISON_REQUEST = "COMPARISON_REQUEST"
+    RECOMMENDATION_OR_PREDICTION = "RECOMMENDATION_OR_PREDICTION"
+    GENERAL_EDUCATION = "GENERAL_EDUCATION"
+
+
+class AssistantRole(str, Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+
+
 class ThesisStatus(str, Enum):
     ACTIVE = "active"
     ARCHIVED = "archived"
@@ -214,6 +229,81 @@ class Evidence(Provenance):
     generated: bool = False
     citations: list[str] = Field(default_factory=list)
     statements: list[EvidenceStatement] = Field(default_factory=list)
+
+
+class AssistantMessage(BaseModel):
+    role: AssistantRole
+    content: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("content")
+    @classmethod
+    def normalize_content(cls, value: str):
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("message cannot be empty")
+        return normalized
+
+
+class AssistantReportEvidence(BaseModel):
+    """One already-rendered report fact the assistant may quote verbatim."""
+
+    evidence_id: str = Field(min_length=1, max_length=160)
+    label: str = Field(min_length=1, max_length=200)
+    value: str = Field(min_length=1, max_length=1000)
+    source: str = Field(min_length=1, max_length=300)
+    as_of_date: date | None = None
+    source_url: str | None = Field(default=None, max_length=2000)
+
+
+class AssistantReportContext(BaseModel):
+    ticker: str = Field(min_length=1, max_length=80)
+    company_name: str | None = Field(default=None, max_length=200)
+    report_id: UUID | None = None
+    evidence: list[AssistantReportEvidence] = Field(default_factory=list, max_length=80)
+
+
+class AssistantCitation(BaseModel):
+    evidence_id: str
+    title: str
+    source: str
+    as_of_date: date | None = None
+    source_url: str | None = None
+
+
+class AssistantChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+    history: list[AssistantMessage] = Field(default_factory=list, max_length=30)
+    website_language: PreferredLanguage = PreferredLanguage.ENGLISH
+    customer_id: UUID | None = None
+    report_id: UUID | None = None
+    current_report: AssistantReportContext | None = None
+
+    @field_validator("message")
+    @classmethod
+    def normalize_message(cls, value: str):
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("message cannot be empty")
+        return normalized
+
+    @model_validator(mode="after")
+    def report_id_requires_customer(self):
+        if self.report_id is not None and self.customer_id is None:
+            raise ValueError("customer_id is required when report_id is used")
+        return self
+
+
+class AssistantChatResponse(BaseModel):
+    reply: str
+    intent: AssistantIntent
+    detected_language: str
+    detected_languages: list[str]
+    code_switched: bool = False
+    explanation_depth: ExplanationDepth = ExplanationDepth.STANDARD
+    citations: list[AssistantCitation] = Field(default_factory=list)
+    used_llm: bool = False
+    grounded: bool = False
+    context_truncated: bool = False
 
 
 class AuditIssue(BaseModel):

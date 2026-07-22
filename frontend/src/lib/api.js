@@ -18,6 +18,9 @@ const write = (path, method, body) => request(path, {
 })
 
 export const api = {
+  assistant: {
+    chat: (payload) => write('/api/assistant/chat', 'POST', payload),
+  },
   overview: (ticker) => get(`/api/stocks/${encodeURIComponent(ticker)}`),
   history: (ticker, period = '6mo') =>
     get(`/api/stocks/${encodeURIComponent(ticker)}/history?period=${period}`),
