@@ -59,6 +59,9 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     alert_preferences: Mapped[list[AlertPreference]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    investment_policies: Mapped[list[InvestmentPolicy]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class CustomerProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -329,3 +332,231 @@ class AlertPreference(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     user: Mapped[User] = relationship(back_populates="alert_preferences")
+
+
+class InvestmentPolicy(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """A user-owned policy container with an immutable version history."""
+
+    __tablename__ = "investment_policies"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "name", name="uq_investment_policies_user_name"
+        ),
+    )
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    user: Mapped[User] = relationship(back_populates="investment_policies")
+    versions: Mapped[list[PolicyVersion]] = relationship(
+        back_populates="investment_policy",
+        cascade="all, delete-orphan",
+        order_by="PolicyVersion.version_number",
+    )
+
+
+class PolicyVersion(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """A complete point-in-time snapshot of one investment policy."""
+
+    __tablename__ = "policy_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "investment_policy_id",
+            "version_number",
+            name="uq_policy_versions_policy_number",
+        ),
+        CheckConstraint(
+            "version_number > 0", name="positive_version_number"
+        ),
+    )
+
+    investment_policy_id: Mapped[UUID] = mapped_column(
+        ForeignKey("investment_policies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    change_summary: Mapped[str | None] = mapped_column(Text)
+    effective_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    investment_policy: Mapped[InvestmentPolicy] = relationship(
+        back_populates="versions"
+    )
+    principles: Mapped[list[PolicyPrinciple]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+    market_scopes: Mapped[list[PolicyMarketScope]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+    sector_preferences: Mapped[list[PolicySectorPreference]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+    theme_preferences: Mapped[list[PolicyThemePreference]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+    metric_rules: Mapped[list[PolicyMetricRule]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+    constraints: Mapped[list[PolicyConstraint]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+    valuation_rules: Mapped[list[PolicyValuationRule]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+    portfolio_rules: Mapped[list[PolicyPortfolioRule]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+    alert_rules: Mapped[list[PolicyAlertRule]] = relationship(
+        back_populates="policy_version", cascade="all, delete-orphan"
+    )
+
+
+def _policy_rule_constraints() -> tuple[CheckConstraint, ...]:
+    """Return fresh constraints for each concrete rule table."""
+
+    return (
+        CheckConstraint(
+            "importance >= 1 AND importance <= 5", name="importance_range"
+        ),
+        CheckConstraint(
+            "hard_or_soft IN ('hard', 'soft')", name="hard_or_soft_values"
+        ),
+        CheckConstraint(
+            "application_effect IN "
+            "('filtering', 'ranking', 'report_emphasis', 'alerts', "
+            "'preference_fit_scoring')",
+            name="safe_application_effects",
+        ),
+    )
+
+
+class PolicyRuleMixin:
+    """Shared contract for every versioned policy rule.
+
+    ``application_effect`` is deliberately restricted to presentation and
+    preference-fit concerns. No policy rule can be classified as changing,
+    hiding, or recalculating objective evidence or benchmarks.
+    """
+
+    policy_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("policy_versions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    rule_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    operator: Mapped[str] = mapped_column(String(32), nullable=False)
+    value: Mapped[Any] = mapped_column(JSON, nullable=False)
+    importance: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    hard_or_soft: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="soft"
+    )
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    application_effect: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="preference_fit_scoring"
+    )
+
+
+class PolicyPrinciple(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_principles"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="principles"
+    )
+
+
+class PolicyMarketScope(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_market_scopes"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="market_scopes"
+    )
+
+
+class PolicySectorPreference(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_sector_preferences"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="sector_preferences"
+    )
+
+
+class PolicyThemePreference(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_theme_preferences"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="theme_preferences"
+    )
+
+
+class PolicyMetricRule(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_metric_rules"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="metric_rules"
+    )
+
+
+class PolicyConstraint(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_constraints"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="constraints"
+    )
+
+
+class PolicyValuationRule(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_valuation_rules"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="valuation_rules"
+    )
+
+
+class PolicyPortfolioRule(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_portfolio_rules"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="portfolio_rules"
+    )
+
+
+class PolicyAlertRule(
+    UUIDPrimaryKeyMixin, TimestampMixin, PolicyRuleMixin, Base
+):
+    __tablename__ = "policy_alert_rules"
+    __table_args__ = _policy_rule_constraints()
+
+    policy_version: Mapped[PolicyVersion] = relationship(
+        back_populates="alert_rules"
+    )

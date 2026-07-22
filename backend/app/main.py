@@ -24,6 +24,10 @@ from .models.schemas import (
     FilingQuestionRequest,
     FilingQuestionResponse,
     HistoryResponse,
+    InvestmentPolicyCreate,
+    InvestmentPolicyResponse,
+    InvestmentPolicySummary,
+    InvestmentPolicyUpdate,
     NewsResponse,
     Overview,
     ResearchReportAuditResponse,
@@ -31,6 +35,8 @@ from .models.schemas import (
     ResearchSessionCreate,
     ResearchSessionResponse,
     ResearchSessionSummary,
+    PolicyVersionCreate,
+    PolicyVersionResponse,
     ThesisAssumptionCreate,
     ThesisAssumptionResponse,
     ThesisAssumptionUpdate,
@@ -52,6 +58,7 @@ from .services import (
     benchmarks,
     company_search,
     evidence_auditor,
+    investment_policies,
     market_data,
     research_workspace,
     sec_filings,
@@ -116,6 +123,16 @@ def _raise_thesis_error(error: thesis_ledger.ThesisLedgerError):
     if isinstance(error, thesis_ledger.ThesisLedgerValidationError):
         raise HTTPException(status_code=400, detail=str(error))
     raise HTTPException(status_code=500, detail="Thesis ledger error")
+
+
+def _raise_policy_error(error: investment_policies.InvestmentPolicyError):
+    if isinstance(error, investment_policies.InvestmentPolicyNotFoundError):
+        raise HTTPException(status_code=404, detail=str(error))
+    if isinstance(error, investment_policies.InvestmentPolicyConflictError):
+        raise HTTPException(status_code=409, detail=str(error))
+    if isinstance(error, investment_policies.InvestmentPolicyValidationError):
+        raise HTTPException(status_code=400, detail=str(error))
+    raise HTTPException(status_code=500, detail="Investment policy error")
 
 
 @app.get("/api/health")
@@ -602,6 +619,177 @@ def what_changed_since_last_research(
         _raise_workspace_error(error)
     except SQLAlchemyError:
         raise HTTPException(status_code=503, detail="Change tracking is unavailable")
+
+
+@app.get(
+    "/api/customers/{customer_id}/investment-policies",
+    response_model=list[InvestmentPolicySummary],
+)
+def read_investment_policies(
+    customer_id: UUID, db: Session = Depends(get_db)
+):
+    try:
+        return investment_policies.list_policies(db, customer_id)
+    except investment_policies.InvestmentPolicyError as error:
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
+
+
+@app.post(
+    "/api/customers/{customer_id}/investment-policies",
+    response_model=InvestmentPolicyResponse,
+    status_code=201,
+)
+def create_investment_policy(
+    customer_id: UUID,
+    request: InvestmentPolicyCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return investment_policies.create_policy(db, customer_id, request)
+    except investment_policies.InvestmentPolicyError as error:
+        db.rollback()
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
+
+
+@app.get(
+    "/api/customers/{customer_id}/investment-policies/{policy_id}",
+    response_model=InvestmentPolicyResponse,
+)
+def read_investment_policy(
+    customer_id: UUID,
+    policy_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        return investment_policies.get_policy(db, customer_id, policy_id)
+    except investment_policies.InvestmentPolicyError as error:
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
+
+
+@app.put(
+    "/api/customers/{customer_id}/investment-policies/{policy_id}",
+    response_model=InvestmentPolicyResponse,
+)
+def replace_investment_policy_metadata(
+    customer_id: UUID,
+    policy_id: UUID,
+    request: InvestmentPolicyUpdate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return investment_policies.update_policy(
+            db, customer_id, policy_id, request
+        )
+    except investment_policies.InvestmentPolicyError as error:
+        db.rollback()
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
+
+
+@app.delete(
+    "/api/customers/{customer_id}/investment-policies/{policy_id}",
+    status_code=204,
+)
+def remove_investment_policy(
+    customer_id: UUID,
+    policy_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        investment_policies.delete_policy(db, customer_id, policy_id)
+    except investment_policies.InvestmentPolicyError as error:
+        db.rollback()
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
+
+
+@app.get(
+    "/api/customers/{customer_id}/investment-policies/{policy_id}/versions",
+    response_model=list[PolicyVersionResponse],
+)
+def read_policy_versions(
+    customer_id: UUID,
+    policy_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        return investment_policies.list_policy_versions(
+            db, customer_id, policy_id
+        )
+    except investment_policies.InvestmentPolicyError as error:
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
+
+
+@app.post(
+    "/api/customers/{customer_id}/investment-policies/{policy_id}/versions",
+    response_model=PolicyVersionResponse,
+    status_code=201,
+)
+def create_policy_version(
+    customer_id: UUID,
+    policy_id: UUID,
+    request: PolicyVersionCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        return investment_policies.create_policy_version(
+            db, customer_id, policy_id, request
+        )
+    except investment_policies.InvestmentPolicyError as error:
+        db.rollback()
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
+
+
+@app.get(
+    "/api/customers/{customer_id}/investment-policies/{policy_id}/versions/{version_id}",
+    response_model=PolicyVersionResponse,
+)
+def read_policy_version(
+    customer_id: UUID,
+    policy_id: UUID,
+    version_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        return investment_policies.get_policy_version(
+            db, customer_id, policy_id, version_id
+        )
+    except investment_policies.InvestmentPolicyError as error:
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
 
 
 @app.get("/api/stocks/{ticker}", response_model=Overview)

@@ -4,9 +4,10 @@ Financial values and claims deliberately carry their provenance alongside the
 payload.  Keeping these two primitives in the API contract makes it difficult
 for a new endpoint to accidentally return an unattributed number or narrative.
 """
+import json
 from datetime import date, datetime, timezone
 from enum import Enum
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -69,6 +70,32 @@ class ReportDepth(str, Enum):
     QUICK = "quick"
     STANDARD = "standard"
     DEEP = "deep"
+
+
+class InvestmentPolicyStatus(str, Enum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+class PolicyVersionStatus(str, Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    RETIRED = "retired"
+
+
+class PolicyRuleStrength(str, Enum):
+    HARD = "hard"
+    SOFT = "soft"
+
+
+class PolicyApplicationEffect(str, Enum):
+    """The exhaustive set of safe ways policy preferences may be applied."""
+
+    FILTERING = "filtering"
+    RANKING = "ranking"
+    REPORT_EMPHASIS = "report_emphasis"
+    ALERTS = "alerts"
+    PREFERENCE_FIT_SCORING = "preference_fit_scoring"
 
 
 class PreferredLanguage(str, Enum):
@@ -722,6 +749,242 @@ class WatchlistResponse(BaseModel):
     items: list[WatchlistItemResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
+
+
+class PolicyRuleCreate(BaseModel):
+    """Common rule input shared by every investment-policy rule family.
+
+    Rules describe preferences only. ``application_effect`` intentionally has
+    no value for modifying, hiding, or recalculating evidence or benchmarks.
+    """
+
+    rule_type: str = Field(min_length=1, max_length=120)
+    operator: str = Field(min_length=1, max_length=32)
+    value: Any
+    importance: int = Field(default=3, ge=1, le=5)
+    hard_or_soft: PolicyRuleStrength = PolicyRuleStrength.SOFT
+    rationale: str = Field(min_length=1, max_length=4000)
+    enabled: bool = True
+    application_effect: PolicyApplicationEffect = (
+        PolicyApplicationEffect.PREFERENCE_FIT_SCORING
+    )
+
+    @field_validator("rule_type", "operator", "rationale")
+    @classmethod
+    def normalize_policy_rule_text(cls, value: str):
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("policy rule text cannot be empty")
+        return normalized
+
+    @field_validator("value")
+    @classmethod
+    def value_is_json_serializable(cls, value: Any):
+        try:
+            json.dumps(value, allow_nan=False)
+        except (TypeError, ValueError) as error:
+            raise ValueError("value must be finite JSON data") from error
+        return value
+
+
+class PolicyPrincipleCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicyMarketScopeCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicySectorPreferenceCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicyThemePreferenceCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicyMetricRuleCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicyConstraintCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicyValuationRuleCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicyPortfolioRuleCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicyAlertRuleCreate(PolicyRuleCreate):
+    pass
+
+
+class PolicyRuleResponse(PolicyRuleCreate):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class PolicyPrincipleResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicyMarketScopeResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicySectorPreferenceResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicyThemePreferenceResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicyMetricRuleResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicyConstraintResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicyValuationRuleResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicyPortfolioRuleResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicyAlertRuleResponse(PolicyRuleResponse):
+    pass
+
+
+class PolicyVersionCreate(BaseModel):
+    status: PolicyVersionStatus = PolicyVersionStatus.DRAFT
+    change_summary: str | None = Field(default=None, max_length=4000)
+    effective_at: datetime | None = None
+    principles: list[PolicyPrincipleCreate] = Field(
+        default_factory=list, max_length=100
+    )
+    market_scopes: list[PolicyMarketScopeCreate] = Field(
+        default_factory=list, max_length=100
+    )
+    sector_preferences: list[PolicySectorPreferenceCreate] = Field(
+        default_factory=list, max_length=100
+    )
+    theme_preferences: list[PolicyThemePreferenceCreate] = Field(
+        default_factory=list, max_length=100
+    )
+    metric_rules: list[PolicyMetricRuleCreate] = Field(
+        default_factory=list, max_length=100
+    )
+    constraints: list[PolicyConstraintCreate] = Field(
+        default_factory=list, max_length=100
+    )
+    valuation_rules: list[PolicyValuationRuleCreate] = Field(
+        default_factory=list, max_length=100
+    )
+    portfolio_rules: list[PolicyPortfolioRuleCreate] = Field(
+        default_factory=list, max_length=100
+    )
+    alert_rules: list[PolicyAlertRuleCreate] = Field(
+        default_factory=list, max_length=100
+    )
+
+    @field_validator("change_summary")
+    @classmethod
+    def normalize_change_summary(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+
+class PolicyVersionResponse(BaseModel):
+    id: UUID
+    investment_policy_id: UUID
+    version_number: int
+    status: PolicyVersionStatus
+    change_summary: str | None = None
+    effective_at: datetime | None = None
+    principles: list[PolicyPrincipleResponse] = Field(default_factory=list)
+    market_scopes: list[PolicyMarketScopeResponse] = Field(default_factory=list)
+    sector_preferences: list[PolicySectorPreferenceResponse] = Field(
+        default_factory=list
+    )
+    theme_preferences: list[PolicyThemePreferenceResponse] = Field(
+        default_factory=list
+    )
+    metric_rules: list[PolicyMetricRuleResponse] = Field(default_factory=list)
+    constraints: list[PolicyConstraintResponse] = Field(default_factory=list)
+    valuation_rules: list[PolicyValuationRuleResponse] = Field(default_factory=list)
+    portfolio_rules: list[PolicyPortfolioRuleResponse] = Field(default_factory=list)
+    alert_rules: list[PolicyAlertRuleResponse] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+
+class InvestmentPolicyCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    description: str | None = Field(default=None, max_length=4000)
+    status: InvestmentPolicyStatus = InvestmentPolicyStatus.ACTIVE
+    is_default: bool = False
+    initial_version: PolicyVersionCreate = Field(
+        default_factory=PolicyVersionCreate
+    )
+
+    @field_validator("name")
+    @classmethod
+    def normalize_policy_name(cls, value: str):
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("policy name cannot be empty")
+        return normalized
+
+    @field_validator("description")
+    @classmethod
+    def normalize_policy_description(cls, value: str | None):
+        if value is None:
+            return None
+        return " ".join(value.split()) or None
+
+
+class InvestmentPolicyUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    description: str | None = Field(default=None, max_length=4000)
+    status: InvestmentPolicyStatus | None = None
+    is_default: bool | None = None
+
+    @field_validator("name", "description")
+    @classmethod
+    def normalize_policy_update_text(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+
+class InvestmentPolicySummary(BaseModel):
+    id: UUID
+    customer_id: UUID
+    name: str
+    description: str | None = None
+    status: InvestmentPolicyStatus
+    is_default: bool
+    latest_version_number: int
+    published_version_number: int | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class InvestmentPolicyResponse(InvestmentPolicySummary):
+    versions: list[PolicyVersionResponse] = Field(default_factory=list)
 
 
 class ThesisEvidence(BaseModel):

@@ -154,6 +154,31 @@ def test_openapi_exposes_standardized_data_point_and_evidence_contracts():
         "/api/customers/{customer_id}/theses/{thesis_id}/assumptions/{assumption_id}"
         in schema["paths"]
     )
+    assert "/api/customers/{customer_id}/investment-policies" in schema["paths"]
+    assert (
+        "/api/customers/{customer_id}/investment-policies/{policy_id}/versions"
+        in schema["paths"]
+    )
+    rule = models["PolicyMetricRuleCreate"]
+    assert {
+        "rule_type",
+        "operator",
+        "value",
+        "rationale",
+    } <= set(rule["required"])
+    assert {
+        "importance",
+        "hard_or_soft",
+        "enabled",
+        "application_effect",
+    } <= set(rule["properties"])
+    assert set(models["PolicyApplicationEffect"]["enum"]) == {
+        "filtering",
+        "ranking",
+        "report_emphasis",
+        "alerts",
+        "preference_fit_scoring",
+    }
 
 
 def test_overview_analysis_comparison_and_news_responses_include_provenance(monkeypatch):

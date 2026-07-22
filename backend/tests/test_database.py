@@ -16,6 +16,17 @@ from app.db.models import (  # noqa: E402
     AlertPreference,
     CustomerProfile,
     Feedback,
+    InvestmentPolicy,
+    PolicyAlertRule,
+    PolicyConstraint,
+    PolicyMarketScope,
+    PolicyMetricRule,
+    PolicyPortfolioRule,
+    PolicyPrinciple,
+    PolicySectorPreference,
+    PolicyThemePreference,
+    PolicyValuationRule,
+    PolicyVersion,
     ResearchSession,
     SavedReport,
     Thesis,
@@ -39,6 +50,17 @@ EXPECTED_TABLES = {
     "thesis_assumption_history",
     "feedback",
     "alert_preferences",
+    "investment_policies",
+    "policy_versions",
+    "policy_principles",
+    "policy_market_scopes",
+    "policy_sector_preferences",
+    "policy_theme_preferences",
+    "policy_metric_rules",
+    "policy_constraints",
+    "policy_valuation_rules",
+    "policy_portfolio_rules",
+    "policy_alert_rules",
 }
 
 
@@ -129,6 +151,78 @@ def test_models_persist_a_complete_customer_research_graph():
             conditions={"minimum_severity": "medium"},
         )
     )
+    rule = {
+        "operator": "equals",
+        "importance": 4,
+        "hard_or_soft": "soft",
+        "rationale": "Express a preference without changing objective evidence.",
+        "enabled": True,
+        "application_effect": "preference_fit_scoring",
+    }
+    user.investment_policies.append(
+        InvestmentPolicy(
+            name="Long-term quality",
+            is_default=True,
+            versions=[
+                PolicyVersion(
+                    version_number=1,
+                    status="published",
+                    principles=[
+                        PolicyPrinciple(
+                            rule_type="quality_first", value=True, **rule
+                        )
+                    ],
+                    market_scopes=[
+                        PolicyMarketScope(
+                            rule_type="country", value=["US"], **rule
+                        )
+                    ],
+                    sector_preferences=[
+                        PolicySectorPreference(
+                            rule_type="sector", value="Technology", **rule
+                        )
+                    ],
+                    theme_preferences=[
+                        PolicyThemePreference(
+                            rule_type="theme", value="AI infrastructure", **rule
+                        )
+                    ],
+                    metric_rules=[
+                        PolicyMetricRule(
+                            rule_type="revenue_growth", value=0.1, **rule
+                        )
+                    ],
+                    constraints=[
+                        PolicyConstraint(
+                            rule_type="exclude_asset_type", value="crypto", **rule
+                        )
+                    ],
+                    valuation_rules=[
+                        PolicyValuationRule(
+                            rule_type="maximum_pe", value=35, **rule
+                        )
+                    ],
+                    portfolio_rules=[
+                        PolicyPortfolioRule(
+                            rule_type="maximum_position", value=0.1, **rule
+                        )
+                    ],
+                    alert_rules=[
+                        PolicyAlertRule(
+                            rule_type="valuation_threshold",
+                            value=25,
+                            application_effect="alerts",
+                            **{
+                                key: value
+                                for key, value in rule.items()
+                                if key != "application_effect"
+                            },
+                        )
+                    ],
+                )
+            ],
+        )
+    )
 
     with Session(engine) as session:
         session.add(user)
@@ -145,6 +239,16 @@ def test_models_persist_a_complete_customer_research_graph():
         assert stored.theses[0].assumptions[0].target_value == "0"
         assert stored.theses[0].assumptions[0].history[0].change_type == "created"
         assert stored.alert_preferences[0].is_enabled is True
+        policy_version = stored.investment_policies[0].versions[0]
+        assert policy_version.principles[0].rule_type == "quality_first"
+        assert policy_version.market_scopes[0].value == ["US"]
+        assert policy_version.sector_preferences[0].value == "Technology"
+        assert policy_version.theme_preferences[0].value == "AI infrastructure"
+        assert policy_version.metric_rules[0].value == 0.1
+        assert policy_version.constraints[0].value == "crypto"
+        assert policy_version.valuation_rules[0].value == 35
+        assert policy_version.portfolio_rules[0].value == 0.1
+        assert policy_version.alert_rules[0].application_effect == "alerts"
 
         stored.customer_profile.priorities.append("income")
         stored.alert_preferences[0].conditions["minimum_severity"] = "high"

@@ -48,6 +48,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 📐 **Relative benchmarks** | Compares metrics with industry, sector, automatically selected peers, and the company’s own annual history—and explains which benchmark is primary and why |
 | 🧠 **Research memory** | Persists grouped watchlists and research snapshots, then shows what changed in metrics, news, filings, signals, and thesis assumptions |
 | 📒 **Thesis Ledger** | Records a research thesis, measurable metric or event assumptions, evidence on both sides, status, and an append-only change history |
+| 🧭 **Investment policies** | Stores multiple versioned policies per customer across principles, scope, sectors, themes, metrics, constraints, valuation, portfolio, and alerts—without changing objective evidence or benchmarks |
 | 🧮 **Valuation & scenarios** | Calculates DCF, reverse DCF, selected-peer multiples, three scenario cases, and a sensitivity matrix entirely in deterministic code |
 | 🛡️ **Evidence Auditor** | Checks every assembled report for unsupported claims, stale evidence, missing citations, source conflicts, incorrect units, and inconsistent numbers before generated conclusions are displayed or saved |
 | ✅ **Product evaluation** | Runs a fixed offline report suite across citation, numeric, freshness, contradiction, coverage, readability, personalization, and multilingual quality gates |
@@ -97,7 +98,8 @@ default. Override these process-local cache windows with
 The stock overview, history, news, analysis, and comparison endpoints remain
 anonymous and do not require a database connection. Persistence is available as
 an independent SQLAlchemy layer for customer profiles, watchlists, research
-sessions, saved reports, theses, feedback, and alert preferences.
+sessions, saved reports, theses, investment policies, feedback, and alert
+preferences.
 
 For the quickest local setup, leave `FINSIGHT_DATABASE_URL` unset. SQLAlchemy
 then uses `sqlite:///./finsight.db`. Create or update the schema from `backend/`:
@@ -169,6 +171,7 @@ priorities—is passed to the optional AI narrative layer.
 │   │   │   ├── customer_profiles.py  onboarding persistence
 │   │   │   ├── research_workspace.py watchlists, snapshots, and deterministic diffs
 │   │   │   ├── thesis_ledger.py  thesis and assumption CRUD with audit history
+│   │   │   ├── investment_policies.py versioned policy CRUD and ownership checks
 │   │   │   ├── valuations.py    deterministic DCF, reverse DCF, peers, and sensitivity
 │   │   │   ├── evidence_auditor.py deterministic report validation and conclusion blocking
 │   │   │   ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
@@ -210,6 +213,9 @@ priorities—is passed to the optional AI narrative layer.
 | `GET/POST /api/customers/{customer_id}/research-sessions` | List or save validated research snapshots |
 | `GET/DELETE /api/customers/{customer_id}/research-sessions/{session_id}` | Restore or delete a saved research session |
 | `POST /api/customers/{customer_id}/what-changed/{ticker}` | Compare current evidence with the latest or selected saved session |
+| `GET/POST /api/customers/{customer_id}/investment-policies` | List or create user-owned, versioned investment policies |
+| `GET/PUT/DELETE /api/customers/{customer_id}/investment-policies/{policy_id}` | Read, update metadata, or delete one owned policy |
+| `GET/POST /api/customers/{customer_id}/investment-policies/{policy_id}/versions` | List immutable policy snapshots or add the next numbered version |
 | `GET /api/health` | Status + whether the AI layer is enabled |
 
 ### FinSight Assistant safety and cost controls
