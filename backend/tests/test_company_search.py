@@ -1,6 +1,7 @@
 """Company-aware symbol search ranking, fallback, cache, and API tests."""
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
@@ -13,6 +14,7 @@ from app.services.company_search import (  # noqa: E402
     CompanySearchResult,
     CompanySearchService,
     MaintainedIndexProvider,
+    YahooFinanceCompanyProvider,
 )
 
 
@@ -105,6 +107,44 @@ def test_provider_failure_falls_back_to_maintained_index():
 
     assert results[0].ticker == "AAPL"
     assert results[0].data_source.startswith("FinSight maintained symbol index")
+
+
+def test_yahoo_provider_normalizes_live_symbol_fields(monkeypatch):
+    calls = []
+
+    def fake_search(
+        query,
+        max_results=8,
+        news_count=8,
+        enable_fuzzy_query=False,
+        timeout=30,
+    ):
+        calls.append((query, max_results, news_count, enable_fuzzy_query, timeout))
+        return SimpleNamespace(quotes=[{
+            "symbol": "msft",
+            "longname": "Microsoft Corporation",
+            "exchange": "NMS",
+            "exchDisp": "NasdaqGS",
+            "quoteType": "EQUITY",
+            "sectorDisp": "Technology",
+        }])
+
+    monkeypatch.setattr(company_search.yf, "Search", fake_search)
+
+    records = YahooFinanceCompanyProvider().search("Microsoft", 5)
+
+    assert calls[0][0] == "Microsoft"
+    assert calls[0][2] == 0
+    assert calls[0][3] is True
+    assert records == [CompanyRecord(
+        ticker="MSFT",
+        company_name="Microsoft Corporation",
+        exchange="NasdaqGS",
+        country="United States",
+        sector="Technology",
+        asset_type="equity",
+        data_source="Yahoo Finance symbol search",
+    )]
 
 
 def test_search_results_are_cached_by_normalized_query_and_limit():

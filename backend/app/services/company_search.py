@@ -7,6 +7,7 @@ mapping a company name to a ticker.
 """
 from __future__ import annotations
 
+import inspect
 import re
 import threading
 import time
@@ -235,10 +236,13 @@ class YahooFinanceCompanyProvider:
             "timeout": settings.COMPANY_SEARCH_TIMEOUT_SECONDS,
             "raise_errors": True,
         }
-        try:
-            response = yf.Search(query, enable_fuzzy_query=True, **kwargs)
-        except TypeError:  # Compatibility with older supported yfinance builds.
-            response = yf.Search(query, **kwargs)
+        supported = inspect.signature(yf.Search).parameters
+        compatible_kwargs = {
+            key: value for key, value in kwargs.items() if key in supported
+        }
+        if "enable_fuzzy_query" in supported:
+            compatible_kwargs["enable_fuzzy_query"] = True
+        response = yf.Search(query, **compatible_kwargs)
 
         records = []
         for quote in response.quotes:

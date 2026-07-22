@@ -274,7 +274,9 @@ export default function SearchBar({ mode, onModeChange, onAnalyze, onCompare, lo
 
   const showPopup = open && searchStatus !== 'idle'
   const topResult = results[0]
-  const activeOptionId = activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
+  const activeOptionId = open && activeIndex >= 0
+    ? `${listboxId}-option-${activeIndex}`
+    : undefined
   const statusText = searchStatus === 'loading'
     ? t('searchLoading')
     : searchStatus === 'empty'
@@ -363,39 +365,37 @@ export default function SearchBar({ mode, onModeChange, onAnalyze, onCompare, lo
                   {t('didYouMean')} <strong>{topResult.company_name} ({topResult.ticker})</strong>?
                 </p>
               )}
-              {results.length > 0 && (
-                <ul id={listboxId} role="listbox" aria-label={t('searchResultsLabel')}>
-                  {results.map((result, index) => (
-                    <li
-                      id={`${listboxId}-option-${index}`}
-                      key={`${result.ticker}-${result.exchange}`}
-                      role="option"
-                      aria-selected={activeIndex === index}
-                      className={activeIndex === index ? 'active' : ''}
-                      onMouseDown={(event) => {
-                        event.preventDefault()
-                        selectResult(result)
-                      }}
-                      onMouseMove={() => setActiveIndex(index)}
-                    >
-                      <div className="suggestion-primary">
-                        <strong><HighlightedText text={result.company_name} query={query} /></strong>
-                        <span><HighlightedText text={result.ticker} query={query} /></span>
-                      </div>
-                      <div className="suggestion-meta">
-                        <span>{result.exchange}</span>
-                        <span>{result.sector || t('unknownSector')}</span>
-                        <span className={`match-reason match-${result.match_type}`}>
-                          {t(MATCH_LABELS[result.match_type] || 'matchPartial')}
-                          {result.matched_text && (
-                            <> · <mark>{result.matched_text}</mark></>
-                          )}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <ul id={listboxId} role="listbox" aria-label={t('searchResultsLabel')}>
+                {results.map((result, index) => (
+                  <li
+                    id={`${listboxId}-option-${index}`}
+                    key={`${result.ticker}-${result.exchange}`}
+                    role="option"
+                    aria-selected={activeIndex === index}
+                    className={activeIndex === index ? 'active' : ''}
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      selectResult(result)
+                    }}
+                    onMouseMove={() => setActiveIndex(index)}
+                  >
+                    <div className="suggestion-primary">
+                      <strong><HighlightedText text={result.company_name} query={query} /></strong>
+                      <span><HighlightedText text={result.ticker} query={query} /></span>
+                    </div>
+                    <div className="suggestion-meta">
+                      <span>{result.exchange}</span>
+                      <span>{result.sector || t('unknownSector')}</span>
+                      <span className={`match-reason match-${result.match_type}`}>
+                        {t(MATCH_LABELS[result.match_type] || 'matchPartial')}
+                        {result.matched_text && (
+                          <> · <mark>{result.matched_text}</mark></>
+                        )}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
