@@ -30,6 +30,9 @@ from .models.schemas import (
     InvestmentPolicyUpdate,
     NewsResponse,
     Overview,
+    PolicyExtractionRequest,
+    PolicyExtractionResponse,
+    PolicyProposalConfirmRequest,
     ResearchReportAuditResponse,
     ResearchReportDraft,
     ResearchSessionCreate,
@@ -60,6 +63,7 @@ from .services import (
     evidence_auditor,
     investment_policies,
     market_data,
+    policy_builder,
     research_workspace,
     sec_filings,
     thesis_ledger,
@@ -141,6 +145,14 @@ def _raise_policy_error(error: investment_policies.InvestmentPolicyError):
     if isinstance(error, investment_policies.InvestmentPolicyValidationError):
         raise HTTPException(status_code=400, detail=str(error))
     raise HTTPException(status_code=500, detail="Investment policy error")
+
+
+def _raise_policy_builder_error(error: policy_builder.PolicyBuilderError):
+    if isinstance(error, policy_builder.PolicyBuilderUnavailableError):
+        raise HTTPException(status_code=503, detail=str(error))
+    if isinstance(error, policy_builder.PolicyBuilderExtractionError):
+        raise HTTPException(status_code=502, detail=str(error))
+    raise HTTPException(status_code=500, detail="Investment policy extraction error")
 
 
 @app.get("/api/health")
@@ -641,6 +653,61 @@ def read_investment_policies(
     except investment_policies.InvestmentPolicyError as error:
         _raise_policy_error(error)
     except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="Investment policies are unavailable"
+        )
+
+
+@app.post(
+    "/api/customers/{customer_id}/investment-policy-proposals",
+    response_model=PolicyExtractionResponse,
+    status_code=201,
+)
+def extract_investment_policy_proposal(
+    customer_id: UUID,
+    request: PolicyExtractionRequest,
+    db: Session = Depends(get_db),
+):
+    """Extract a review-only proposal. This endpoint never creates a policy."""
+    try:
+        return policy_builder.extract_proposal(db, customer_id, request)
+    except investment_policies.InvestmentPolicyError as error:
+        db.rollback()
+        _raise_policy_error(error)
+    except policy_builder.PolicyBuilderError as error:
+        db.rollback()
+        _raise_policy_builder_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=503, detail="Investment policy extraction is unavailable"
+        )
+
+
+@app.post(
+    (
+        "/api/customers/{customer_id}/investment-policy-proposals/"
+        "{proposal_id}/confirm"
+    ),
+    response_model=InvestmentPolicyResponse,
+    status_code=201,
+)
+def confirm_investment_policy_proposal(
+    customer_id: UUID,
+    proposal_id: UUID,
+    request: PolicyProposalConfirmRequest,
+    db: Session = Depends(get_db),
+):
+    """Persist an edited proposal only after an explicit confirmation value."""
+    try:
+        return policy_builder.confirm_proposal(
+            db, customer_id, proposal_id, request
+        )
+    except investment_policies.InvestmentPolicyError as error:
+        db.rollback()
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        db.rollback()
         raise HTTPException(
             status_code=503, detail="Investment policies are unavailable"
         )

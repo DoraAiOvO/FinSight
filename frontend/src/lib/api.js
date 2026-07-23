@@ -65,6 +65,21 @@ export const api = {
       write(`/api/customer-profiles/${encodeURIComponent(customerId)}`, 'PUT', profile)
     ),
   },
+  investmentPolicies: {
+    list: (customerId) => get(
+      `/api/customers/${encodeURIComponent(customerId)}/investment-policies`,
+    ),
+    extract: (customerId, preferences) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/investment-policy-proposals`,
+      'POST',
+      preferences,
+    ),
+    confirm: (customerId, proposalId, confirmation) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/investment-policy-proposals/${encodeURIComponent(proposalId)}/confirm`,
+      'POST',
+      confirmation,
+    ),
+  },
   watchlists: {
     list: (customerId) => get(`/api/customers/${encodeURIComponent(customerId)}/watchlists`),
     create: (customerId, watchlist) => write(

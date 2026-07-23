@@ -15,6 +15,7 @@ import ResearchWorkspace from './components/ResearchWorkspace.jsx'
 import ValuationPanel from './components/ValuationPanel.jsx'
 import EvidenceAuditPanel from './components/EvidenceAuditPanel.jsx'
 import AssistantWidget from './components/AssistantWidget.jsx'
+import InvestmentPolicyBuilder from './components/InvestmentPolicyBuilder.jsx'
 import { useCustomerProfile } from './context/CustomerProfileContext.jsx'
 import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
@@ -194,6 +195,7 @@ export default function App() {
   const [compare, setCompare] = useState(null)
   const [compareAudit, setCompareAudit] = useState(null)
   const [researchView, setResearchView] = useState('personalized')
+  const [policyBuilderOpen, setPolicyBuilderOpen] = useState(false)
   const requestId = useRef(0)
   const lastAnalyzeTicker = useRef(null)
   const previousPreferenceKey = useRef(`${language}:${profile?.updated_at || ''}`)
@@ -366,6 +368,16 @@ export default function App() {
             <span className="status-dot" />
             {t('headerNote')}
           </div>
+          <button
+            type="button"
+            className="policy-trigger"
+            onClick={() => (
+              customerId ? setPolicyBuilderOpen(true) : openOnboarding()
+            )}
+          >
+            <span aria-hidden="true">◇</span>
+            {t('policyOpen')}
+          </button>
           <ProfileButton />
           <LanguageSwitcher />
         </div>
@@ -458,6 +470,12 @@ export default function App() {
         <p>{t('footerDisclaimer')}</p>
       </footer>
       <CustomerOnboarding />
+      <InvestmentPolicyBuilder
+        open={policyBuilderOpen}
+        customerId={customerId}
+        onClose={() => setPolicyBuilderOpen(false)}
+        onRequireProfile={openOnboarding}
+      />
       <AssistantWidget customerId={customerId} currentReport={assistantReport} />
     </div>
   )

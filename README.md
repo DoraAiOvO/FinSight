@@ -49,6 +49,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 🧠 **Research memory** | Persists grouped watchlists and research snapshots, then shows what changed in metrics, news, filings, signals, and thesis assumptions |
 | 📒 **Thesis Ledger** | Records a research thesis, measurable metric or event assumptions, evidence on both sides, status, and an append-only change history |
 | 🧭 **Investment policies** | Stores multiple versioned policies per customer and returns policy fit, preference matches, constraint checks, ranking rationale, emphasis, and alert relevance in a separate personalized layer—without changing objective evidence or benchmarks |
+| ✍️ **Natural-language policy builder** | Extracts multilingual and code-switched preferences into a review-only structured draft, exposes ambiguities and conflicts, and saves a versioned policy only after explicit user confirmation |
 | 🧮 **Valuation & scenarios** | Calculates DCF, reverse DCF, selected-peer multiples, three scenario cases, and a sensitivity matrix entirely in deterministic code |
 | 🛡️ **Evidence Auditor** | Checks every assembled report for unsupported claims, stale evidence, missing citations, source conflicts, incorrect units, and inconsistent numbers before generated conclusions are displayed or saved |
 | ✅ **Product evaluation** | Runs a fixed offline report suite across citation, numeric, freshness, contradiction, coverage, readability, personalization, and multilingual quality gates |
@@ -177,6 +178,7 @@ switch explicitly between **Personalized View** and **Neutral Evidence View**.
 │   │   │   ├── research_workspace.py watchlists, snapshots, and deterministic diffs
 │   │   │   ├── thesis_ledger.py  thesis and assumption CRUD with audit history
 │   │   │   ├── investment_policies.py versioned policy CRUD and ownership checks
+│   │   │   ├── policy_builder.py review-only AI extraction and explicit confirmation
 │   │   │   ├── valuations.py    deterministic DCF, reverse DCF, peers, and sensitivity
 │   │   │   ├── evidence_auditor.py deterministic report validation and conclusion blocking
 │   │   │   ├── sec_filings.py  SEC metadata, extraction, cache, and Q&A retrieval
@@ -221,6 +223,8 @@ switch explicitly between **Personalized View** and **Neutral Evidence View**.
 | `GET/POST /api/customers/{customer_id}/investment-policies` | List or create user-owned, versioned investment policies |
 | `GET/PUT/DELETE /api/customers/{customer_id}/investment-policies/{policy_id}` | Read, update metadata, or delete one owned policy |
 | `GET/POST /api/customers/{customer_id}/investment-policies/{policy_id}/versions` | List immutable policy snapshots or add the next numbered version |
+| `POST /api/customers/{customer_id}/investment-policy-proposals` | Use AI to extract multilingual natural-language preferences into a persisted, non-active review draft |
+| `POST /api/customers/{customer_id}/investment-policy-proposals/{proposal_id}/confirm` | Save the user-edited proposal as published version 1; requires an explicit confirmation value and acknowledgment of extraction issues |
 | `GET /api/health` | Status + whether the AI layer is enabled |
 
 ### FinSight Assistant safety and cost controls
@@ -242,6 +246,12 @@ summary for older turns, and a final numeric guard on optional model output.
 Usage logs contain user/intent/token counters and a one-way IP hash, not message
 text. `FINSIGHT_ASSISTANT_MODEL` selects the lower-cost fallback model; without
 an Anthropic key, deterministic features remain fully available.
+
+The policy builder uses `FINSIGHT_AI_MODEL` only for schema extraction. Model
+output cannot create or publish an `InvestmentPolicy`: extraction first stores a
+separate `pending_review` proposal. The confirmation endpoint validates the
+edited schema and conflicts again in deterministic code, requires
+`confirmed: true`, and only then writes the first published policy version.
 
 ### Data provenance contract
 

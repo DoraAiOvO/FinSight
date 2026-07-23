@@ -62,6 +62,9 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     investment_policies: Mapped[list[InvestmentPolicy]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    investment_policy_proposals: Mapped[list[InvestmentPolicyProposal]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class CustomerProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -358,6 +361,39 @@ class InvestmentPolicy(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="PolicyVersion.version_number",
     )
+
+
+class InvestmentPolicyProposal(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """A review-only AI extraction that has no policy application effect."""
+
+    __tablename__ = "investment_policy_proposals"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    source_text: Mapped[str] = mapped_column(Text, nullable=False)
+    language_hint: Mapped[str | None] = mapped_column(String(35))
+    detected_languages: Mapped[list[str]] = mapped_column(
+        JSON_LIST, nullable=False, default=list
+    )
+    proposed_policy: Mapped[dict[str, Any]] = mapped_column(
+        JSON_DICT, nullable=False, default=dict
+    )
+    issues: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON_LIST, nullable=False, default=list
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending_review"
+    )
+    confirmed_policy_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("investment_policies.id", ondelete="SET NULL"), nullable=True
+    )
+    confirmed_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("policy_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    user: Mapped[User] = relationship(back_populates="investment_policy_proposals")
 
 
 class PolicyVersion(UUIDPrimaryKeyMixin, TimestampMixin, Base):

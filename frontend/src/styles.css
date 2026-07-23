@@ -1232,6 +1232,116 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .profile-secondary:hover { border-color: var(--border-bright); color: var(--text); }
 .profile-primary:focus-visible, .profile-secondary:focus-visible, .profile-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+.policy-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(143,227,189,.28);
+  border-radius: 9px;
+  background: rgba(143,227,189,.055);
+  color: var(--muted-bright);
+  cursor: pointer;
+  font-size: .7rem;
+  font-weight: 650;
+}
+.policy-trigger span { color: var(--accent); font-size: .9rem; }
+.policy-trigger:hover { border-color: rgba(143,227,189,.55); color: var(--text); }
+.policy-overlay { z-index: 110; }
+.policy-dialog { width: min(1040px, 100%); }
+.policy-dialog > .profile-dialog-head { position: relative; }
+.policy-describe > label,
+.policy-metadata label,
+.policy-rule label { display: grid; gap: 6px; }
+.policy-describe > label > span,
+.policy-metadata label > span,
+.policy-rule label > span {
+  color: var(--muted-bright);
+  font-size: .64rem;
+  font-weight: 680;
+}
+.policy-describe textarea,
+.policy-metadata input,
+.policy-metadata textarea,
+.policy-rule input,
+.policy-rule select,
+.policy-rule textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(5,13,11,.68);
+  color: var(--text);
+}
+.policy-describe textarea {
+  min-height: 220px;
+  padding: 15px 16px;
+  resize: vertical;
+  font-size: .82rem;
+  line-height: 1.65;
+}
+.policy-describe textarea::placeholder { color: #647570; }
+.policy-describe textarea:focus,
+.policy-metadata input:focus,
+.policy-metadata textarea:focus,
+.policy-rule input:focus,
+.policy-rule select:focus,
+.policy-rule textarea:focus { border-color: rgba(143,227,189,.7); outline: 0; box-shadow: 0 0 0 3px rgba(143,227,189,.06); }
+.policy-actions { align-items: center; }
+.policy-input-count { color: var(--muted); font-size: .62rem; }
+.policy-review-intro { display: flex; justify-content: space-between; gap: 22px; align-items: flex-start; }
+.policy-review-intro .profile-intro { margin-bottom: 18px; }
+.policy-draft-badge {
+  flex: 0 0 auto;
+  margin-top: 18px;
+  padding: 5px 9px;
+  border: 1px solid rgba(241,200,120,.25);
+  border-radius: 999px;
+  background: rgba(241,200,120,.06);
+  color: var(--amber);
+  font-size: .58rem;
+  font-weight: 700;
+}
+.policy-metadata { display: grid; grid-template-columns: minmax(220px,.75fr) minmax(0,1.25fr); gap: 12px; }
+.policy-metadata input, .policy-metadata textarea { min-height: 39px; padding: 9px 10px; resize: vertical; font-size: .72rem; }
+.policy-languages { margin: 13px 0 0; color: var(--muted); font-size: .63rem; }
+.policy-languages strong { color: var(--muted-bright); }
+.policy-issues { display: grid; gap: 8px; margin-top: 18px; padding: 15px; border: 1px solid rgba(241,200,120,.22); border-radius: 11px; background: rgba(241,200,120,.045); }
+.policy-issues h3 { margin: 0 0 2px; color: var(--amber); font-size: .7rem; }
+.policy-issues > label { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: flex-start; cursor: pointer; }
+.policy-issues input { margin-top: 3px; accent-color: var(--accent); }
+.policy-issues label > span { display: grid; grid-template-columns: auto 1fr; gap: 3px 8px; color: var(--muted-bright); font-size: .66rem; }
+.policy-issues label strong { color: var(--amber); font-size: .55rem; text-transform: uppercase; letter-spacing: .05em; }
+.policy-issues small { grid-column: 1 / -1; color: var(--muted); font-size: .6rem; }
+.policy-issues em { grid-column: 1 / -1; color: var(--accent); font-size: .58rem; font-style: normal; }
+.policy-groups { display: grid; gap: 13px; margin-top: 20px; }
+.policy-group { overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.012); }
+.policy-group > header { display: flex; justify-content: space-between; align-items: center; padding: 11px 13px; border-bottom: 1px solid rgba(147,164,159,.12); background: rgba(255,255,255,.015); }
+.policy-group h3 { margin: 0; font-size: .72rem; }
+.policy-group header > span { display: grid; place-items: center; min-width: 21px; height: 21px; border-radius: 999px; background: rgba(143,227,189,.08); color: var(--accent); font-size: .57rem; }
+.policy-empty { margin: 0; padding: 14px 13px 4px; color: var(--muted); font-size: .63rem; }
+.policy-rule { display: grid; gap: 10px; margin: 10px; padding: 11px; border: 1px solid rgba(147,164,159,.14); border-radius: 9px; background: rgba(4,11,10,.38); }
+.policy-rule-primary { display: grid; grid-template-columns: 1fr .85fr 1.2fr auto; gap: 8px; align-items: end; }
+.policy-rule-primary input,
+.policy-rule-options input,
+.policy-rule-options select { min-height: 35px; padding: 6px 8px; font-size: .65rem; }
+.policy-remove { width: 34px; height: 35px; border: 1px solid rgba(255,140,145,.2); border-radius: 8px; background: rgba(255,140,145,.035); color: var(--red); cursor: pointer; }
+.policy-remove:hover { border-color: rgba(255,140,145,.5); }
+.policy-rule-options { display: grid; grid-template-columns: .55fr 1fr 1.35fr auto; gap: 8px; align-items: end; }
+.policy-enabled { display: flex !important; min-height: 35px; align-items: center; gap: 7px !important; padding: 0 8px; border: 1px solid var(--border); border-radius: 8px; }
+.policy-enabled input { width: auto; min-height: auto; accent-color: var(--accent); }
+.policy-rationale textarea { min-height: 54px; padding: 8px; resize: vertical; font-size: .65rem; }
+.policy-add { margin: 0 10px 10px; padding: 6px 9px; border: 1px dashed var(--border-bright); border-radius: 7px; background: transparent; color: var(--accent); cursor: pointer; font-size: .61rem; }
+.policy-add:hover { background: rgba(143,227,189,.045); }
+.policy-confirmation { display: grid; gap: 8px; margin-top: 18px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: rgba(255,255,255,.012); }
+.policy-confirmation label { display: flex; gap: 9px; align-items: flex-start; color: var(--muted-bright); cursor: pointer; font-size: .67rem; }
+.policy-confirmation input { margin-top: 2px; accent-color: var(--accent); }
+.policy-explicit-confirm { color: var(--text) !important; font-weight: 680; }
+.policy-saved { display: grid; justify-items: center; padding: 55px 20px 25px; text-align: center; }
+.policy-saved-mark { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 16px; border: 1px solid rgba(143,227,189,.45); border-radius: 50%; background: rgba(143,227,189,.08); color: var(--accent); font-size: 1.4rem; }
+.policy-saved p { display: grid; gap: 4px; margin: 0 0 22px; color: var(--muted); font-size: .7rem; }
+.policy-saved p strong { color: var(--text); font-size: .9rem; }
+
 .assistant-widget {
   position: fixed;
   right: 22px;
@@ -1447,6 +1557,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .site-header { min-height: 64px; margin: 0 -14px; padding: 0 14px; }
   .header-note { display: none; }
   .header-actions { gap: 0; }
+  .policy-trigger { width: 36px; padding: 0; justify-content: center; margin-right: 7px; font-size: 0; }
+  .policy-trigger span { font-size: .9rem; }
   .profile-trigger { width: 36px; padding: 0; justify-content: center; margin-right: 7px; }
   .profile-trigger:not(:focus) { font-size: 0; }
   .profile-trigger span { font-size: .86rem; }
@@ -1539,6 +1651,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .profile-dialog { width: 100%; max-height: 100vh; min-height: 100vh; padding: 25px 20px; border: 0; border-radius: 0; }
   .profile-dialog-head { gap: 12px; }
   .profile-dialog .language-switcher.compact select { width: 78px; }
+  .policy-dialog { width: 100%; max-height: 100vh; min-height: 100vh; padding: 25px 20px; border: 0; border-radius: 0; }
+  .policy-review-intro { display: block; }
+  .policy-draft-badge { display: inline-block; margin: -5px 0 17px; }
+  .policy-metadata { grid-template-columns: 1fr; }
+  .policy-rule-primary, .policy-rule-options { grid-template-columns: 1fr 1fr; }
+  .policy-remove { grid-column: 2; justify-self: end; }
+  .policy-enabled { min-height: 35px; }
   .profile-choice-grid, .profile-choice-grid.multi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-choice-grid.language-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-safety { grid-template-columns: 1fr; gap: 4px; }

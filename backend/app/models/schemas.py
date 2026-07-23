@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Any, Literal, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class FreshnessStatus(str, Enum):
@@ -1104,6 +1104,96 @@ class InvestmentPolicySummary(BaseModel):
 
 class InvestmentPolicyResponse(InvestmentPolicySummary):
     versions: list[PolicyVersionResponse] = Field(default_factory=list)
+
+
+class PolicyExtractionRequest(BaseModel):
+    preferences: str = Field(
+        min_length=1,
+        max_length=12000,
+        validation_alias=AliasChoices(
+            "preferences", "text", "natural_language_preferences"
+        ),
+    )
+    language_hint: str | None = Field(default=None, min_length=2, max_length=35)
+
+    @field_validator("preferences")
+    @classmethod
+    def normalize_preferences(cls, value: str):
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("investment preferences cannot be empty")
+        return normalized
+
+    @field_validator("language_hint")
+    @classmethod
+    def normalize_language_hint(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = value.strip().replace("_", "-")
+        return normalized or None
+
+
+class PolicyExtractionIssue(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    issue_id: str = Field(min_length=1, max_length=80)
+    code: Literal[
+        "ambiguous_instruction",
+        "conflicting_instructions",
+        "unsupported_instruction",
+        "low_confidence",
+    ]
+    severity: Literal["warning", "blocking"] = "warning"
+    message: str = Field(min_length=1, max_length=1000)
+    source_text: str | None = Field(default=None, max_length=2000)
+    rule_families: list[str] = Field(default_factory=list, max_length=9)
+
+
+class InvestmentPolicyProposalPayload(BaseModel):
+    """Editable review payload. It is always a draft until confirmation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=160)
+    description: str | None = Field(default=None, max_length=4000)
+    initial_version: PolicyVersionCreate = Field(
+        default_factory=PolicyVersionCreate
+    )
+
+    @field_validator("name")
+    @classmethod
+    def normalize_proposal_name(cls, value: str):
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("policy name cannot be empty")
+        return normalized
+
+    @model_validator(mode="after")
+    def remains_review_only(self):
+        if self.initial_version.status != PolicyVersionStatus.DRAFT:
+            raise ValueError(
+                "an extracted policy must remain a draft until explicit confirmation"
+            )
+        return self
+
+
+class PolicyExtractionResponse(BaseModel):
+    proposal_id: UUID
+    detected_languages: list[str] = Field(default_factory=list)
+    proposed_policy: InvestmentPolicyProposalPayload
+    issues: list[PolicyExtractionIssue] = Field(default_factory=list)
+    requires_confirmation: Literal[True] = True
+    ai_provider: str
+    created_at: datetime
+
+
+class PolicyProposalConfirmRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirmed: Literal[True]
+    policy: InvestmentPolicyProposalPayload
+    make_default: bool = True
+    acknowledged_issue_ids: list[str] = Field(default_factory=list, max_length=100)
 
 
 class ThesisEvidence(BaseModel):

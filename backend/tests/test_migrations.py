@@ -23,6 +23,7 @@ EXPECTED_TABLES = {
     "feedback",
     "alert_preferences",
     "investment_policies",
+    "investment_policy_proposals",
     "policy_versions",
     "policy_principles",
     "policy_market_scopes",
@@ -66,4 +67,4 @@ def test_hosted_startup_migration_uses_alembic_head(tmp_path):
     with engine.connect() as connection:
         assert connection.exec_driver_sql(
             "SELECT version_num FROM alembic_version"
-        ).scalar_one() == "20260722_0004"
+        ).scalar_one() == "20260723_0005"

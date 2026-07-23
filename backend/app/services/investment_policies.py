@@ -241,7 +241,11 @@ def list_policies(
 
 
 def create_policy(
-    session: Session, customer_id: UUID, request: InvestmentPolicyCreate
+    session: Session,
+    customer_id: UUID,
+    request: InvestmentPolicyCreate,
+    *,
+    commit: bool = True,
 ) -> InvestmentPolicyResponse:
     _require_user(session, customer_id)
     existing = session.scalars(
@@ -272,7 +276,10 @@ def create_policy(
     )
     _append_version(policy, request.initial_version, 1)
     session.add(policy)
-    session.commit()
+    if commit:
+        session.commit()
+    else:
+        session.flush()
     return serialize_policy(_load_policy(session, customer_id, policy.id))
 
 
