@@ -1,5 +1,6 @@
 """Environment configuration tests."""
 
+import json
 import sys
 from pathlib import Path
 
@@ -51,3 +52,12 @@ def test_vercel_postgres_enables_startup_migrations(monkeypatch):
     assert auto_migrate_database_from_environment(
         "postgresql+psycopg://db/finsight"
     ) is False
+
+
+def test_vercel_backend_allows_startup_migrations_to_finish():
+    project_root = Path(__file__).resolve().parents[2]
+    vercel_config = json.loads((project_root / "vercel.json").read_text())
+
+    backend_functions = vercel_config["services"]["backend"]["functions"]
+
+    assert backend_functions["app/main.py"]["maxDuration"] >= 60
