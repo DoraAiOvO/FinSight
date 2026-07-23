@@ -94,5 +94,6 @@ def test_postgres_startup_migration_uses_one_atomic_locked_transaction(monkeypat
     statement, parameters = connection.execute.call_args.args
     assert "pg_advisory_xact_lock" in str(statement)
     assert parameters == {"lock_id": migrations.POSTGRES_MIGRATION_LOCK_ID}
+    assert parameters["lock_id"] == 4_604_733_744_581_681_417
     assert upgrade_calls[0][0].attributes["connection"] is connection
     assert upgrade_calls[0][1] == "head"

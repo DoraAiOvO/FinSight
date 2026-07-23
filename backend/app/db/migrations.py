@@ -10,7 +10,10 @@ from .session import engine
 
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
-POSTGRES_MIGRATION_LOCK_ID = 4_604_733_744_581_681_416
+# Do not reuse the legacy session-scoped lock key. A serverless invocation that
+# was interrupted before cleanup could leave that key held by a pooled database
+# connection. This key is used only with pg_advisory_xact_lock below.
+POSTGRES_MIGRATION_LOCK_ID = 4_604_733_744_581_681_417
 
 
 def migration_config() -> Config:
