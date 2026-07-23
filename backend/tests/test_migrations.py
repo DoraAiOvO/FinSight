@@ -2,6 +2,8 @@
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from alembic import command
 from alembic.config import Config
@@ -68,3 +70,29 @@ def test_hosted_startup_migration_uses_alembic_head(tmp_path):
         assert connection.exec_driver_sql(
             "SELECT version_num FROM alembic_version"
         ).scalar_one() == "20260723_0005"
+
+
+def test_postgres_startup_migration_uses_one_atomic_locked_transaction(monkeypatch):
+    from app.db import migrations
+
+    connection = MagicMock()
+    connection.dialect = SimpleNamespace(name="postgresql")
+    engine = MagicMock()
+    engine.begin.return_value.__enter__.return_value = connection
+    upgrade_calls = []
+
+    monkeypatch.setattr(
+        migrations.command,
+        "upgrade",
+        lambda config, revision: upgrade_calls.append((config, revision)),
+    )
+
+    migrations.upgrade_database(engine)
+
+    engine.begin.assert_called_once_with()
+    connection.execute.assert_called_once()
+    statement, parameters = connection.execute.call_args.args
+    assert "pg_advisory_xact_lock" in str(statement)
+    assert parameters == {"lock_id": migrations.POSTGRES_MIGRATION_LOCK_ID}
+    assert upgrade_calls[0][0].attributes["connection"] is connection
+    assert upgrade_calls[0][1] == "head"

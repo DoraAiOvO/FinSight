@@ -135,8 +135,9 @@ single source of truth for schema changes.
 
 On Vercel, a Marketplace Postgres connection exposed as `DATABASE_URL` or
 `POSTGRES_URL` is detected automatically. The serverless app runs the same
-Alembic migrations before accepting requests, protected by a Postgres advisory
-lock so concurrent cold starts cannot migrate the schema at the same time.
+Alembic migrations before accepting requests in one atomic transaction,
+protected by a transaction-scoped Postgres advisory lock so concurrent cold
+starts cannot migrate the schema at the same time.
 
 ### Customer onboarding and safe personalization
 
