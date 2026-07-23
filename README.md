@@ -134,10 +134,12 @@ features. The application never calls `create_all()` at startup; Alembic is the
 single source of truth for schema changes.
 
 On Vercel, a Marketplace Postgres connection exposed as `DATABASE_URL` or
-`POSTGRES_URL` is detected automatically. The serverless app runs the same
-Alembic migrations before accepting requests in one atomic transaction,
-protected by a transaction-scoped Postgres advisory lock so concurrent cold
-starts cannot migrate the schema at the same time.
+`POSTGRES_URL` is detected automatically. The backend deployment runs
+`python -m app.db.migrations` before publishing the serverless function. The
+same Alembic migrations run in one atomic transaction, protected by a
+transaction-scoped Postgres advisory lock so concurrent deployments cannot
+migrate the schema at the same time. Request-startup migrations are disabled
+unless `FINSIGHT_AUTO_MIGRATE` is explicitly enabled.
 
 ### Customer onboarding and safe personalization
 

@@ -39,14 +39,19 @@ def test_vercel_marketplace_database_url_is_supported(monkeypatch):
     )
 
 
-def test_vercel_postgres_enables_startup_migrations(monkeypatch):
+def test_startup_migrations_require_explicit_opt_in(monkeypatch):
     monkeypatch.delenv("FINSIGHT_AUTO_MIGRATE", raising=False)
     monkeypatch.setenv("VERCEL", "1")
 
     assert auto_migrate_database_from_environment(
         "postgresql+psycopg://db/finsight"
-    ) is True
+    ) is False
     assert auto_migrate_database_from_environment("sqlite:///./finsight.db") is False
+
+    monkeypatch.setenv("FINSIGHT_AUTO_MIGRATE", "true")
+    assert auto_migrate_database_from_environment(
+        "postgresql+psycopg://db/finsight"
+    ) is True
 
     monkeypatch.setenv("FINSIGHT_AUTO_MIGRATE", "false")
     assert auto_migrate_database_from_environment(
@@ -60,4 +65,7 @@ def test_vercel_backend_allows_startup_migrations_to_finish():
 
     backend_functions = vercel_config["services"]["backend"]["functions"]
 
+    assert vercel_config["services"]["backend"]["buildCommand"] == (
+        "python -m app.db.migrations"
+    )
     assert backend_functions["app/main.py"]["maxDuration"] >= 60

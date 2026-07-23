@@ -38,3 +38,7 @@ def upgrade_database(target_engine: Engine = engine) -> None:
         config = migration_config()
         config.attributes["connection"] = connection
         command.upgrade(config, "head")
+
+
+if __name__ == "__main__":
+    upgrade_database()

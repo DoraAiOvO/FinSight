@@ -22,11 +22,12 @@ def database_url_from_environment() -> str:
 
 
 def auto_migrate_database_from_environment(database_url: str) -> bool:
-    """Enable Alembic startup migrations explicitly or for hosted Vercel Postgres."""
+    """Enable request-startup migrations only through an explicit opt-in."""
     configured = os.getenv("FINSIGHT_AUTO_MIGRATE")
-    if configured is not None:
-        return configured.strip().lower() in {"1", "true", "yes", "on"}
-    return os.getenv("VERCEL") == "1" and database_url.startswith("postgresql")
+    return (
+        configured is not None
+        and configured.strip().lower() in {"1", "true", "yes", "on"}
+    )
 
 
 class Settings:
