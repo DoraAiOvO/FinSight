@@ -46,19 +46,13 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["confirmed_policy_id"],
             ["investment_policies.id"],
-            name=(
-                "fk_investment_policy_proposals_confirmed_policy_id_"
-                "investment_policies"
-            ),
+            name="fk_policy_proposals_confirmed_policy_id_policies",
             ondelete="SET NULL",
         ),
         sa.ForeignKeyConstraint(
             ["confirmed_version_id"],
             ["policy_versions.id"],
-            name=(
-                "fk_investment_policy_proposals_confirmed_version_id_"
-                "policy_versions"
-            ),
+            name="fk_policy_proposals_confirmed_version_id_versions",
             ondelete="SET NULL",
         ),
         sa.ForeignKeyConstraint(

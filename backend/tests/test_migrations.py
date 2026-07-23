@@ -1,5 +1,6 @@
 """Alembic migration smoke tests."""
 
+import ast
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -40,6 +41,7 @@ EXPECTED_TABLES = {
 
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
+POSTGRES_IDENTIFIER_LIMIT = 63
 
 
 def test_initial_migration_upgrades_and_downgrades(tmp_path):
@@ -97,3 +99,41 @@ def test_postgres_startup_migration_uses_one_atomic_locked_transaction(monkeypat
     assert parameters["lock_id"] == 4_604_733_744_581_681_417
     assert upgrade_calls[0][0].attributes["connection"] is connection
     assert upgrade_calls[0][1] == "head"
+
+
+def test_migration_identifiers_fit_postgres_limit():
+    identifiers = []
+    named_operations = {
+        "create_index",
+        "create_table",
+        "drop_index",
+        "drop_table",
+    }
+
+    for migration_path in (BACKEND_ROOT / "alembic" / "versions").glob("*.py"):
+        tree = ast.parse(migration_path.read_text())
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            for keyword in node.keywords:
+                if (
+                    keyword.arg == "name"
+                    and isinstance(keyword.value, ast.Constant)
+                    and isinstance(keyword.value.value, str)
+                ):
+                    identifiers.append((migration_path.name, keyword.value.value))
+            if (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr in named_operations
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+            ):
+                identifiers.append((migration_path.name, node.args[0].value))
+
+    too_long = [
+        f"{migration}: {identifier}"
+        for migration, identifier in identifiers
+        if len(identifier) > POSTGRES_IDENTIFIER_LIMIT
+    ]
+    assert too_long == []
