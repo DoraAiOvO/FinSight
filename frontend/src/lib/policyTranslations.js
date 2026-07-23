@@ -5,6 +5,21 @@ export const policyTranslations = {
     policyTitle: 'Turn your preferences into rules you control.',
     policyIntro:
       'Describe your approach in any language. AI will only extract a proposed structure; nothing becomes active until you review, edit, and confirm it.',
+    policyPresetStatus: 'Optional preset · Never selected automatically',
+    policyPresetDescription:
+      'An editable starting point for long-horizon, quality-focused technology research.',
+    policyPresetDefaults:
+      'Themes: software, semiconductors, internet, AI, cloud computing, new energy, smart vehicles. Markets: United States, Japan, Hong Kong.',
+    policyPresetDisclaimer:
+      'Inspired by general long-term business-owner and value-investing principles. It does not reproduce, predict, or represent any real investor’s decisions.',
+    policyPresetUse: 'Use editable preset',
+    policyPresetLoading: 'Preparing editable preset…',
+    policyOrDescribe: 'or describe your own approach',
+    policyPresetDraftBadge: 'Preset draft · Not active',
+    policyPresetEditable:
+      'Every threshold, limit, market, theme, and rule below is editable.',
+    policyPresetDefaultScope:
+      'This choice can affect only your policy. It never changes FinSight’s global default.',
     policyInputLabel: 'Describe your investment preferences',
     policyInputPlaceholder:
       'Example: Prefer profitable US software companies with revenue growth above 15%. Avoid tobacco and crypto. Keep any one position below 8%, and alert me if forward P/E rises above 30.',
@@ -61,6 +76,21 @@ export const policyTranslations = {
     policyTitle: 'Convierte tus preferencias en reglas bajo tu control.',
     policyIntro:
       'Describe tu enfoque en cualquier idioma. La IA solo extrae una propuesta; nada se activa hasta que la revises, edites y confirmes.',
+    policyPresetStatus: 'Preajuste opcional · Nunca se selecciona automáticamente',
+    policyPresetDescription:
+      'Un punto de partida editable para investigar tecnología de calidad a largo plazo.',
+    policyPresetDefaults:
+      'Temas: software, semiconductores, internet, IA, nube, nueva energía y vehículos inteligentes. Mercados: Estados Unidos, Japón y Hong Kong.',
+    policyPresetDisclaimer:
+      'Inspirado en principios generales de propietario de negocio e inversión en valor a largo plazo. No reproduce, predice ni representa decisiones de ningún inversor real.',
+    policyPresetUse: 'Usar preajuste editable',
+    policyPresetLoading: 'Preparando el preajuste…',
+    policyOrDescribe: 'o describe tu propio enfoque',
+    policyPresetDraftBadge: 'Borrador de preajuste · Inactivo',
+    policyPresetEditable:
+      'Puedes editar cada umbral, límite, mercado, tema y regla.',
+    policyPresetDefaultScope:
+      'Esta elección solo puede afectar a tu política. Nunca cambia el valor predeterminado global de FinSight.',
     policyInputLabel: 'Describe tus preferencias de inversión',
     policyInputPlaceholder:
       'Ejemplo: Prefiero software rentable de EE. UU. con crecimiento superior al 15 %. Evita tabaco y cripto. Máximo 8 % por posición.',
@@ -115,6 +145,21 @@ export const policyTranslations = {
     policyTitle: 'Transformez vos préférences en règles que vous contrôlez.',
     policyIntro:
       'Décrivez votre approche dans toute langue. L’IA extrait uniquement une proposition ; rien ne devient actif avant votre révision et confirmation.',
+    policyPresetStatus: 'Préréglage facultatif · Jamais sélectionné automatiquement',
+    policyPresetDescription:
+      'Un point de départ modifiable pour une recherche technologique de qualité à long terme.',
+    policyPresetDefaults:
+      'Thèmes : logiciels, semi-conducteurs, internet, IA, cloud, nouvelles énergies et véhicules intelligents. Marchés : États-Unis, Japon et Hong Kong.',
+    policyPresetDisclaimer:
+      'Inspiré de principes généraux de propriétaire à long terme et d’investissement axé sur la valeur. Il ne reproduit, ne prédit ni ne représente les décisions d’un investisseur réel.',
+    policyPresetUse: 'Utiliser le préréglage modifiable',
+    policyPresetLoading: 'Préparation du préréglage…',
+    policyOrDescribe: 'ou décrivez votre propre approche',
+    policyPresetDraftBadge: 'Brouillon prédéfini · Inactif',
+    policyPresetEditable:
+      'Chaque seuil, limite, marché, thème et règle ci-dessous est modifiable.',
+    policyPresetDefaultScope:
+      'Ce choix ne peut affecter que votre politique. Il ne modifie jamais le réglage global de FinSight.',
     policyInputLabel: 'Décrivez vos préférences d’investissement',
     policyInputPlaceholder:
       'Exemple : privilégier les logiciels américains rentables avec une croissance supérieure à 15 %. Exclure le tabac et les cryptos.',
@@ -168,6 +213,18 @@ export const policyTranslations = {
     policyKicker: '自然语言投资政策',
     policyTitle: '把偏好变成由你掌控的规则。',
     policyIntro: '你可以使用任何语言描述投资方式。AI 只提取结构化草案；在你审阅、编辑并明确确认前，不会启用任何政策。',
+    policyPresetStatus: '可选预设 · 永不自动选择',
+    policyPresetDescription: '面向长期优质科技研究的可编辑起点。',
+    policyPresetDefaults:
+      '主题：软件、半导体、互联网、AI、云计算、新能源、智能汽车。市场：美国、日本、香港。',
+    policyPresetDisclaimer:
+      '灵感来自一般性的长期企业所有者和价值投资原则，不复制、预测或代表任何真实投资者的决策。',
+    policyPresetUse: '使用可编辑预设',
+    policyPresetLoading: '正在准备可编辑预设…',
+    policyOrDescribe: '或描述你自己的方法',
+    policyPresetDraftBadge: '预设草案 · 尚未启用',
+    policyPresetEditable: '下方每个阈值、限额、市场、主题和规则都可以编辑。',
+    policyPresetDefaultScope: '此选择只能影响你的政策，绝不会更改 FinSight 的全局默认设置。',
     policyInputLabel: '描述你的投资偏好',
     policyInputPlaceholder: '例如：偏好营收增长超过 15% 的盈利美国软件公司。排除烟草和加密资产。单一持仓不超过 8%。',
     policyExtract: '解析偏好',

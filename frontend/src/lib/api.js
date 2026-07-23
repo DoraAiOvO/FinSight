@@ -66,8 +66,14 @@ export const api = {
     ),
   },
   investmentPolicies: {
+    presets: () => get('/api/investment-policy-presets'),
     list: (customerId) => get(
       `/api/customers/${encodeURIComponent(customerId)}/investment-policies`,
+    ),
+    fromPreset: (customerId, presetId) => write(
+      `/api/customers/${encodeURIComponent(customerId)}/investment-policy-presets/${encodeURIComponent(presetId)}/proposals`,
+      'POST',
+      {},
     ),
     extract: (customerId, preferences) => write(
       `/api/customers/${encodeURIComponent(customerId)}/investment-policy-proposals`,

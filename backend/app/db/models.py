@@ -364,7 +364,7 @@ class InvestmentPolicy(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 class InvestmentPolicyProposal(UUIDPrimaryKeyMixin, TimestampMixin, Base):
-    """A review-only AI extraction that has no policy application effect."""
+    """A review-only extracted or preset draft with no policy application effect."""
 
     __tablename__ = "investment_policy_proposals"
 

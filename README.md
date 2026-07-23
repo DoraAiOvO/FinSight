@@ -50,6 +50,7 @@ it never generates conclusions of its own and never recommends buying or selling
 | 📒 **Thesis Ledger** | Records a research thesis, measurable metric or event assumptions, evidence on both sides, status, and an append-only change history |
 | 🧭 **Investment policies** | Stores multiple versioned policies per customer and returns policy fit, preference matches, constraint checks, ranking rationale, emphasis, and alert relevance in a separate personalized layer—without changing objective evidence or benchmarks |
 | ✍️ **Natural-language policy builder** | Extracts multilingual and code-switched preferences into a review-only structured draft, exposes ambiguities and conflicts, and saves a versioned policy only after explicit user confirmation |
+| 🧩 **Optional policy presets** | Offers an opt-in, fully editable Long-Term Tech Value research starting point with an explicit non-endorsement disclaimer; presets never become FinSight’s global default |
 | 🧮 **Valuation & scenarios** | Calculates DCF, reverse DCF, selected-peer multiples, three scenario cases, and a sensitivity matrix entirely in deterministic code |
 | 🛡️ **Evidence Auditor** | Checks every assembled report for unsupported claims, stale evidence, missing citations, source conflicts, incorrect units, and inconsistent numbers before generated conclusions are displayed or saved |
 | ✅ **Product evaluation** | Runs a fixed offline report suite across citation, numeric, freshness, contradiction, coverage, readability, personalization, and multilingual quality gates |
@@ -225,6 +226,8 @@ switch explicitly between **Personalized View** and **Neutral Evidence View**.
 | `GET/POST /api/customers/{customer_id}/investment-policies/{policy_id}/versions` | List immutable policy snapshots or add the next numbered version |
 | `POST /api/customers/{customer_id}/investment-policy-proposals` | Use AI to extract multilingual natural-language preferences into a persisted, non-active review draft |
 | `POST /api/customers/{customer_id}/investment-policy-proposals/{proposal_id}/confirm` | Save the user-edited proposal as published version 1; requires an explicit confirmation value and acknowledgment of extraction issues |
+| `GET /api/investment-policy-presets` | List optional editable preset metadata; listing never selects or applies a preset |
+| `POST /api/customers/{customer_id}/investment-policy-presets/{preset_id}/proposals` | Create an inactive, review-only proposal from an explicitly selected preset |
 | `GET /api/health` | Status + whether the AI layer is enabled |
 
 ### FinSight Assistant safety and cost controls
@@ -252,6 +255,10 @@ output cannot create or publish an `InvestmentPolicy`: extraction first stores a
 separate `pending_review` proposal. The confirmation endpoint validates the
 edited schema and conflicts again in deterministic code, requires
 `confirmed: true`, and only then writes the first published policy version.
+The deterministic `Long-Term Tech Value` preset enters the same review and
+confirmation flow without calling AI. Its thresholds and portfolio limits are
+starting values, all rules remain editable, and selecting it does not make it a
+personal or global default.
 
 ### Data provenance contract
 

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { api } from '../lib/api.js'
 
+const LONG_TERM_TECH_VALUE_PRESET_ID = 'long-term-tech-value'
+
 const RULE_GROUPS = [
   ['principles', 'policyPrinciples'],
   ['market_scopes', 'policyMarkets'],
@@ -203,11 +205,13 @@ export default function InvestmentPolicyBuilder({
   const [screen, setScreen] = useState('describe')
   const [preferences, setPreferences] = useState('')
   const [proposal, setProposal] = useState(null)
+  const [proposalSource, setProposalSource] = useState(null)
   const [policy, setPolicy] = useState(null)
   const [acknowledged, setAcknowledged] = useState({})
   const [makeDefault, setMakeDefault] = useState(true)
   const [explicitConfirmation, setExplicitConfirmation] = useState(false)
   const [extracting, setExtracting] = useState(false)
+  const [loadingPreset, setLoadingPreset] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savedPolicy, setSavedPolicy] = useState(null)
   const [error, setError] = useState(null)
@@ -228,11 +232,12 @@ export default function InvestmentPolicyBuilder({
   if (!open) return null
 
   function close() {
-    if (extracting || saving) return
+    if (extracting || loadingPreset || saving) return
     onClose()
     setScreen('describe')
     setPreferences('')
     setProposal(null)
+    setProposalSource(null)
     setPolicy(null)
     setAcknowledged({})
     setMakeDefault(true)
@@ -260,14 +265,43 @@ export default function InvestmentPolicyBuilder({
         language_hint: language,
       })
       setProposal(result)
+      setProposalSource('ai')
       setPolicy(editablePolicy(result.proposed_policy))
       setAcknowledged({})
+      setMakeDefault(true)
       setExplicitConfirmation(false)
       setScreen('review')
     } catch (requestError) {
       setError(requestError.message || t('policyError'))
     } finally {
       setExtracting(false)
+    }
+  }
+
+  async function useLongTermTechValuePreset() {
+    if (!customerId) {
+      onClose()
+      onRequireProfile()
+      return
+    }
+    setLoadingPreset(true)
+    setError(null)
+    try {
+      const result = await api.investmentPolicies.fromPreset(
+        customerId,
+        LONG_TERM_TECH_VALUE_PRESET_ID,
+      )
+      setProposal(result)
+      setProposalSource(LONG_TERM_TECH_VALUE_PRESET_ID)
+      setPolicy(editablePolicy(result.proposed_policy))
+      setAcknowledged({})
+      setMakeDefault(false)
+      setExplicitConfirmation(false)
+      setScreen('review')
+    } catch (requestError) {
+      setError(requestError.message || t('policyError'))
+    } finally {
+      setLoadingPreset(false)
     }
   }
 
@@ -367,6 +401,29 @@ export default function InvestmentPolicyBuilder({
         {screen === 'describe' && (
           <form className="policy-describe" onSubmit={extract}>
             <p className="profile-intro">{t('policyIntro')}</p>
+            <section
+              className="policy-preset-card"
+              aria-labelledby="long-term-tech-value-title"
+            >
+              <div className="policy-preset-copy">
+                <span className="policy-preset-status">{t('policyPresetStatus')}</span>
+                <h3 id="long-term-tech-value-title">Long-Term Tech Value</h3>
+                <p>{t('policyPresetDescription')}</p>
+                <small>{t('policyPresetDefaults')}</small>
+                <em>{t('policyPresetDisclaimer')}</em>
+              </div>
+              <button
+                className="profile-secondary"
+                type="button"
+                disabled={extracting || loadingPreset}
+                onClick={useLongTermTechValuePreset}
+              >
+                {loadingPreset ? t('policyPresetLoading') : t('policyPresetUse')}
+              </button>
+            </section>
+            <div className="policy-input-divider">
+              <span>{t('policyOrDescribe')}</span>
+            </div>
             <label htmlFor="policy-preferences">
               <span>{t('policyInputLabel')}</span>
               <textarea
@@ -388,7 +445,7 @@ export default function InvestmentPolicyBuilder({
               <button
                 className="profile-primary"
                 type="submit"
-                disabled={extracting || !preferences.trim()}
+                disabled={extracting || loadingPreset || !preferences.trim()}
               >
                 {extracting ? t('policyExtracting') : t('policyExtract')}
               </button>
@@ -400,8 +457,18 @@ export default function InvestmentPolicyBuilder({
           <div className="policy-review">
             <div className="policy-review-intro">
               <p className="profile-intro">{t('policyReviewIntro')}</p>
-              <span className="policy-draft-badge">{t('policyDraftBadge')}</span>
+              <span className="policy-draft-badge">
+                {proposalSource === LONG_TERM_TECH_VALUE_PRESET_ID
+                  ? t('policyPresetDraftBadge')
+                  : t('policyDraftBadge')}
+              </span>
             </div>
+            {proposalSource === LONG_TERM_TECH_VALUE_PRESET_ID && (
+              <aside className="policy-preset-notice">
+                <strong>{t('policyPresetEditable')}</strong>
+                <span>{t('policyPresetDisclaimer')}</span>
+              </aside>
+            )}
             <div className="policy-metadata">
               <label htmlFor="policy-name">
                 <span>{t('policyName')}</span>
@@ -422,10 +489,12 @@ export default function InvestmentPolicyBuilder({
               </label>
             </div>
 
-            <p className="policy-languages">
-              <strong>{t('policyDetectedLanguages')}:</strong>{' '}
-              {proposal.detected_languages.join(' + ')}
-            </p>
+            {proposalSource === 'ai' && (
+              <p className="policy-languages">
+                <strong>{t('policyDetectedLanguages')}:</strong>{' '}
+                {proposal.detected_languages.join(' + ')}
+              </p>
+            )}
 
             {proposal.issues.length > 0 && (
               <section className="policy-issues" aria-labelledby="policy-issues-title">
@@ -494,6 +563,9 @@ export default function InvestmentPolicyBuilder({
                 />
                 <span>{t('policyMakeDefault')}</span>
               </label>
+              {proposalSource === LONG_TERM_TECH_VALUE_PRESET_ID && (
+                <p className="policy-default-scope">{t('policyPresetDefaultScope')}</p>
+              )}
               <label className="policy-explicit-confirm">
                 <input
                   type="checkbox"

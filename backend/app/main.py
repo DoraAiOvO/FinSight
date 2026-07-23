@@ -32,6 +32,7 @@ from .models.schemas import (
     Overview,
     PolicyExtractionRequest,
     PolicyExtractionResponse,
+    PolicyPresetSummary,
     PolicyProposalConfirmRequest,
     ResearchReportAuditResponse,
     ResearchReportDraft,
@@ -64,6 +65,7 @@ from .services import (
     investment_policies,
     market_data,
     policy_builder,
+    policy_presets,
     research_workspace,
     sec_filings,
     thesis_ledger,
@@ -639,6 +641,41 @@ def what_changed_since_last_research(
         _raise_workspace_error(error)
     except SQLAlchemyError:
         raise HTTPException(status_code=503, detail="Change tracking is unavailable")
+
+
+@app.get(
+    "/api/investment-policy-presets",
+    response_model=list[PolicyPresetSummary],
+)
+def read_investment_policy_presets():
+    """List optional preset metadata without selecting or applying a preset."""
+    return policy_presets.list_presets()
+
+
+@app.post(
+    (
+        "/api/customers/{customer_id}/investment-policy-presets/"
+        "{preset_id}/proposals"
+    ),
+    response_model=PolicyExtractionResponse,
+    status_code=201,
+)
+def create_investment_policy_preset_proposal(
+    customer_id: UUID,
+    preset_id: str,
+    db: Session = Depends(get_db),
+):
+    """Create an inactive preset proposal only after an explicit user request."""
+    try:
+        return policy_presets.create_proposal(db, customer_id, preset_id)
+    except investment_policies.InvestmentPolicyError as error:
+        db.rollback()
+        _raise_policy_error(error)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=503, detail="Investment policy presets are unavailable"
+        )
 
 
 @app.get(

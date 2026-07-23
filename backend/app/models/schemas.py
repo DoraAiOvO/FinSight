@@ -1187,6 +1187,22 @@ class PolicyExtractionResponse(BaseModel):
     created_at: datetime
 
 
+class PolicyPresetSummary(BaseModel):
+    """Public metadata for an optional, editable policy starting point."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    preset_id: str = Field(min_length=1, max_length=80)
+    name: str = Field(min_length=1, max_length=160)
+    description: str = Field(min_length=1, max_length=1000)
+    disclaimer: str = Field(min_length=1, max_length=1000)
+    default_themes: list[str] = Field(default_factory=list, max_length=30)
+    default_markets: list[str] = Field(default_factory=list, max_length=30)
+    is_opt_in: Literal[True] = True
+    is_global_default: Literal[False] = False
+    all_rules_editable: Literal[True] = True
+
+
 class PolicyProposalConfirmRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -246,6 +246,7 @@ def create_policy(
     request: InvestmentPolicyCreate,
     *,
     commit: bool = True,
+    default_if_first: bool = True,
 ) -> InvestmentPolicyResponse:
     _require_user(session, customer_id)
     existing = session.scalars(
@@ -262,7 +263,10 @@ def create_policy(
 
     make_default = (
         request.status.value == "active"
-        and (request.is_default or not existing)
+        and (
+            request.is_default
+            or (default_if_first and not existing)
+        )
     )
     if make_default:
         for policy in existing:

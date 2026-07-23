@@ -25,7 +25,7 @@ from ..models.schemas import (
     PolicyVersionCreate,
     PolicyVersionStatus,
 )
-from . import ai, investment_policies
+from . import ai, investment_policies, policy_presets
 
 
 RULE_FAMILIES = tuple(investment_policies.RULE_MODELS)
@@ -495,11 +495,13 @@ def confirm_proposal(
         is_default=request.make_default,
         initial_version=published_version,
     )
+    is_preset_proposal = policy_presets.is_preset_source(record.source_text)
     created = investment_policies.create_policy(
         session,
         customer_id,
         create_request,
         commit=False,
+        default_if_first=not is_preset_proposal,
     )
     confirmed_version = created.versions[-1]
     record.status = "confirmed"
