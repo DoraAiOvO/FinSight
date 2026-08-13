@@ -104,6 +104,32 @@ describe('CustomerOnboarding language experience', () => {
     expect(screen.getByRole('combobox')).toHaveProperty('value', 'zh')
   })
 
+  it('waits for an explicit save after continuing to the final step', async () => {
+    window.localStorage.setItem('language', 'en')
+    const storedProfile = {
+      ...defaultProfile('en'),
+      customer_id: 'customer-new',
+      created_at: '2026-08-13T12:00:00Z',
+      updated_at: '2026-08-13T12:00:00Z',
+    }
+    api.customerProfile.create.mockResolvedValue(storedProfile)
+    api.customerProfile.get.mockResolvedValue(storedProfile)
+    const user = userEvent.setup()
+
+    renderOnboarding()
+    await user.click(await screen.findByRole('button', { name: 'Continue' }))
+    const finalContinueButton = screen.getByRole('button', { name: 'Continue' })
+    await user.click(finalContinueButton)
+
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Save research profile' })).toBeTruthy()
+    expect(finalContinueButton.isConnected).toBe(false)
+    expect(api.customerProfile.create).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Save research profile' }))
+    await waitFor(() => expect(api.customerProfile.create).toHaveBeenCalledTimes(1))
+  })
+
   it('gives an authenticated profile preference priority and syncs the form', async () => {
     window.localStorage.setItem('finsight-customer-id', 'customer-1')
     window.localStorage.setItem('language', 'en')

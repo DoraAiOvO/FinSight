@@ -197,7 +197,8 @@ export default function CustomerOnboarding() {
     .replace('{current}', String(step + 1))
     .replace('{total}', '3')
 
-  function nextStep() {
+  function nextStep(event) {
+    event.preventDefault()
     if (step === 1 && values.priorities.length === 0) {
       setError(t('profileRequired'))
       return
@@ -400,9 +401,9 @@ export default function CustomerOnboarding() {
               ) : null}
             </div>
             {step < 2 ? (
-              <button type="button" className="profile-primary" onClick={nextStep}>{t('profileNext')}</button>
+              <button key="next-step" type="button" className="profile-primary" onClick={nextStep}>{t('profileNext')}</button>
             ) : (
-              <button type="submit" className="profile-primary" disabled={saving}>
+              <button key="save-profile" type="submit" className="profile-primary" disabled={saving}>
                 {saving ? t('profileSaving') : t('profileSave')}
               </button>
             )}
