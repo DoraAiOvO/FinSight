@@ -104,6 +104,26 @@ describe('CustomerOnboarding language experience', () => {
     expect(screen.getByRole('combobox')).toHaveProperty('value', 'zh')
   })
 
+  it('opens automatically for visitors without a profile and keeps skip non-persisting', async () => {
+    window.localStorage.setItem('language', 'en')
+    const user = userEvent.setup()
+
+    const firstVisit = renderOnboarding()
+    expect(await screen.findByRole('dialog', { name: 'Make every report easier to use.' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Skip for now' })).toBeTruthy()
+    expect(api.customerProfile.create).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Skip for now' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(window.localStorage.getItem('finsight-customer-id')).toBeNull()
+    expect(api.customerProfile.create).not.toHaveBeenCalled()
+
+    firstVisit.unmount()
+    renderOnboarding()
+    expect(await screen.findByRole('dialog', { name: 'Make every report easier to use.' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Skip for now' })).toBeTruthy()
+  })
+
   it('waits for an explicit save after continuing to the final step', async () => {
     window.localStorage.setItem('language', 'en')
     const storedProfile = {
