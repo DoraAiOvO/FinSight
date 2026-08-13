@@ -17,6 +17,7 @@ export function buildResearchSnapshot(data) {
   return {
     captured_at: capturedAt,
     overview: data.overview,
+    financials: data.financials || null,
     analysis: data.analysis || null,
     news: data.news || null,
     filings: data.filings || null,

@@ -2,7 +2,7 @@
 from datetime import date, datetime, timezone
 from typing import Iterable
 
-from ..models.schemas import FreshnessStatus
+from ..models.schemas import FreshnessStatus, VerificationStatus
 
 
 FRESHNESS_RANK = {
@@ -56,16 +56,29 @@ def provenance(
     as_of_date: date,
     fetched_at: datetime,
     freshness_status: str,
-    confidence: float,
+    verification_status: str | VerificationStatus | None = None,
     source_url: str | None = None,
 ) -> dict:
+    """Build provenance with a categorical verification state.
+
+    The categorical state is auditable and is never converted to a subjective
+    numeric confidence score.
+    """
+    if verification_status is None:
+        provider_key = provider.casefold()
+        if "sec" in provider_key:
+            verification_status = VerificationStatus.OFFICIAL
+        elif provider_key == "finsight":
+            verification_status = VerificationStatus.CALCULATED
+        else:
+            verification_status = VerificationStatus.SINGLE_SOURCE
     return {
         "provider": provider,
         "source": source,
         "as_of_date": as_of_date,
         "fetched_at": fetched_at,
         "freshness_status": freshness_status,
-        "confidence": confidence,
+        "verification_status": getattr(verification_status, "value", verification_status),
         "source_url": source_url,
     }
 
@@ -94,7 +107,7 @@ def inherited_provenance(
     *,
     provider: str = "FinSight",
     source: str = "deterministic analysis rules v1",
-    confidence: float | None = None,
+    verification_status: str | VerificationStatus = VerificationStatus.CALCULATED,
 ) -> dict:
     """Build conservative metadata for a value/claim derived from input points."""
     points = [point for point in inputs if isinstance(point, dict)]
@@ -106,25 +119,20 @@ def inherited_provenance(
             as_of_date=now.date(),
             fetched_at=now,
             freshness_status=FreshnessStatus.UNKNOWN.value,
-            confidence=confidence if confidence is not None else 0.5,
+            verification_status=verification_status,
         )
 
     as_of = min(point["as_of_date"] for point in points)
     fetched_at = max(point["fetched_at"] for point in points)
     statuses = [str(point["freshness_status"]) for point in points]
     freshness = max(statuses, key=lambda status: FRESHNESS_RANK.get(status, 2))
-    input_confidence = min(float(point["confidence"]) for point in points)
     return provenance(
         provider=provider,
         source=source,
         as_of_date=as_of,
         fetched_at=fetched_at,
         freshness_status=freshness,
-        confidence=(
-            min(input_confidence, confidence)
-            if confidence is not None
-            else input_confidence
-        ),
+        verification_status=verification_status,
     )
 
 
@@ -133,7 +141,6 @@ def generated_evidence(
     *,
     provider: str,
     source: str,
-    confidence: float,
     fetched_at: datetime | None = None,
     citations: list[str] | None = None,
     statements: list[dict] | None = None,
@@ -152,6 +159,6 @@ def generated_evidence(
             as_of_date=fetched_at.date(),
             fetched_at=fetched_at,
             freshness_status=FreshnessStatus.FRESH.value,
-            confidence=confidence,
+            verification_status=VerificationStatus.ESTIMATED,
         ),
     )

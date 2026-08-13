@@ -105,7 +105,6 @@ def _derived_point(
     *,
     source: str,
     unit: str | None = None,
-    confidence: float = 0.8,
 ) -> dict:
     return data_point(
         value,
@@ -114,7 +113,6 @@ def _derived_point(
         **inherited_provenance(
             inputs,
             source=source,
-            confidence=confidence,
         ),
     )
 
@@ -131,7 +129,6 @@ def _policy_point(value: float, *, source: str, unit: str = "ratio") -> dict:
             as_of_date=now.date(),
             fetched_at=now,
             freshness_status="unknown",
-            confidence=1.0,
         ),
     )
 
@@ -148,7 +145,6 @@ def _user_point(value: float, field: str) -> dict:
             as_of_date=now.date(),
             fetched_at=now,
             freshness_status="fresh",
-            confidence=1.0,
         ),
     )
 
@@ -441,7 +437,6 @@ def _scenario_points(
                 [base_points[field]],
                 source=f"deterministic {scenario} scenario offset policy v1: {field}",
                 unit="ratio",
-                confidence=0.75,
             )
     return points
 
@@ -523,7 +518,6 @@ def _reverse_dcf(
                         "value to current price"
                     ),
                     unit="ratio",
-                    confidence=0.75,
                 )
                 explanation_text = (
                     "The implied annual revenue growth is the bisection solution that makes "
@@ -546,7 +540,6 @@ def _reverse_dcf(
             **inherited_provenance(
                 shared_inputs,
                 source="reverse DCF v1 methodology explanation",
-                confidence=0.75,
             ),
         ),
     }
@@ -618,7 +611,6 @@ def _peer_multiples(
                         f"multiplied by company {basis_label}"
                     ),
                     unit=per_share_unit,
-                    confidence=0.7,
                 ),
                 "sample_size": reference["sample_size"],
                 "peer_tickers": reference.get("sample_tickers", []),
@@ -628,7 +620,6 @@ def _peer_multiples(
                     **inherited_provenance(
                         calculation_inputs,
                         source=f"peer multiple v1 methodology: {metric_key}",
-                        confidence=0.7,
                     ),
                 ),
             }
@@ -698,7 +689,6 @@ def _sensitivity(
                         "and terminal-growth rates"
                     ),
                     unit=f"{currency}/share",
-                    confidence=0.7,
                 )
             cells.append(
                 {
@@ -716,7 +706,6 @@ def _limitation(claim: str, inputs: list[dict]) -> dict:
         **inherited_provenance(
             inputs,
             source="deterministic valuation limitation",
-            confidence=0.9,
         ),
     )
 
@@ -857,7 +846,6 @@ def build_valuation(
         **inherited_provenance(
             methodology_inputs,
             source="FinSight deterministic valuation methodology v1",
-            confidence=0.8,
         ),
     )
     return {

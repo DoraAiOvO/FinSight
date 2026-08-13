@@ -23,6 +23,7 @@ from .models.schemas import (
     FilingListResponse,
     FilingQuestionRequest,
     FilingQuestionResponse,
+    FinancialEvidenceResponse,
     HistoryResponse,
     InvestmentPolicyCreate,
     InvestmentPolicyResponse,
@@ -62,6 +63,7 @@ from .services import (
     benchmarks,
     company_search,
     evidence_auditor,
+    financial_verification,
     investment_policies,
     market_data,
     policy_builder,
@@ -918,6 +920,26 @@ def stock_overview(ticker: str):
         raise HTTPException(status_code=502, detail=f"Data provider error: {e}")
 
 
+@app.get(
+    "/api/financials/{ticker}/evidence",
+    response_model=FinancialEvidenceResponse,
+)
+def verified_financial_evidence(ticker: str):
+    """Return normalized observations, decisions, and unresolved conflicts."""
+    try:
+        ticker = normalize_ticker(ticker)
+        overview = market_data.get_overview(ticker)
+        return financial_verification.get_financial_evidence(ticker, overview)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error))
+    except Exception as error:
+        raise HTTPException(
+            status_code=502, detail=f"Financial verification error: {error}"
+        )
+
+
 @app.get("/api/stocks/{ticker}/history", response_model=HistoryResponse)
 def stock_history(ticker: str, period: str = Query("6mo", pattern="^(1mo|3mo|6mo|1y|2y|5y)$")):
     try:
@@ -1016,11 +1038,23 @@ def stock_analysis(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     try:
-        metrics = market_data.get_overview(ticker)
+        provider_metrics = market_data.get_overview(ticker)
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Data provider error: {e}")
+    try:
+        financials = financial_verification.get_financial_evidence(
+            ticker, provider_metrics
+        )
+        metrics = financial_verification.apply_verified_overview(
+            provider_metrics, financials
+        )
+    except Exception:
+        # Deterministic report sections can still degrade gracefully, but the AI
+        # narrative remains disabled when the verification boundary is unavailable.
+        financials = None
+        metrics = provider_metrics
     profile = None
     if customer_id is not None:
         try:
@@ -1042,14 +1076,23 @@ def stock_analysis(
         except SQLAlchemyError:
             # Policy interpretation is optional and must not affect evidence.
             policy = None
-    narrative = ai.narrate_analysis(
-        ticker.upper(),
-        metrics,
-        neutral_insights,
-        lang=lang,
-        # Narrative content belongs to neutral evidence. User preferences may
-        # change expansion/display only, never the generated factual synthesis.
-        explanation_depth="standard",
+    narrative = (
+        ai.narrate_analysis(
+            ticker.upper(),
+            {
+                "company_name": financials.company.legal_name,
+                "verified_financial_metrics": (
+                    financial_verification.normalized_ai_evidence(financials)
+                ),
+            },
+            neutral_insights,
+            lang=lang,
+            # Narrative content belongs to neutral evidence. User preferences may
+            # change expansion/display only, never the generated factual synthesis.
+            explanation_depth="standard",
+        )
+        if financials is not None
+        else None
     )
     return {
         "ticker": ticker.upper(),

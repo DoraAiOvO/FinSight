@@ -102,7 +102,7 @@ def assert_provenance(item):
     assert item["as_of_date"]
     assert item["fetched_at"]
     assert item["freshness_status"]
-    assert 0 <= item["confidence"] <= 1
+    assert item["verification_status"] == "CALCULATED"
 
 
 def test_dcf_reverse_dcf_peer_multiples_and_sensitivity_are_calculated_in_code():

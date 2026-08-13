@@ -128,7 +128,7 @@ function EvidenceEditor({ busy, onSave, onCancel, t }) {
   const [claim, setClaim] = useState('')
   const [source, setSource] = useState('')
   const [sourceUrl, setSourceUrl] = useState('')
-  const [confidence, setConfidence] = useState('0.7')
+  const [verificationStatus, setVerificationStatus] = useState('SINGLE_SOURCE')
 
   async function submit(event) {
     event.preventDefault()
@@ -137,7 +137,7 @@ function EvidenceEditor({ busy, onSave, onCancel, t }) {
       claim,
       source,
       source_url: sourceUrl,
-      confidence,
+      verification_status: verificationStatus,
     }))
   }
 
@@ -171,11 +171,16 @@ function EvidenceEditor({ busy, onSave, onCancel, t }) {
         />
       </label>
       <label>
-        <span>{t('evidenceConfidence')}</span>
-        <select value={confidence} onChange={(event) => setConfidence(event.target.value)}>
-          <option value="0.4">{t('confidenceLow')}</option>
-          <option value="0.7">{t('confidenceMedium')}</option>
-          <option value="0.9">{t('confidenceHigh')}</option>
+        <span>{t('verificationStatus')}</span>
+        <select value={verificationStatus} onChange={(event) => setVerificationStatus(event.target.value)}>
+          <option value="OFFICIAL">OFFICIAL</option>
+          <option value="CROSS_VERIFIED">CROSS_VERIFIED</option>
+          <option value="SINGLE_SOURCE">SINGLE_SOURCE</option>
+          <option value="CALCULATED">CALCULATED</option>
+          <option value="ESTIMATED">ESTIMATED</option>
+          <option value="STALE">STALE</option>
+          <option value="PERIOD_UNCLEAR">PERIOD_UNCLEAR</option>
+          <option value="CONFLICTING">CONFLICTING</option>
         </select>
       </label>
       <label className="ledger-form-wide">
@@ -206,7 +211,7 @@ function EvidenceList({ items, emptyText }) {
       {items.map((item) => (
         <li key={`${item.recorded_at}:${item.claim}`}>
           <strong>{item.claim}</strong>
-          <span>{item.source} · {item.as_of_date}</span>
+          <span>{item.source} · {item.as_of_date} · {item.verification_status || 'SINGLE_SOURCE'}</span>
           {item.source_url && (
             <a href={item.source_url} target="_blank" rel="noreferrer">↗</a>
           )}

@@ -15,6 +15,7 @@ export function buildAuditDraft(data) {
   return {
     captured_at: capturedAt,
     overview: data.overview,
+    financials: data.financials || null,
     history: data.history || null,
     analysis: data.analysis || null,
     news: data.news || null,

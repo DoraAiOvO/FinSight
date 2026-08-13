@@ -50,7 +50,7 @@ PROVENANCE_KEYS = {
     "as_of_date",
     "fetched_at",
     "freshness_status",
-    "confidence",
+    "verification_status",
 }
 
 
@@ -259,7 +259,6 @@ def _benchmark_item(metric: dict, reference: dict) -> dict:
                     reference["upper_bound"],
                 ],
                 source=f"benchmark-aware analysis: {metric['metric_key']}",
-                confidence=0.8,
             ),
         ),
         "benchmark_key": f"relative_{scope}_benchmark",
@@ -284,7 +283,6 @@ def build_insights(m: dict, benchmarks: dict | None = None) -> list[dict]:
         claim_meta = inherited_provenance(
             [item["value"], item["benchmark"]],
             source=f"deterministic benchmark insight: {code}",
-            confidence=0.85,
         )
         out.append(
             {
@@ -460,11 +458,11 @@ def build_insights(m: dict, benchmarks: dict | None = None) -> list[dict]:
                 "value": data_point(
                     position,
                     display_value=_pct(position),
-                    **inherited_provenance(inputs, source="52-week range position", confidence=0.9),
+                    **inherited_provenance(inputs, source="52-week range position"),
                 ),
                 "benchmark": evidence(
                     f"Observed range {low:,.2f}–{high:,.2f}",
-                    **inherited_provenance(inputs, source="company 52-week range", confidence=0.9),
+                    **inherited_provenance(inputs, source="company 52-week range"),
                 ),
                 "benchmark_key": "range_values",
                 "benchmark_params": {"low": f"{low:,.2f}", "high": f"{high:,.2f}"},
@@ -472,7 +470,6 @@ def build_insights(m: dict, benchmarks: dict | None = None) -> list[dict]:
             claim_meta = inherited_provenance(
                 [item["value"], item["benchmark"]],
                 source=f"deterministic benchmark insight: {code}",
-                confidence=0.85,
             )
             out.append(
                 {
@@ -524,7 +521,6 @@ def build_comparison(overviews: list[dict]) -> list[dict]:
                     **inherited_provenance(
                         [value for value in values.values() if isinstance(value, dict)],
                         source=f"peer comparison: {key}",
-                        confidence=0.9,
                     ),
                 )
         rows.append(

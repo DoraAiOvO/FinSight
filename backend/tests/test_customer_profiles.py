@@ -1,6 +1,7 @@
 """Customer onboarding persistence and presentation-boundary tests."""
 
 import sys
+from types import SimpleNamespace
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -206,6 +207,19 @@ def test_profile_only_changes_presentation_not_report_evidence(monkeypatch):
 
     app.dependency_overrides[get_db] = override_db
     monkeypatch.setattr("app.main.market_data.get_overview", lambda ticker: metrics)
+    verified = SimpleNamespace(company=SimpleNamespace(legal_name="Test Corp"))
+    monkeypatch.setattr(
+        "app.main.financial_verification.get_financial_evidence",
+        lambda ticker, overview: verified,
+    )
+    monkeypatch.setattr(
+        "app.main.financial_verification.apply_verified_overview",
+        lambda overview, evidence: overview,
+    )
+    monkeypatch.setattr(
+        "app.main.financial_verification.normalized_ai_evidence",
+        lambda evidence: [{"metric_key": "trailing_pe", "value": 65.0}],
+    )
     monkeypatch.setattr(
         "app.main.benchmarks.build_benchmark_context",
         lambda ticker, company_metrics: _benchmark_context(company_metrics),

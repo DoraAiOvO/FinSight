@@ -1,5 +1,6 @@
 """API contract tests for provenance-aware response schemas."""
 import sys
+from types import SimpleNamespace
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -93,7 +94,7 @@ def assert_provenance(payload):
         "as_of_date",
         "fetched_at",
         "freshness_status",
-        "confidence",
+        "verification_status",
         "source_url",
     }
     assert required <= payload.keys()
@@ -108,7 +109,7 @@ def test_openapi_exposes_standardized_data_point_and_evidence_contracts():
         "as_of_date",
         "fetched_at",
         "freshness_status",
-        "confidence",
+        "verification_status",
     }
 
     assert provenance_fields <= set(models["DataPoint"]["required"])
@@ -117,6 +118,14 @@ def test_openapi_exposes_standardized_data_point_and_evidence_contracts():
     assert "claim" in models["Evidence"]["required"]
     assert models["Overview"]["properties"]["price"]["anyOf"][0]["$ref"].endswith("/DataPoint")
     assert models["PricePoint"]["properties"]["close"]["$ref"].endswith("/DataPoint")
+    financial_metric_required = {
+        "metric_key", "value", "unit", "currency", "period_type",
+        "period_start", "period_end", "fiscal_year", "fiscal_quarter",
+        "filing_date", "accounting_standard", "provider", "source_document",
+        "source_concept", "fetched_at", "verification_status",
+    }
+    assert financial_metric_required <= set(models["FinancialMetric"]["required"])
+    assert models["FinancialEvidenceResponse"]["properties"]["conflicts"]["items"]["$ref"].endswith("/SourceConflict")
     neutral_ref = models["AnalysisResponse"]["properties"]["neutral_evidence"]
     assert neutral_ref["$ref"].endswith("/NeutralEvidenceResult")
     narrative_ref = models["NeutralEvidenceResult"]["properties"]["narrative"]["anyOf"][0]
@@ -235,6 +244,19 @@ def test_overview_analysis_comparison_and_news_responses_include_provenance(monk
     monkeypatch.setattr(
         "app.main.benchmarks.build_benchmark_context",
         lambda ticker, metrics: benchmark_context(ticker),
+    )
+    verified = SimpleNamespace(company=SimpleNamespace(legal_name="TEST Corp"))
+    monkeypatch.setattr(
+        "app.main.financial_verification.get_financial_evidence",
+        lambda ticker, metrics: verified,
+    )
+    monkeypatch.setattr(
+        "app.main.financial_verification.apply_verified_overview",
+        lambda metrics, evidence: metrics,
+    )
+    monkeypatch.setattr(
+        "app.main.financial_verification.normalized_ai_evidence",
+        lambda evidence: [{"metric_key": "trailing_pe", "value": 45.0}],
     )
     client = TestClient(app)
 

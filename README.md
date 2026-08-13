@@ -380,11 +380,30 @@ assumption has one of five explicit states: unreviewed, monitoring, supported,
 challenged, or invalidated.
 
 Supporting and contradicting evidence are stored separately with a source,
-as-of date, optional URL, recorded timestamp, and user-selected confidence.
+as-of date, optional URL, recorded timestamp, and categorical verification status.
 Creating an assumption and every later status, condition, description, or
 evidence update writes an append-only history entry with the before/after values
 and an optional reason. This is user-authored research memory; it does not
 generate buy, sell, or suitability instructions.
+
+### Financial verification layer
+
+`GET /api/financials/{ticker}/evidence` returns normalized company, listing,
+period, source, metric, verification-result, and conflict records. For SEC
+filers, Company Facts supplies XBRL observations and Submissions links each fact
+to its filing. Official filing values are primary; Yahoo Finance is retained as
+secondary evidence or an explicitly labeled fallback.
+
+Like-period values are compared with per-metric relative and absolute
+tolerances. Matching providers produce `CROSS_VERIFIED`; disagreements produce
+`CONFLICTING`, preserve every candidate, and create an unresolved conflict
+record. Derived values such as profit margin and free cash flow are calculated
+in code with a visible formula. Only validated metrics in AI-safe verification
+states can enter analysis prompts; raw provider payloads never cross that gate.
+
+Override tolerances with `FINSIGHT_METRIC_TOLERANCES_JSON`, for example
+`{"total_revenue":{"relative":0.01,"absolute":1}}`. The newest value becomes
+`STALE` after `FINSIGHT_FINANCIAL_STALE_DAYS` (550 by default).
 
 ### Benchmark methodology
 
@@ -439,6 +458,7 @@ limitations and never trigger a fallback to the old universal thresholds.
 - [x] Add the Thesis Ledger with measurable assumptions, two-sided evidence, and change history
 - [x] Add deterministic DCF, reverse DCF, peer multiples, scenarios, and sensitivity analysis
 - [x] Add deterministic evidence auditing and block unsupported generated conclusions
+- [x] Add SEC-first normalized financial verification and conflict preservation
 
 ## Contributing
 

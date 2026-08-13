@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import SearchBar from './components/SearchBar.jsx'
 import StockOverview from './components/StockOverview.jsx'
+import FinancialVerificationPanel from './components/FinancialVerificationPanel.jsx'
 import PriceChart from './components/PriceChart.jsx'
 import AnalysisPanel from './components/AnalysisPanel.jsx'
 import BenchmarkPanel from './components/BenchmarkPanel.jsx'
@@ -20,6 +21,7 @@ import { useCustomerProfile } from './context/CustomerProfileContext.jsx'
 import { useTranslation } from './hooks/useTranslation.js'
 import { api } from './lib/api.js'
 import { buildAssistantReportContext } from './lib/assistant.js'
+import { applyFinancialEvidence } from './lib/financialEvidence.js'
 import {
   applyAuditResult,
   buildAuditDraft,
@@ -59,11 +61,14 @@ function ReportSections({ data, historyLoading, onPeriodChange, onValuationChang
   const neutral = data.analysis?.neutral_evidence
   const sections = {
     overview: (
-      <StockOverview
-        overview={data.overview}
-        highlightedMetrics={presentation?.highlighted_metric_keys}
-        industryMatch={presentation?.industry_match}
-      />
+      <>
+        <StockOverview
+          overview={data.overview}
+          highlightedMetrics={presentation?.highlighted_metric_keys}
+          industryMatch={presentation?.industry_match}
+        />
+        {data.financials && <FinancialVerificationPanel evidence={data.financials} />}
+      </>
     ),
     price_history: data.history && (
       <PriceChart
@@ -250,8 +255,13 @@ export default function App() {
 
     try {
       const overview = await api.overview(ticker)
-      const analysisRequest = api.analysis(ticker, language, customerId)
+      const financialsRequest = api.financialEvidence(ticker)
+      const analysisRequest = financialsRequest.then(
+        () => api.analysis(ticker, language, customerId),
+        () => api.analysis(ticker, language, customerId),
+      )
       const sections = await Promise.allSettled([
+        financialsRequest,
         api.history(ticker, '6mo'),
         analysisRequest,
         api.news(ticker, language),
@@ -264,6 +274,7 @@ export default function App() {
       if (currentRequest !== requestId.current) return
 
       const sectionKeys = [
+        'noticeFinancialVerification',
         'noticeHistory',
         'noticeAnalysis',
         'noticeNews',
@@ -274,12 +285,15 @@ export default function App() {
         result.status === 'rejected' ? [{ key: sectionKeys[index] }] : [],
       )
       const draft = {
-        overview,
-        history: sections[0].status === 'fulfilled' ? sections[0].value : null,
-        analysis: sections[1].status === 'fulfilled' ? sections[1].value : null,
-        news: sections[2].status === 'fulfilled' ? sections[2].value : null,
-        filings: sections[3].status === 'fulfilled' ? sections[3].value : null,
-        valuation: sections[4].status === 'fulfilled' ? sections[4].value : null,
+        overview: sections[0].status === 'fulfilled'
+          ? applyFinancialEvidence(overview, sections[0].value)
+          : overview,
+        financials: sections[0].status === 'fulfilled' ? sections[0].value : null,
+        history: sections[1].status === 'fulfilled' ? sections[1].value : null,
+        analysis: sections[2].status === 'fulfilled' ? sections[2].value : null,
+        news: sections[3].status === 'fulfilled' ? sections[3].value : null,
+        filings: sections[4].status === 'fulfilled' ? sections[4].value : null,
+        valuation: sections[5].status === 'fulfilled' ? sections[5].value : null,
         generatedAt: new Date(),
       }
       const auditResult = await api.auditReport(buildAuditDraft(draft))

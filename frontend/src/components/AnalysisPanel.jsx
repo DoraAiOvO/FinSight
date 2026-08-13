@@ -9,11 +9,10 @@ function EvidenceList({ items, professional }) {
   return (
     <div className="evidence-list">
       {items.map((item, index) => {
-        const confidence = `${Math.round((item.value.confidence || 0) * 100)}%`
         const provenance = t('evidenceProvenance')
           .replace('{provider}', item.value.provider || '—')
           .replace('{date}', item.value.as_of_date || '—')
-          .replace('{confidence}', confidence)
+          .replace('{status}', item.value.verification_status || 'SINGLE_SOURCE')
         return (
           <div className="evidence-row" key={`${item.metric}-${index}`}>
             <span><small>{ts(item.metric)}</small><strong>{displayDataPoint(item.value)}</strong></span>

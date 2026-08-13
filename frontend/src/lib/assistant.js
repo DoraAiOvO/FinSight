@@ -103,33 +103,34 @@ function addPoint(evidence, key, label, point, language) {
 }
 
 export function buildAssistantReportContext(data, comparison, language = 'en') {
-  if (data?.overview) {
+  if (data?.overview && data?.financials) {
     const overview = data.overview
-    const evidence = []
     const labels = reportLabels(language)
-    const metricKeys = [
-      'price', 'market_cap', 'trailing_pe', 'forward_pe', 'price_to_sales',
-      'revenue_growth', 'profit_margin', 'free_cash_flow', 'debt_to_equity',
-      'beta', 'dividend_yield',
-    ]
-    metricKeys.forEach((key) => addPoint(evidence, key, labels[key], overview[key], language))
-    const neutral = data.analysis?.neutral_evidence
-    const analysisEvidence = [
-      ...(neutral?.risks || []).map((insight, index) => ({ insight, collection: 'risks', index })),
-      ...(neutral?.opportunities || []).map((insight, index) => ({ insight, collection: 'opportunities', index })),
-    ]
-    analysisEvidence.slice(0, 8).forEach(({ insight, collection, index }) => {
-      const explanation = insight.explanation
-      if (!explanation?.claim) return
-      evidence.push({
-        evidence_id: `analysis.neutral_evidence.${collection}.${index}`,
-        label: translateServerText(language, insight.title?.claim) || insight.code,
-        value: translateServerText(language, explanation.claim),
-        source: sourceFor(explanation, language),
-        as_of_date: explanation.as_of_date || null,
-        source_url: explanation.source_url || null,
-      })
+    const metricMap = new Map(data.financials.metrics.map((metric) => [metric.metric_id, metric]))
+    const allowed = new Set(['OFFICIAL', 'CROSS_VERIFIED', 'SINGLE_SOURCE', 'CALCULATED', 'STALE'])
+    const latest = new Map()
+    data.financials.verification_results.forEach((result) => {
+      if (!allowed.has(result.verification_status)) return
+      const metric = metricMap.get(result.selected_metric_id)
+      if (!metric) return
+      const current = latest.get(metric.metric_key)
+      if (!current || metric.period_end > current.metric.period_end) {
+        latest.set(metric.metric_key, { metric, result })
+      }
     })
+    const evidence = [...latest.values()].slice(0, 80).map(({ metric, result }) => ({
+      evidence_id: `financials.${result.verification_result_id}`,
+      label: labels[metric.metric_key] || metric.metric_key.split('_').join(' '),
+      value: `${metric.value} ${metric.currency || metric.unit}`,
+      source: [
+        metric.provider,
+        metric.source_concept,
+        result.verification_status,
+        metric.calculation_formula ? `formula: ${metric.calculation_formula}` : null,
+      ].filter(Boolean).join(' · '),
+      as_of_date: metric.period_end,
+      source_url: metric.source_document,
+    }))
     return {
       ticker: overview.ticker,
       company_name: overview.name || overview.ticker,

@@ -208,7 +208,6 @@ def get_overview(ticker: str) -> dict:
                 as_of_date=as_of_date,
                 fetched_at=fetched_at,
                 freshness_status=freshness,
-                confidence=0.8 if key in derived_fields else 0.9,
                 source_url=source_url,
             ),
         )
@@ -222,7 +221,6 @@ def get_overview(ticker: str) -> dict:
                 as_of_date=as_of_date,
                 fetched_at=fetched_at,
                 freshness_status=freshness,
-                confidence=0.8,
                 source_url=source_url,
             ),
         )
@@ -281,7 +279,6 @@ def get_valuation_inputs(ticker: str) -> dict:
                     as_of_date=as_of_date,
                     fetched_at=fetched_at,
                     freshness_status=freshness,
-                    confidence=0.9,
                     source_url=source_url,
                 ),
             )
@@ -306,7 +303,6 @@ def get_valuation_inputs(ticker: str) -> dict:
                 as_of_date=as_of_date,
                 fetched_at=fetched_at,
                 freshness_status=freshness,
-                confidence=0.8,
                 source_url=source_url,
             ),
         )
@@ -355,7 +351,6 @@ def normalize_history_points(
                         as_of_date=point_date,
                         fetched_at=fetched_at,
                         freshness_status=FreshnessStatus.HISTORICAL.value,
-                        confidence=0.95,
                         source_url=f"https://finance.yahoo.com/quote/{ticker.upper()}/history",
                     ),
                 ),
@@ -503,7 +498,6 @@ def get_historical_financial_metrics(ticker: str) -> list[dict]:
                     as_of_date=as_of_date,
                     fetched_at=fetched_at,
                     freshness_status=FreshnessStatus.HISTORICAL.value,
-                    confidence=0.85,
                     source_url=source_url,
                 ),
             )
@@ -550,7 +544,6 @@ def get_news(ticker: str, limit: int = 10) -> list[dict]:
                             if has_provider_date
                             else FreshnessStatus.UNKNOWN.value
                         ),
-                        confidence=0.85,
                         source_url=url,
                     ),
                 ),

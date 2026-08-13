@@ -5,6 +5,8 @@ payload.  Keeping these two primitives in the API contract makes it difficult
 for a new endpoint to accidentally return an unattributed number or narrative.
 """
 import json
+import math
+import re
 from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Any, Literal, TypeAlias
@@ -18,6 +20,51 @@ class FreshnessStatus(str, Enum):
     STALE = "stale"
     HISTORICAL = "historical"
     UNKNOWN = "unknown"
+
+
+class VerificationStatus(str, Enum):
+    """Deterministic evidence state; never a subjective confidence score."""
+
+    OFFICIAL = "OFFICIAL"
+    CROSS_VERIFIED = "CROSS_VERIFIED"
+    SINGLE_SOURCE = "SINGLE_SOURCE"
+    CALCULATED = "CALCULATED"
+    ESTIMATED = "ESTIMATED"
+    STALE = "STALE"
+    PERIOD_UNCLEAR = "PERIOD_UNCLEAR"
+    CONFLICTING = "CONFLICTING"
+
+
+class FinancialPeriodType(str, Enum):
+    INSTANT = "INSTANT"
+    QUARTER = "QUARTER"
+    ANNUAL = "ANNUAL"
+    TTM = "TTM"
+    YTD = "YTD"
+
+
+class AccountingStandard(str, Enum):
+    US_GAAP = "US_GAAP"
+    IFRS = "IFRS"
+    NON_GAAP = "NON_GAAP"
+    UNKNOWN = "UNKNOWN"
+
+
+class FinancialUnit(str, Enum):
+    CURRENCY = "currency"
+    CURRENCY_PER_SHARE = "currency_per_share"
+    SHARES = "shares"
+    RATIO = "ratio"
+    PERCENT = "percent"
+    MULTIPLE = "multiple"
+    COUNT = "count"
+
+
+class DataSourceType(str, Enum):
+    SEC_COMPANY_FACTS = "SEC_COMPANY_FACTS"
+    SEC_SUBMISSIONS = "SEC_SUBMISSIONS"
+    YAHOO_FINANCE = "YAHOO_FINANCE"
+    CALCULATION = "CALCULATION"
 
 
 class AuditIssueCode(str, Enum):
@@ -250,8 +297,26 @@ class Provenance(BaseModel):
     as_of_date: date
     fetched_at: datetime
     freshness_status: FreshnessStatus
-    confidence: float = Field(ge=0, le=1)
+    verification_status: VerificationStatus
     source_url: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_confidence(cls, value):
+        """Read old saved reports without re-exposing arbitrary confidence."""
+        if not isinstance(value, dict) or value.get("verification_status"):
+            return value
+        migrated = dict(value)
+        provider = str(migrated.get("provider") or "").casefold()
+        migrated["verification_status"] = (
+            VerificationStatus.OFFICIAL
+            if "sec" in provider
+            else VerificationStatus.CALCULATED
+            if provider == "finsight"
+            else VerificationStatus.SINGLE_SOURCE
+        )
+        migrated.pop("confidence", None)
+        return migrated
 
 
 DataValue: TypeAlias = float | int | str | None
@@ -263,6 +328,169 @@ class DataPoint(Provenance):
     value: DataValue
     unit: str | None = None
     display_value: str | None = None
+
+
+class CompanyEntity(BaseModel):
+    entity_id: str = Field(min_length=1, max_length=160)
+    legal_name: str = Field(min_length=1, max_length=300)
+    cik: str | None = Field(default=None, pattern=r"^\d{10}$")
+    country: str | None = Field(default=None, min_length=2, max_length=2)
+    entity_type: str = Field(default="PUBLIC_COMPANY", min_length=1, max_length=80)
+
+
+class Listing(BaseModel):
+    listing_id: str = Field(min_length=1, max_length=160)
+    entity_id: str = Field(min_length=1, max_length=160)
+    ticker: str = Field(min_length=1, max_length=32)
+    exchange: str | None = Field(default=None, max_length=80)
+    currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
+    is_primary: bool = True
+
+
+class FinancialPeriod(BaseModel):
+    period_id: str = Field(min_length=1, max_length=200)
+    period_type: FinancialPeriodType
+    period_start: date | None
+    period_end: date
+    fiscal_year: int | None = Field(ge=1900, le=2200)
+    fiscal_quarter: int | None = Field(ge=1, le=4)
+
+    @model_validator(mode="after")
+    def period_is_aligned(self):
+        if self.period_start is not None and self.period_start > self.period_end:
+            raise ValueError("period_start must not be after period_end")
+        if self.period_type == FinancialPeriodType.INSTANT and self.period_start is not None:
+            raise ValueError("instant periods must not have period_start")
+        if self.period_type == FinancialPeriodType.QUARTER and self.fiscal_quarter is None:
+            raise ValueError("quarter periods require fiscal_quarter")
+        if self.period_type == FinancialPeriodType.ANNUAL and self.fiscal_quarter is not None:
+            raise ValueError("annual periods must not have fiscal_quarter")
+        return self
+
+
+class DataSource(BaseModel):
+    data_source_id: str = Field(min_length=1, max_length=200)
+    provider: str = Field(min_length=1, max_length=120)
+    source_type: DataSourceType
+    source_document: str = Field(min_length=1, max_length=2000)
+    source_url: str | None = Field(default=None, max_length=2000)
+    is_official: bool
+    fetched_at: datetime
+
+
+class FinancialMetric(BaseModel):
+    """One provider observation. Conflicting observations remain separate rows."""
+
+    metric_id: str = Field(min_length=1, max_length=240)
+    entity_id: str = Field(min_length=1, max_length=160)
+    listing_id: str = Field(min_length=1, max_length=160)
+    financial_period_id: str = Field(min_length=1, max_length=200)
+    data_source_id: str = Field(min_length=1, max_length=200)
+    metric_key: str = Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=120)
+    value: float
+    unit: FinancialUnit
+    currency: str | None
+    period_type: FinancialPeriodType
+    period_start: date | None
+    period_end: date
+    fiscal_year: int | None = Field(ge=1900, le=2200)
+    fiscal_quarter: int | None = Field(ge=1, le=4)
+    filing_date: date | None
+    accounting_standard: AccountingStandard
+    provider: str = Field(min_length=1, max_length=120)
+    source_document: str = Field(min_length=1, max_length=2000)
+    source_concept: str = Field(min_length=1, max_length=500)
+    fetched_at: datetime
+    verification_status: VerificationStatus
+    calculation_formula: str | None = Field(default=None, max_length=1000)
+    validation_warnings: list[str] = Field(default_factory=list)
+
+    @field_validator("value")
+    @classmethod
+    def value_is_finite(cls, value: float):
+        if not math.isfinite(float(value)):
+            raise ValueError("financial metric value must be finite")
+        return float(value)
+
+    @field_validator("currency")
+    @classmethod
+    def currency_is_iso_like(cls, value: str | None):
+        if value is None:
+            return None
+        normalized = value.strip().upper()
+        if not re.fullmatch(r"[A-Z]{3}", normalized):
+            raise ValueError("currency must be a three-letter uppercase code")
+        return normalized
+
+    @model_validator(mode="after")
+    def accounting_period_currency_and_unit_are_consistent(self):
+        period = FinancialPeriod(
+            period_id=self.financial_period_id,
+            period_type=self.period_type,
+            period_start=self.period_start,
+            period_end=self.period_end,
+            fiscal_year=self.fiscal_year,
+            fiscal_quarter=self.fiscal_quarter,
+        )
+        if self.unit in {
+            FinancialUnit.CURRENCY,
+            FinancialUnit.CURRENCY_PER_SHARE,
+        } and self.currency is None:
+            raise ValueError("monetary metrics require currency")
+        if self.unit not in {
+            FinancialUnit.CURRENCY,
+            FinancialUnit.CURRENCY_PER_SHARE,
+        } and self.currency is not None:
+            raise ValueError("non-monetary metrics must not carry currency")
+        if self.filing_date is not None and self.filing_date < period.period_end:
+            raise ValueError("filing_date must not precede period_end")
+        if self.provider == "SEC EDGAR" and self.accounting_standard == AccountingStandard.UNKNOWN:
+            raise ValueError("SEC facts require a known accounting standard")
+        if self.verification_status == VerificationStatus.CALCULATED and not self.calculation_formula:
+            raise ValueError("calculated metrics require calculation_formula")
+        return self
+
+
+class VerificationResult(BaseModel):
+    verification_result_id: str = Field(min_length=1, max_length=240)
+    metric_key: str = Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=120)
+    financial_period_id: str = Field(min_length=1, max_length=200)
+    selected_metric_id: str | None = None
+    candidate_metric_ids: list[str] = Field(default_factory=list)
+    verification_status: VerificationStatus
+    relative_tolerance: float = Field(ge=0)
+    absolute_tolerance: float = Field(ge=0)
+    compared_provider_count: int = Field(ge=0)
+    explanation: str = Field(min_length=1, max_length=1000)
+
+
+class SourceConflict(BaseModel):
+    conflict_id: str = Field(min_length=1, max_length=240)
+    metric_key: str = Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=120)
+    financial_period_id: str = Field(min_length=1, max_length=200)
+    metric_ids: list[str] = Field(min_length=2)
+    providers: list[str] = Field(min_length=2)
+    values: list[float] = Field(min_length=2)
+    relative_difference: float = Field(ge=0)
+    absolute_difference: float = Field(ge=0)
+    relative_tolerance: float = Field(ge=0)
+    absolute_tolerance: float = Field(ge=0)
+    resolution: Literal[
+        "UNRESOLVED_OFFICIAL_PRIMARY", "UNRESOLVED_NO_PRIMARY"
+    ]
+
+
+class FinancialEvidenceResponse(BaseModel):
+    company: CompanyEntity
+    listings: list[Listing]
+    periods: list[FinancialPeriod]
+    sources: list[DataSource]
+    metrics: list[FinancialMetric]
+    verification_results: list[VerificationResult]
+    conflicts: list[SourceConflict]
+    missing_metric_keys: list[str]
+    validation_failures: list[str]
+    generated_at: datetime
 
 
 class EvidenceStatement(BaseModel):
@@ -1220,7 +1448,17 @@ class ThesisEvidence(BaseModel):
     recorded_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
-    confidence: float = Field(default=0.5, ge=0, le=1)
+    verification_status: VerificationStatus = VerificationStatus.SINGLE_SOURCE
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_source_confidence(cls, value):
+        if not isinstance(value, dict) or value.get("verification_status"):
+            return value
+        migrated = dict(value)
+        migrated["verification_status"] = VerificationStatus.SINGLE_SOURCE
+        migrated.pop("confidence", None)
+        return migrated
 
     @field_validator("claim", "source")
     @classmethod
@@ -1392,6 +1630,7 @@ class ThesisAssumptionSnapshot(BaseModel):
 class ResearchSnapshot(BaseModel):
     captured_at: datetime
     overview: Overview
+    financials: FinancialEvidenceResponse | None = None
     analysis: AnalysisResponse | None = None
     news: NewsResponse | None = None
     filings: FilingListResponse | None = None
@@ -1403,6 +1642,7 @@ class ResearchSnapshot(BaseModel):
 class ResearchReportDraft(BaseModel):
     captured_at: datetime
     overview: Overview | None = None
+    financials: FinancialEvidenceResponse | None = None
     history: HistoryResponse | None = None
     analysis: AnalysisResponse | None = None
     news: NewsResponse | None = None
@@ -1418,6 +1658,7 @@ class ResearchReportDraft(BaseModel):
             section is not None
             for section in (
                 self.history,
+                self.financials,
                 self.analysis,
                 self.news,
                 self.filings,

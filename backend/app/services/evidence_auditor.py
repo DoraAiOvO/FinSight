@@ -34,7 +34,7 @@ PROVENANCE_KEYS = {
     "as_of_date",
     "fetched_at",
     "freshness_status",
-    "confidence",
+    "verification_status",
 }
 
 RATIO_KEYS = {
@@ -427,6 +427,24 @@ def _audit_document(document: BaseModel) -> tuple[BaseModel, EvidenceAudit]:
                     f"Unit {node.get('unit')!r} is incompatible with this metric.",
                 )
             )
+
+    financials = payload.get("financials") or {}
+    for index, conflict in enumerate(financials.get("conflicts") or []):
+        issues.append(
+            _issue(
+                AuditIssueCode.CONFLICTING_SOURCES,
+                AuditSeverity.WARNING,
+                f"financials.conflicts.{index}",
+                (
+                    f"Normalized providers disagree on {conflict.get('metric_key')}; "
+                    "all candidate values remain exposed."
+                ),
+                related_paths=[
+                    f"financials.metrics.{metric_id}"
+                    for metric_id in conflict.get("metric_ids") or []
+                ],
+            )
+        )
 
     for metric_key, records in _canonical_facts(payload).items():
         numeric = [

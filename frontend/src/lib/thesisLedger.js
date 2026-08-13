@@ -67,7 +67,7 @@ export function ledgerEvidence(values, now = new Date()) {
     source_url: values.source_url?.trim() || null,
     as_of_date: timestamp.slice(0, 10),
     recorded_at: timestamp,
-    confidence: Number(values.confidence),
+    verification_status: values.verification_status || 'SINGLE_SOURCE',
   }
 }
 

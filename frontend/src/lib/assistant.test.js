@@ -16,22 +16,35 @@ test('Chinese assistant UI uses localized stock-symbol terminology', () => {
 })
 
 test('assistant report evidence labels follow the selected website language', () => {
-  const point = {
-    value: 31.4,
-    display_value: '31.4x',
-    provider: 'Example',
-    source: 'Fixture',
-    as_of_date: '2026-07-21',
-  }
+  const metric = (metricId, metricKey, value, unit, currency = null) => ({
+    metric_id: metricId,
+    metric_key: metricKey,
+    value,
+    unit,
+    currency,
+    provider: 'SEC EDGAR',
+    source_concept: `us-gaap:${metricKey}`,
+    source_document: 'https://sec.example/filing',
+    period_end: '2026-06-30',
+    verification_status: 'OFFICIAL',
+  })
   const context = buildAssistantReportContext({
     overview: {
       ticker: 'MSFT',
       name: 'Microsoft Corporation',
-      trailing_pe: point,
-      market_cap: { ...point, display_value: '3.7万亿美元' },
+    },
+    financials: {
+      metrics: [
+        metric('market-cap', 'market_cap', 3_700_000_000_000, 'currency', 'USD'),
+        metric('trailing-pe', 'trailing_pe', 31.4, 'multiple'),
+      ],
+      verification_results: [
+        { verification_result_id: 'market-cap-result', metric_key: 'market_cap', selected_metric_id: 'market-cap', verification_status: 'OFFICIAL' },
+        { verification_result_id: 'trailing-pe-result', metric_key: 'trailing_pe', selected_metric_id: 'trailing-pe', verification_status: 'OFFICIAL' },
+      ],
     },
   }, null, 'zh')
 
   assert.deepEqual(context.evidence.map((item) => item.label), ['市值', '历史市盈率'])
-  assert.equal(context.evidence[1].value, '31.4x')
+  assert.equal(context.evidence[1].value, '31.4 multiple')
 })

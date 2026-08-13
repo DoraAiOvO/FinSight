@@ -205,7 +205,7 @@ def _derived_point(metric_key: str, value: float, inputs: list[dict], source: st
     return data_point(
         value,
         display_value=_display(metric_key, value),
-        **inherited_provenance(inputs, source=source, confidence=0.8),
+        **inherited_provenance(inputs, source=source),
     )
 
 
@@ -284,7 +284,6 @@ def _reference(
             **inherited_provenance(
                 points,
                 source=f"benchmark selection rationale: {scope}",
-                confidence=0.75,
             ),
         ),
         "rationale_key": rationale_key,
@@ -341,7 +340,6 @@ def _peer_payload(peer: dict, overview: dict, company_cap: dict | None) -> dict:
             **inherited_provenance(
                 inputs,
                 source="automatic peer selection: classification and market cap",
-                confidence=0.75,
             ),
         ),
         "selection_reason_key": reason_key,
@@ -355,7 +353,6 @@ def _limitation(claim: str, inputs: list[dict]) -> dict:
         **inherited_provenance(
             inputs,
             source="benchmark coverage limitation",
-            confidence=0.9,
         ),
     )
 
@@ -544,7 +541,6 @@ def build_benchmark_context(ticker: str, overview: dict) -> dict:
         **inherited_provenance(
             methodology_inputs,
             source="FinSight benchmark methodology v1",
-            confidence=0.75,
         ),
     )
     limitations.append(

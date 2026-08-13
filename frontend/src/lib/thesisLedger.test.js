@@ -47,14 +47,14 @@ test('ledgerEvidence records source metadata without inventing a claim', () => {
     claim: ' Revenue grew 24%. ',
     source: ' Q2 earnings ',
     source_url: ' https://example.com/q2 ',
-    confidence: '0.9',
+    verification_status: 'OFFICIAL',
   }, now), {
     claim: 'Revenue grew 24%.',
     source: 'Q2 earnings',
     source_url: 'https://example.com/q2',
     as_of_date: '2026-07-21',
     recorded_at: '2026-07-21T12:34:56.000Z',
-    confidence: 0.9,
+    verification_status: 'OFFICIAL',
   })
 })
 

@@ -25,6 +25,7 @@ test('buildResearchSnapshot keeps report evidence and deterministic valuation', 
   assert.deepEqual(buildResearchSnapshot(data), {
     captured_at: generatedAt.toISOString(),
     overview: data.overview,
+    financials: null,
     analysis: data.analysis,
     news: data.news,
     filings: data.filings,

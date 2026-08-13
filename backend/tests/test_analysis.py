@@ -141,7 +141,7 @@ def test_high_pe_flags_relative_valuation_risk_with_evidence():
     assert risk["evidence"][0]["benchmark_key"] == "relative_industry_benchmark"
     assert risk["evidence"][0]["value"]["display_value"] == "75.00"
     assert risk["title"]["provider"] == "FinSight"
-    assert risk["explanation"]["confidence"] == 0.8
+    assert risk["explanation"]["verification_status"] == "CALCULATED"
     assert "industry median 20" in risk["evidence"][0]["benchmark"]["claim"]
 
 

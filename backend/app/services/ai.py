@@ -222,7 +222,6 @@ def summarize_news(ticker: str, items: list[dict], lang: str = "en") -> dict | N
         claim,
         provider="Anthropic",
         source=settings.AI_MODEL,
-        confidence=0.6,
         statements=statements,
         citations=citations,
     )
@@ -235,8 +234,20 @@ def narrate_analysis(
     lang: str = "en",
     explanation_depth: str = "standard",
 ) -> dict | None:
-    """Turn rule-based insights into a short narrative in the requested language."""
+    """Narrate only normalized and validated financial evidence.
+
+    ``metrics`` is intentionally an AI-safe context assembled by the verification
+    layer, never a provider payload or the legacy overview dictionary.
+    """
     if not insights:
+        return None
+    verified_rows = metrics.get("verified_financial_metrics") or []
+    verified_by_key = {
+        row.get("metric_key"): row
+        for row in verified_rows
+        if isinstance(row, dict) and row.get("metric_key")
+    }
+    if not verified_by_key:
         return None
     source_lines = []
     kind_indexes = {"risk": 0, "opportunity": 0}
@@ -246,24 +257,30 @@ def narrate_analysis(
         insight_index = kind_indexes[kind]
         kind_indexes[kind] += 1
         source_root = f"analysis.neutral_evidence.{collection}.{insight_index}"
-        source_lines.extend(
-            [
-                f"- Source ID {source_root}.title: "
-                f"{evidence_text(insight['title'])}",
-                f"- Source ID {source_root}.explanation: "
-                f"{evidence_text(insight['explanation'])}",
-            ]
-        )
+        insight_lines = []
         for evidence_index, item in enumerate(insight["evidence"]):
-            source_lines.extend(
-                [
-                    f"- Source ID {source_root}.evidence."
-                    f"{evidence_index}.value: {item['metric']}="
-                    f"{item['value'].get('display_value') or item['value']['value']}",
-                    f"- Source ID {source_root}.evidence."
-                    f"{evidence_index}.benchmark: {evidence_text(item['benchmark'])}",
-                ]
+            metric_key = item.get("metric_key")
+            verified = verified_by_key.get(metric_key)
+            if not verified:
+                continue
+            insight_lines.append(
+                f"- Source ID {source_root}.evidence.{evidence_index}.value: "
+                f"{metric_key}={verified['value']} {verified['unit']}"
+                f"; fiscal period {verified['period_type']} ending {verified['period_end']}"
+                f"; provider {verified['provider']}"
+                f"; verification {verified['verification_status']}"
+                + (
+                    f"; formula {verified['calculation_formula']}"
+                    if verified.get("calculation_formula") else ""
+                )
             )
+        if insight_lines:
+            source_lines.append(
+                f"- Deterministic finding: {evidence_text(insight['title'])}"
+            )
+            source_lines.extend(insight_lines)
+    if not any("Source ID" in line for line in source_lines):
+        return None
     bullet = "\n".join(source_lines)
     depth_instructions = {
         "simple": (
@@ -283,8 +300,8 @@ def narrate_analysis(
         explanation_depth, 600
     )
     result = _ask_cited(
-        f"Company: {metrics.get('name')} ({ticker}), sector {metrics.get('sector')}.\n"
-        f"Rule-based findings with evidence:\n{bullet}\n\n"
+        f"Company: {metrics.get('company_name')} ({ticker}).\n"
+        f"Validated financial evidence and deterministic findings:\n{bullet}\n\n"
         f"Write a narrative weaving these findings together. {depth_instruction} "
         "Explain the evidence; do not recommend buying or selling. Do not infer "
         "that the company is suitable or unsuitable for this user.",
@@ -298,7 +315,6 @@ def narrate_analysis(
         claim,
         provider="Anthropic",
         source=settings.AI_MODEL,
-        confidence=0.6,
         statements=statements,
         citations=citations,
     )

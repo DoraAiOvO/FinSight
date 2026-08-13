@@ -20,7 +20,7 @@ def test_data_point_and_evidence_require_complete_provenance():
         "as_of_date": date(2026, 7, 19),
         "fetched_at": datetime(2026, 7, 20, tzinfo=timezone.utc),
         "freshness_status": "fresh",
-        "confidence": 0.9,
+        "verification_status": "SINGLE_SOURCE",
         "source_url": "https://finance.yahoo.com/quote/TEST",
     }
 
@@ -38,14 +38,13 @@ def test_inherited_provenance_uses_most_conservative_input():
     }
     meta = inherited_provenance(
         [
-            {**base, "freshness_status": "fresh", "confidence": 0.9},
-            {**base, "freshness_status": "stale", "confidence": 0.7},
+            {**base, "freshness_status": "fresh", "verification_status": "SINGLE_SOURCE"},
+            {**base, "freshness_status": "stale", "verification_status": "STALE"},
         ],
-        confidence=0.85,
     )
 
     assert meta["freshness_status"] == "stale"
-    assert meta["confidence"] == 0.7
+    assert meta["verification_status"] == "CALCULATED"
 
 
 def test_freshness_and_generated_claim_metadata():
@@ -57,9 +56,8 @@ def test_freshness_and_generated_claim_metadata():
         "A concise synthesis.",
         provider="Anthropic",
         source="claude-test",
-        confidence=0.6,
         fetched_at=fetched_at,
     )
     assert claim["provider"] == "Anthropic"
     assert claim["as_of_date"] == fetched_at.date()
-    assert claim["confidence"] == 0.6
+    assert claim["verification_status"] == "ESTIMATED"

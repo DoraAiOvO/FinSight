@@ -52,6 +52,7 @@ export const translations = {
     noticeAnalysis: 'Risk analysis is temporarily unavailable.',
     noticeNews: 'Recent news is temporarily unavailable.',
     noticeFilings: 'SEC filings are temporarily unavailable.',
+    noticeFinancialVerification: 'Financial verification is temporarily unavailable.',
     noticeHistoryUpdate: 'Price history could not be updated',
 
     // Report headings
@@ -63,6 +64,27 @@ export const translations = {
     peerKicker: 'Peer research',
     compareTitle: 'Compare the evidence,',
     compareTitleEm: 'metric by metric.',
+
+    // Financial verification
+    verificationKicker: 'Financial evidence ledger',
+    verificationTitle: 'Verified reporting data',
+    verificationIntro: 'Official filings are primary. Secondary values remain visible when they disagree.',
+    verificationAllPeriods: 'Show all periods',
+    verificationLatest: 'Show latest only',
+    verificationMetric: 'Metric',
+    verificationSource: 'Source',
+    verificationPeriod: 'Fiscal period',
+    verificationAsOf: 'As of',
+    verificationStatus: 'Verification',
+    verificationFormula: 'Formula',
+    verificationFiled: 'Filed',
+    verificationNoFilingDate: 'No filing date supplied',
+    verificationConflicts: 'Unresolved source conflicts',
+    verificationConflictDifference: 'Relative difference',
+    verificationUnresolved: 'Official filing retained as primary; no value was overwritten.',
+    verificationUnresolvedNoPrimary: 'No authoritative primary source was available; no value was overwritten.',
+    verificationLimitations: 'Missing data and validation notes',
+    verificationMissing: 'Missing metrics',
 
     // Search bar
     searchAriaLabel: 'Stock research search',

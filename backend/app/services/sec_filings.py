@@ -26,6 +26,7 @@ from .provenance import evidence, freshness_for, provenance, utc_now
 
 SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers_exchange.json"
 SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
+SEC_COMPANY_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
 SEC_ARCHIVES_ROOT = "https://www.sec.gov/Archives/edgar/data"
 SUPPORTED_FORMS = ("10-K", "10-Q", "8-K")
 MAX_DOCUMENT_BYTES = 15_000_000
@@ -323,6 +324,38 @@ def _load_company_filings(ticker: str):
     return company, filings, cache, submissions_url
 
 
+def get_submissions_metadata(ticker: str) -> dict:
+    """Return normalized SEC Submissions metadata for financial-fact linking."""
+    company = _company_for_ticker(ticker)
+    submissions_url = SEC_SUBMISSIONS_URL.format(cik=company["cik"])
+    payload, cache = _cached_json(submissions_url, settings.SEC_CACHE_TTL_SECONDS)
+    recent = payload.get("filings", {}).get("recent", {}) if isinstance(payload, dict) else {}
+    rows = _submission_rows(recent)
+    return {
+        **company,
+        "company_name": str(payload.get("name") or company["company_name"]),
+        "filings": rows,
+        "source_url": submissions_url,
+        "fetched_at": cache["fetched_at"],
+    }
+
+
+def get_company_facts(ticker: str) -> dict:
+    """Fetch the official SEC XBRL Company Facts document for a US filer."""
+    company = _company_for_ticker(ticker)
+    source_url = SEC_COMPANY_FACTS_URL.format(cik=company["cik"])
+    payload, cache = _cached_json(source_url, settings.SEC_CACHE_TTL_SECONDS)
+    if not isinstance(payload, dict) or not isinstance(payload.get("facts"), dict):
+        raise SecParseError("SEC Company Facts did not contain XBRL facts")
+    return {
+        **company,
+        "company_name": str(payload.get("entityName") or company["company_name"]),
+        "facts": payload["facts"],
+        "source_url": source_url,
+        "fetched_at": cache["fetched_at"],
+    }
+
+
 def _source_metadata(
     *,
     source: str,
@@ -341,7 +374,6 @@ def _source_metadata(
             if historical
             else freshness_for(as_of_date, fetched_at, fresh_days=30)
         ),
-        confidence=1.0,
         source_url=source_url,
     )
 
@@ -722,7 +754,6 @@ def answer_question(
             as_of_date=filing["filing_date"],
             fetched_at=answered_at,
             freshness_status=FreshnessStatus.HISTORICAL.value,
-            confidence=0.65 if ai_used else 0.8,
             source_url=filing["source_url"],
         ),
     )

@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "us_gaap_industrial",
+      "company_type": "US GAAP industrial",
+      "ticker": "IND",
+      "cik": "0000000101",
+      "accounting_standard": "US_GAAP",
+      "period": {
+        "period_type": "ANNUAL",
+        "period_start": "2025-01-01",
+        "period_end": "2025-12-31",
+        "fiscal_year": 2025,
+        "fiscal_quarter": null,
+        "filing_date": "2026-02-15"
+      },
+      "observations": [
+        {"metric_key": "total_revenue", "provider": "SEC EDGAR", "value": 1000.0, "unit": "currency", "currency": "USD", "concept": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax"},
+        {"metric_key": "total_revenue", "provider": "Yahoo Finance", "value": 1005.0, "unit": "currency", "currency": "USD", "concept": "yfinance yearly income:TotalRevenue"},
+        {"metric_key": "net_income", "provider": "SEC EDGAR", "value": 120.0, "unit": "currency", "currency": "USD", "concept": "us-gaap:NetIncomeLoss"},
+        {"metric_key": "operating_cash_flow", "provider": "SEC EDGAR", "value": 250.0, "unit": "currency", "currency": "USD", "concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities"},
+        {"metric_key": "capital_expenditure", "provider": "SEC EDGAR", "value": 60.0, "unit": "currency", "currency": "USD", "concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment"}
+      ],
+      "expected": {
+        "total_revenue_status": "CROSS_VERIFIED",
+        "selected_total_revenue": 1000.0,
+        "profit_margin": 0.12,
+        "free_cash_flow": 190.0
+      }
+    },
+    {
+      "id": "us_bank_conflict",
+      "company_type": "US financial institution",
+      "ticker": "BNK",
+      "cik": "0000000202",
+      "accounting_standard": "US_GAAP",
+      "period": {
+        "period_type": "INSTANT",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "fiscal_year": 2025,
+        "fiscal_quarter": null,
+        "filing_date": "2026-02-20"
+      },
+      "observations": [
+        {"metric_key": "total_assets", "provider": "SEC EDGAR", "value": 5000.0, "unit": "currency", "currency": "USD", "concept": "us-gaap:Assets"},
+        {"metric_key": "total_assets", "provider": "Yahoo Finance", "value": 5250.0, "unit": "currency", "currency": "USD", "concept": "yfinance yearly balance:TotalAssets"}
+      ],
+      "expected": {
+        "status": "CONFLICTING",
+        "selected_total_assets": 5000.0,
+        "preserved_value_count": 2
+      }
+    },
+    {
+      "id": "foreign_ifrs_period_alignment",
+      "company_type": "Foreign private issuer using IFRS",
+      "ticker": "FPI",
+      "cik": "0000000303",
+      "accounting_standard": "IFRS",
+      "period": {
+        "period_type": "ANNUAL",
+        "period_start": "2025-01-01",
+        "period_end": "2025-12-31",
+        "fiscal_year": 2025,
+        "fiscal_quarter": null,
+        "filing_date": "2026-03-15"
+      },
+      "observations": [
+        {"metric_key": "total_revenue", "provider": "SEC EDGAR", "value": 800.0, "unit": "currency", "currency": "EUR", "concept": "ifrs-full:Revenue"},
+        {"metric_key": "total_revenue", "provider": "Yahoo Finance", "value": 200.0, "unit": "currency", "currency": "EUR", "concept": "yfinance quarterly income:TotalRevenue", "period_type": "QUARTER", "period_start": "2025-10-01", "fiscal_quarter": 4}
+      ],
+      "expected": {
+        "annual_status": "OFFICIAL",
+        "quarter_status": "SINGLE_SOURCE",
+        "conflict_count": 0,
+        "missing_metric_key": "operating_cash_flow"
+      }
+    }
+  ]
+}

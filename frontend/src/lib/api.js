@@ -26,6 +26,9 @@ export const api = {
     chat: (payload) => write('/api/assistant/chat', 'POST', payload),
   },
   overview: (ticker) => get(`/api/stocks/${encodeURIComponent(ticker)}`),
+  financialEvidence: (ticker) => (
+    get(`/api/financials/${encodeURIComponent(ticker)}/evidence`)
+  ),
   history: (ticker, period = '6mo') =>
     get(`/api/stocks/${encodeURIComponent(ticker)}/history?period=${period}`),
   news: (ticker, lang = 'en') =>

@@ -66,6 +66,12 @@ class Settings:
         "FINSIGHT_SEC_USER_AGENT",
         "FinSight DoraAiOvO@users.noreply.github.com",
     )
+    METRIC_TOLERANCES_JSON: str = os.getenv(
+        "FINSIGHT_METRIC_TOLERANCES_JSON", "{}"
+    )
+    FINANCIAL_STALE_DAYS: int = int(
+        os.getenv("FINSIGHT_FINANCIAL_STALE_DAYS", "550")
+    )
     DATABASE_URL: str = database_url_from_environment()
     AUTO_MIGRATE_DATABASE: bool = auto_migrate_database_from_environment(DATABASE_URL)
 
